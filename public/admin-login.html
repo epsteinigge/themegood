@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ThemeGood Admin Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap">
+  <style>
+    :root {
+      --brand: #ef233c;
+      --brand-deep: #8f1028;
+      --ink: #1f2430;
+      --muted: #666f7d;
+      --line: rgba(143, 16, 40, 0.14);
+      --surface: rgba(255, 255, 255, 0.88);
+      --shadow: 0 28px 60px rgba(103, 13, 34, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Nunito Sans", Arial, sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(135deg, rgba(143, 16, 40, 0.68), rgba(239, 35, 60, 0.28)),
+        url("photos/tg24.jpg") center / cover no-repeat fixed;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.3), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(255, 228, 233, 0.22), transparent 30%),
+        rgba(43, 7, 18, 0.36);
+      pointer-events: none;
+    }
+
+    .shell {
+      position: relative;
+      z-index: 1;
+      width: min(100%, 1040px);
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      background: rgba(255, 248, 250, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 32px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .brand-panel {
+      padding: 48px;
+      background:
+        linear-gradient(180deg, rgba(78, 7, 22, 0.6), rgba(78, 7, 22, 0.2)),
+        linear-gradient(145deg, rgba(239, 35, 60, 0.32), rgba(255, 255, 255, 0.04));
+      color: #fff9fb;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 32px;
+    }
+
+    .brand-mark img {
+      width: 156px;
+      max-width: 100%;
+      display: block;
+    }
+
+    .eyebrow,
+    .meta-label {
+      font-family: "Montserrat", sans-serif;
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .brand-copy h1 {
+      margin: 16px 0 14px;
+      font-family: "Montserrat", sans-serif;
+      font-size: clamp(2.2rem, 4vw, 3.6rem);
+      line-height: 0.98;
+    }
+
+    .brand-copy p {
+      max-width: 34ch;
+      margin: 0;
+      font-size: 1.02rem;
+      line-height: 1.7;
+      color: rgba(255, 245, 248, 0.86);
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .meta-card {
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+    }
+
+    .meta-card strong {
+      display: block;
+      margin-top: 8px;
+      font-family: "Montserrat", sans-serif;
+      font-size: 1rem;
+    }
+
+    .meta-card span {
+      color: rgba(255, 245, 248, 0.82);
+      font-size: 0.94rem;
+      line-height: 1.5;
+    }
+
+    .form-panel {
+      padding: 48px;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+    }
+
+    .login-card {
+      width: 100%;
+    }
+
+    .login-card h2 {
+      margin: 10px 0 8px;
+      font-family: "Montserrat", sans-serif;
+      font-size: clamp(1.8rem, 2.4vw, 2.4rem);
+      color: var(--brand-deep);
+    }
+
+    .login-card p {
+      margin: 0 0 26px;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .field {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-family: "Montserrat", sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--brand-deep);
+    }
+
+    input {
+      width: 100%;
+      min-height: 56px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fffafb;
+      color: var(--ink);
+      font-size: 1rem;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: rgba(239, 35, 60, 0.45);
+      box-shadow: 0 0 0 4px rgba(239, 35, 60, 0.12);
+      transform: translateY(-1px);
+    }
+
+    button {
+      width: 100%;
+      min-height: 58px;
+      border: 0;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #ff3657, #ef233c 58%, #c1122f);
+      color: #fff;
+      font-family: "Montserrat", sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 16px 32px rgba(193, 18, 47, 0.24);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 36px rgba(193, 18, 47, 0.3);
+      filter: brightness(1.04);
+    }
+
+    .form-footer {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    .form-footer a {
+      color: var(--brand);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .error-message {
+      min-height: 22px;
+      margin-top: 14px;
+      color: #b00020;
+      font-size: 0.94rem;
+      font-weight: 700;
+    }
+
+    @media (max-width: 900px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .brand-panel,
+      .form-panel {
+        padding: 32px 24px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      body {
+        padding: 14px;
+      }
+
+      .shell {
+        border-radius: 24px;
+      }
+
+      .meta-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .brand-copy h1 {
+        font-size: 2rem;
+      }
+
+      .form-footer {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="brand-panel">
+      <div class="brand-mark">
+        <img src="photos/New_Theme Good Logo-02.png" alt="ThemeGood logo" />
+      </div>
+
+      <div class="brand-copy">
+        <div class="eyebrow">Admin Portal</div>
+        <h1>Manage orders with the same premium feel as the storefront.</h1>
+        <p>
+          Access the ThemeGood dashboard to review new purchases, confirm payments,
+          and keep fulfilment moving without leaving the brand experience behind.
+        </p>
+      </div>
+
+      <div class="meta-grid" aria-label="Admin features">
+        <article class="meta-card">
+          <div class="meta-label">Orders</div>
+          <strong>Live dashboard</strong>
+          <span>Track incoming purchases and payment progress in one place.</span>
+        </article>
+        <article class="meta-card">
+          <div class="meta-label">Fulfilment</div>
+          <strong>Status control</strong>
+          <span>Update every order from new to shipped without extra tools.</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="form-panel">
+      <div class="login-card">
+        <div class="eyebrow" style="color: var(--brand);">Secure Access</div>
+        <h2>Admin login</h2>
+        <p>Enter the admin password to continue to the ThemeGood orders dashboard.</p>
+
+        <form id="loginForm">
+          <div class="field">
+            <label for="password">Admin Password</label>
+            <input
+              type="password"
+              id="password"
+              placeholder="Enter your password"
+              autocomplete="current-password"
+              required
+            >
+          </div>
+
+          <button type="submit">Enter Dashboard</button>
+          <div id="errorMessage" class="error-message" aria-live="polite"></div>
+        </form>
+
+        <div class="form-footer">
+          <span>ThemeGood internal access only</span>
+          <a href="index.html">Back to website</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const loginForm = document.getElementById("loginForm");
+    const passwordInput = document.getElementById("password");
+    const errorMessage = document.getElementById("errorMessage");
+
+    loginForm.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      errorMessage.textContent = "";
+
+      const password = passwordInput.value.trim();
+
+      try {
+        const response = await fetch("/api/admin-login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ password })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Login failed");
+        }
+
+        localStorage.setItem("adminToken", data.token);
+        localStorage.setItem("adminLoggedIn", "true");
+        window.location.href = "admin-orders.html";
+      } catch (error) {
+        errorMessage.textContent = error.message || "Login failed";
+      }
+    });
+  </script>
+</body>
+</html>

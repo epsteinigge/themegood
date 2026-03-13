@@ -1,0 +1,415 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ThemeGood</title>
+
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="overrides.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Nunito+Sans:wght@400;500;600;700;800&display=swap">
+</head>
+
+<body>
+
+<!-- HEADER -->
+<header>
+<a href="index.html" class="logo-container">
+<img src="photos/New_Theme Good Logo-02.png" class="logo" alt="ThemeGood logo">
+</a>
+
+<button id="hamburgerBtn" aria-expanded="false" aria-label="Open navigation">
+<i class="fa fa-bars"></i>
+</button>
+
+<nav id="navMenu">
+<ul class="nav-links">
+<li><a href="#home" data-i18n="home">Home</a></li>
+<li><a href="shopping.html" data-i18n="shopping">Shopping</a></li>
+<li><a href="gallery.html" data-i18n="gallery">Gallery</a></li>
+<li><a href="#about" data-i18n="about">About</a></li>
+<li><a href="#testimonials" data-i18n="testimonials">Testimonials</a></li>
+<li><a href="#faq" data-i18n="faq">FAQ</a></li>
+<li><a href="#contact" data-i18n="contact_us">Contact Us</a></li>
+</ul>
+</nav>
+
+<div class="social-icons header-social-middle">
+<a href="https://www.facebook.com/www.themegood.com.my" target="_blank" rel="noopener noreferrer"><i class="fab fa-facebook"></i></a>
+<a href="https://www.instagram.com/themegood_malaysia" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
+<a href="https://api.whatsapp.com/send/?phone=60187786000" target="_blank" rel="noopener noreferrer"><i class="fab fa-whatsapp"></i></a>
+</div>
+
+<div class="header-store-links" aria-label="Marketplace links">
+<a class="store-badge store-badge-lazada" href="https://www.lazada.com.my/theme-good-121123223/" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Lazada" title="Lazada"><img src="photos/Lazada_29_icon.webp" alt="Lazada"></a>
+<a class="store-badge store-badge-shopee" href="https://shopee.com.my/themegood" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Shopee" title="Shopee"><img src="photos/shopee.png" alt="Shopee"></a>
+</div>
+
+<div class="header-actions">
+<button id="wishlist-toggle">&hearts; Wishlist <span id="wishlist-count">0</span></button>
+<button id="cart-toggle">&#128722; Cart <span id="cart-count">0</span></button>
+<label class="lang-switch" aria-label="Language">
+<span data-i18n="language">Language</span>
+<select class="js-lang-switch">
+<option value="en">EN</option>
+<option value="ms">BM</option>
+<option value="zh">??</option>
+</select>
+</label>
+</div>
+
+<div id="menuOverlay"></div>
+
+</header>
+
+<!-- HERO SLIDER -->
+<section id="home" class="hero">
+<div class="slide active" data-slide-link="shopping-details.html#product-pomegranate">
+<img src="photos/tg18.jpg" alt="ThemeGood wellness product slide 1">
+<div class="slide-cta">
+<a href="#products" class="btn btn-primary">Buy Now</a>
+<a href="#about" class="btn btn-secondary">Learn More</a>
+</div>
+</div>
+
+<div class="slide" data-slide-link="shopping-details.html#products">
+<img src="photos/tg12.jpg" alt="ThemeGood wellness product slide 2">
+<div class="slide-cta">
+<a href="#products" class="btn btn-primary">Buy Now</a>
+<a href="#about" class="btn btn-secondary">Learn More</a>
+</div>
+</div>
+
+<div class="slide" data-slide-link="shopping-details.html#products">
+<img src="photos/tg24.jpg" alt="ThemeGood wellness product slide 3">
+<div class="slide-cta">
+<a href="#products" class="btn btn-primary">Buy Now</a>
+<a href="#about" class="btn btn-secondary">Learn More</a>
+</div>
+</div>
+
+<div class="slide" data-slide-link="shopping.html#products">
+<img src="photos/tg23.jpg" alt="ThemeGood wellness product slide 4">
+<div class="slide-cta">
+<a href="#products" class="btn btn-primary">Buy Now</a>
+<a href="#about" class="btn btn-secondary">Learn More</a>
+</div>
+</div>
+
+<div class="slide" data-slide-link="shopping.html#products">
+<img src="photos/tg21.jpg" alt="ThemeGood wellness product slide 5">
+<div class="slide-cta">
+<a href="#products" class="btn btn-primary">Buy Now</a>
+<a href="#about" class="btn btn-secondary">Learn More</a>
+</div>
+</div>
+
+<button class="arrow left" id="prevBtn" aria-label="Previous slide">&#10094;</button>
+<button class="arrow right" id="nextBtn" aria-label="Next slide">&#10095;</button>
+
+<div class="dots" aria-label="Slide navigation">
+<span class="dot active"></span>
+<span class="dot"></span>
+<span class="dot"></span>
+<span class="dot"></span>
+<span class="dot"></span>
+</div>
+</section>
+
+<!-- PRODUCTS -->
+<section id="products" class="section">
+<h2 class="section-title">Featured Products</h2>
+
+<div class="products-grid">
+<div class="product-card"
+data-id="1"
+data-name="Pomegranate Multigrain"
+data-price="55"
+data-description="Provides female hormones to reduce menopausal discomfort and prevents prostate cancer."
+data-image="photos/Pomegranate 300g.png"
+data-hover-image="photos/Pomegranate 600g.png"
+data-gallery="photos/Pomegranate 300g.png, photos/Pomegranate 600g.png, photos/Pomegranate 800g (1).png">
+<img src="photos/Pomegranate 300g.png" alt="Pomegranate product">
+<h4>Pomegranate Multigrain</h4>
+<p>Provides female hormones to reduce menopausal discomfort and prevents prostate cancer.</p>
+<button class="add-to-cart">Add to Cart</button>
+<button class="add-to-wishlist">&hearts; Wishlist</button>
+</div>
+
+<div class="product-card"
+data-id="2"
+data-name="Bilberry Multigrain"
+data-price="55"
+data-description="Helps with sleep and fatigue support & dry eye syndrome."
+data-image="photos/Bilberry 300g.png"
+data-hover-image="photos/Bilberry 600g.png"
+data-gallery="photos/Bilberry 300g.png, photos/Bilberry 600g.png, photos/Bilberry 800g.png">
+<img src="photos/Bilberry 300g.png" alt="Bilberry product">
+<h4>Bilberry Multigrain</h4>
+<p>Helps with sleep and fatigue support & dry eye syndrome.</p>
+<button class="add-to-cart">Add to Cart</button>
+<button class="add-to-wishlist">&hearts; Wishlist</button>
+</div>
+
+<div class="product-card"
+data-id="3"
+data-name="Melon Avocado Multigrain"
+data-price="55"
+data-description="Maintain optimal skin hydration and helps with arthritis."
+data-image="photos/Melon Avocado 300g.png"
+data-hover-image="photos/Melon Avocado 600g.png"
+data-gallery="photos/Melon Avocado 300g.png, photos/Melon Avocado 600g.png, photos/Melon Avocado 800g.png">
+<img src="photos/Melon Avocado 300g.png" alt="Melon Avocado product">
+<h4>Melon Avocado Multigrain</h4>
+<p>Maintain optimal skin hydration and helps with arthritis.</p>
+<button class="add-to-cart">Add to Cart</button>
+<button class="add-to-wishlist">&hearts; Wishlist</button>
+</div>
+
+<div class="product-card"
+data-id="4"
+data-name="Passion Fruit Multigrain"
+data-price="55"
+data-description="Soothes the nervous system and helps with detoxification to help with skin beautifying."
+data-image="photos/Passion Fruit 300g.png"
+data-hover-image="photos/Passion Fruit 600g.png"
+data-gallery="photos/Passion Fruit 300g.png, photos/Passion Fruit 600g.png, photos/Passion Fruit 800g.png">
+<img src="photos/Passion Fruit 300g.png" alt="Passion Fruit Multigrain product">
+<h4>Passion Fruit Multigrain</h4>
+<p>Soothes the nervous system and helps with detoxification to help with skin beautifying.</p>
+<button class="add-to-cart">Add to Cart</button>
+<button class="add-to-wishlist">&hearts; Wishlist</button>
+</div>
+
+<div class="product-card"
+data-id="5"
+data-name="Oat Beta Glucan Multigrain"
+data-price="55"
+data-description="Helps with reducing cholesterol and controls blood sugar levels."
+data-image="photos/Oat Beta 300g.png"
+data-hover-image="photos/Oat Beta 600g.png"
+data-gallery="photos/Oat Beta 300g.png, photos/Oat Beta 600g.png, photos/Oat Beta 800g (1).png">
+<img src="photos/Oat Beta 300g.png" alt="Oat Beta Glucan Multigrain product">
+<h4>Oat Beta Glucan Multigrain</h4>
+<p>Helps with reducing cholesterol and controls blood sugar levels.</p>
+<button class="add-to-cart">Add to Cart</button>
+<button class="add-to-wishlist">&hearts; Wishlist</button>
+</div>
+
+<div class="product-card"
+data-id="6"
+data-name="Cocoa Multigrain"
+data-price="72"
+data-description="Strengthens respiratory system and immune system."
+data-image="photos/Cocoa 300g.png"
+data-hover-image="photos/Cocoa800g.png"
+data-gallery="photos/Cocoa 300g.png, photos/Cocoa800g.png, photos/Cocoa800g.png">
+<img src="photos/Cocoa 300g.png" alt="Cocoa Multigrain product">
+<h4>Cocoa Multigrain</h4>
+<p>Strengthens respiratory system and immune system.</p>
+<button class="add-to-cart">Add to Cart</button>
+<button class="add-to-wishlist">&hearts; Wishlist</button>
+</div>
+</div>
+</section>
+
+<!-- ABOUT -->
+<section id="about" class="section">
+<h2>About ThemeGood</h2>
+<p class="about-lead">
+Quality and natural wellness nutrition for modern lifestyles.
+</p>
+
+<div class="about-pillars">
+<article class="about-pillar">
+<h3>Who We Are</h3>
+<p>ThemeGood develops nutrient-rich wellness drinks using carefully selected natural ingredients and balanced formulas.</p>
+</article>
+
+<article class="about-pillar">
+<h3>Perfect Recipe</h3>
+<p>Our blends are focused on fibre, vitamins, minerals, and everyday digestive support with practical nutrition science.</p>
+</article>
+
+<article class="about-pillar">
+<h3>Suitability</h3>
+<p>Designed for adults, seniors, and families looking for a convenient daily wellness option with a gentle nutrition profile.</p>
+</article>
+</div>
+
+<div class="about-stats">
+<div class="about-stat"><strong>12+</strong><span>Years Foundation</span></div>
+<div class="about-stat"><strong>250+</strong><span>Distributors & Retailers</span></div>
+<div class="about-stat"><strong>100+</strong><span>Reports & Certifications</span></div>
+<div class="about-stat"><strong>7000+</strong><span>Monthly Orders</span></div>
+</div>
+</section>
+
+<section id="testimonials" class="section testimonials-section">
+<h2 class="section-title">What Our Customers Say</h2>
+<p class="testimonials-intro">Real feedback from customers who add ThemeGood to their daily wellness routine.</p>
+
+<div class="testimonials-grid">
+<article class="testimonial-card">
+<div class="testimonial-stars" aria-label="5 star rating">★★★★★</div>
+<p class="testimonial-copy">The Pomegranate blend is smooth, easy to prepare, and has become part of my morning routine.</p>
+<div class="testimonial-author">
+<strong>Ms. Lim</strong>
+<span>Working Professional</span>
+</div>
+</article>
+
+<article class="testimonial-card">
+<div class="testimonial-stars" aria-label="5 star rating">★★★★★</div>
+<p class="testimonial-copy">My parents enjoy the Bilberry and Oat Beta options. The size choices are practical and convenient.</p>
+<div class="testimonial-author">
+<strong>Mr. Gan</strong>
+<span>Family Buyer</span>
+</div>
+</article>
+
+<article class="testimonial-card">
+<div class="testimonial-stars" aria-label="5 star rating">★★★★★</div>
+<p class="testimonial-copy">The Passion Fruit flavour stands out. Ordering online is easy and the product presentation feels premium.</p>
+<div class="testimonial-author">
+<strong>Ms. Aina</strong>
+<span>Repeat Customer</span>
+</div>
+</article>
+</div>
+</section>
+
+<section id="faq" class="section faq-section">
+<h2 class="section-title">Frequently Asked Questions</h2>
+<p class="faq-intro">Quick answers about product sizes, ordering, delivery, and daily use.</p>
+
+<div class="faq-list">
+<details class="faq-item" open>
+<summary>How do I choose between 300g, 600g, and 800g?</summary>
+<p>The 300g size is suitable for trying a product, 600g offers a practical refill size, and 800g is ideal for regular household use.</p>
+</details>
+
+<details class="faq-item">
+<summary>Can I order directly from the website?</summary>
+<p>You can review products here and also connect with our official marketplace stores through Lazada and Shopee for convenient checkout.</p>
+</details>
+
+<details class="faq-item">
+<summary>How should I enjoy ThemeGood multigrain products?</summary>
+<p>Prepare according to the recommended serving method and enjoy as part of your daily routine, whether in the morning or as a nourishing drink during the day.</p>
+</details>
+
+<details class="faq-item">
+<summary>How can I contact ThemeGood for product questions?</summary>
+<p>You can reach us through the contact section, social channels, or WhatsApp for more information about products and ordering support.</p>
+</details>
+</div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact" class="section contact">
+<h2>Contact Us</h2>
+
+<div class="contact-container">
+<div class="contact-info">
+<p><strong>Email:</strong> <a href="mailto:info@themegood.com.my">info@themegood.com.my</a></p>
+<p><strong>Phone:</strong> <a href="tel:+6052431668">05-2431668</a></p>
+<p><strong>Location:</strong> <a href="https://www.google.com/maps/search/?api=1&query=14%2C+Jalan+Tokong%2C+Taman+Hoover%2C+Ipoh%2C+Perak%2C+Malaysia" target="_blank" rel="noopener noreferrer">14, Jalan Tokong, Taman Hoover, Ipoh, Perak, Malaysia.</a></p>
+</div>
+
+<div class="contact-social">
+<a href="https://www.facebook.com/www.themegood.com.my" target="_blank" rel="noopener noreferrer">
+<i class="fab fa-facebook"></i> Facebook
+</a>
+
+<a href="https://www.instagram.com/themegood_malaysia" target="_blank" rel="noopener noreferrer">
+<i class="fab fa-instagram"></i> Instagram
+</a>
+
+<a href="https://api.whatsapp.com/send/?phone=60187786000" target="_blank" rel="noopener noreferrer">
+<i class="fab fa-whatsapp"></i> WhatsApp
+</a>
+</div>
+</div>
+
+<div class="shop-map">
+<h3>Find Our Shop</h3>
+<iframe
+title="ThemeGood Shop Location"
+src="https://www.google.com/maps?q=14%2C%20Jalan%20Tokong%2C%20Taman%20Hoover%2C%20Ipoh%2C%20Perak%2C%20Malaysia&output=embed"
+loading="lazy"
+allowfullscreen
+referrerpolicy="no-referrer-when-downgrade">
+</iframe>
+</div>
+</section>
+
+<section class="section newsletter" aria-label="Newsletter">
+<h2>Subscribe to Our Newsletter</h2>
+<p>Get updates about new wellness products and special offers.</p>
+
+<form id="newsletter-form">
+<input
+type="email"
+id="newsletter-email"
+placeholder="Enter your email"
+required
+>
+<button type="submit">Subscribe</button>
+</form>
+</section>
+
+<div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+<button id="backToTop" aria-label="Back to top">&#8593;</button>
+
+<footer>
+<div class="footer-container">
+<div class="footer-brand">
+<a href="index.html" aria-label="Back to main page">
+<img src="photos/New_Theme Good Logo-02.png" class="footer-logo" alt="ThemeGood logo">
+</a>
+<p>ThemeGood Wellness Nutrition</p>
+</div>
+
+<div class="footer-links">
+<h4 data-i18n="quick_links">Quick Links</h4>
+<a href="#home" data-i18n="home">Home</a>
+<a href="#products" data-i18n="products">Products</a>
+<a href="gallery.html" data-i18n="gallery">Gallery</a>
+<a href="#about" data-i18n="about">About</a>
+<a href="#testimonials" data-i18n="testimonials">Testimonials</a>
+<a href="#faq" data-i18n="faq">FAQ</a>
+<a href="#contact" data-i18n="contact_us">Contact Us</a>
+<label class="lang-switch footer-lang" aria-label="Language">
+<span data-i18n="language">Language</span>
+<select class="js-lang-switch">
+<option value="en">EN</option>
+<option value="ms">BM</option>
+<option value="zh">??</option>
+</select>
+</label>
+</div>
+
+<div class="footer-social">
+<h4 data-i18n="follow_us">Follow Us</h4>
+<a href="https://www.facebook.com/www.themegood.com.my" target="_blank" rel="noopener noreferrer"><i class="fab fa-facebook"></i></a>
+<a href="https://www.instagram.com/themegood_malaysia" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
+<a href="https://api.whatsapp.com/send/?phone=60187786000" target="_blank" rel="noopener noreferrer"><i class="fab fa-whatsapp"></i></a>
+<a class="store-badge store-badge-lazada" href="https://www.lazada.com.my/theme-good-121123223/" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Lazada" title="Lazada"><img src="photos/Lazada_29_icon.webp" alt="Lazada"></a>
+<a class="store-badge store-badge-shopee" href="https://shopee.com.my/themegood" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Shopee" title="Shopee"><img src="photos/shopee.png" alt="Shopee"></a>
+</div>
+
+<div class="footer-qr">
+<h4>Scan QR</h4>
+<img src="photos/tgqr.png" alt="ThemeGood QR code">
+</div>
+</div>
+
+<p class="footer-bottom">&copy; 2026 ThemeGood. All Rights Reserved.</p>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

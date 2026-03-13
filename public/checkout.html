@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout | ThemeGood</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="overrides.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Nunito+Sans:wght@400;500;600;700;800&display=swap">
+</head>
+<body class="checkout-page">
+
+<header>
+  <a href="index.html" class="logo-container">
+    <img src="photos/New_Theme Good Logo-02.png" class="logo" alt="ThemeGood logo">
+  </a>
+
+  <button id="hamburgerBtn" aria-expanded="false" aria-label="Open navigation">
+    <i class="fa fa-bars"></i>
+  </button>
+
+  <nav id="navMenu">
+    <ul class="nav-links">
+      <li><a href="index.html#home">Home</a></li>
+      <li><a href="shopping.html">Products</a></li>
+      <li><a href="gallery.html">Gallery</a></li>
+      <li><a href="index.html#about">About</a></li>
+      <li><a href="index.html#testimonials">Testimonials</a></li>
+      <li><a href="index.html#faq">FAQ</a></li>
+      <li><a href="index.html#contact">Contact Us</a></li>
+      <li><a href="checkout.html">Checkout</a></li>
+    </ul>
+  </nav>
+
+  <div id="menuOverlay"></div>
+
+  <div class="header-store-links" aria-label="Marketplace links">
+    <a class="store-badge store-badge-lazada" href="https://www.lazada.com.my/theme-good-121123223/" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Lazada" title="Lazada"><img src="photos/Lazada_29_icon.webp" alt="Lazada"></a>
+    <a class="store-badge store-badge-shopee" href="https://shopee.com.my/themegood" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Shopee" title="Shopee"><img src="photos/shopee.png" alt="Shopee"></a>
+  </div>
+
+  <div class="header-actions">
+    <button id="wishlist-toggle">&hearts; Wishlist <span id="wishlist-count">0</span></button>
+    <button id="cart-toggle">&#128722; Cart <span id="cart-count">0</span></button>
+  </div>
+</header>
+
+<main>
+  <section class="section checkout-hero">
+    <h1 class="section-title">Secure Checkout</h1>
+    <p>Review your order and complete payment.</p>
+    <div class="checkout-trust" aria-label="Checkout benefits">
+      <span>Secure Order</span>
+      <span>Fast Review</span>
+      <span>Instant Confirmation</span>
+    </div>
+  </section>
+
+  <section class="section checkout-shell">
+    <div class="checkout-grid">
+
+      <div class="checkout-summary">
+        <h2>Order Summary</h2>
+        <ul id="checkout-items"></ul>
+
+        <div class="checkout-total-row">
+          <span>Subtotal</span>
+          <strong><span id="checkout-total">RM 0.00</span></strong>
+        </div>
+
+        <div class="checkout-total-row">
+          <span>Discount</span>
+          <strong><span id="checkout-discount">-RM 0.00</span></strong>
+        </div>
+
+        <div class="checkout-total-row grand">
+          <span>Total</span>
+          <strong><span id="checkout-grand-total">RM 0.00</span></strong>
+        </div>
+
+        <a href="shopping.html" class="checkout-link">Continue Shopping</a>
+      </div>
+
+      <div class="checkout-payment">
+        <h2>Checkout Details</h2>
+
+        <form id="checkoutForm">
+          <label for="customer_name">Full Name</label>
+          <input type="text" id="customer_name" placeholder="Full Name" required>
+
+          <label for="phone">Phone Number</label>
+          <input type="text" id="phone" placeholder="Phone Number" required>
+
+          <label for="address">Address</label>
+          <textarea id="address" placeholder="Address" required></textarea>
+
+          <label for="total_amount">Total Amount</label>
+          <input type="number" id="total_amount" step="0.01" min="0" readonly required>
+
+          <button type="submit" class="btn">Place Order</button>
+        </form>
+
+        <p id="result"></p>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+<button id="backToTop" aria-label="Back to top">&#8593;</button>
+
+<footer>
+  <div class="footer-container">
+    <div class="footer-brand">
+      <a href="index.html" aria-label="Back to main page">
+        <img src="photos/New_Theme Good Logo-02.png" class="footer-logo" alt="ThemeGood logo">
+      </a>
+      <p>ThemeGood Wellness Nutrition</p>
+    </div>
+
+    <div class="footer-links">
+      <h4>Quick Links</h4>
+      <a href="index.html#home">Home</a>
+      <a href="shopping.html">Products</a>
+      <a href="gallery.html">Gallery</a>
+      <a href="index.html#about">About</a>
+      <a href="index.html#testimonials">Testimonials</a>
+      <a href="index.html#faq">FAQ</a>
+      <a href="index.html#contact">Contact Us</a>
+    </div>
+
+    <div class="footer-social">
+      <h4>Follow Us</h4>
+      <a href="https://www.facebook.com/www.themegood.com.my" target="_blank" rel="noopener noreferrer"><i class="fab fa-facebook"></i></a>
+      <a href="https://www.instagram.com/themegood_malaysia" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
+      <a href="https://api.whatsapp.com/send/?phone=60187786000" target="_blank" rel="noopener noreferrer"><i class="fab fa-whatsapp"></i></a>
+      <a class="store-badge store-badge-lazada" href="https://www.lazada.com.my/theme-good-121123223/" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Lazada" title="Lazada"><img src="photos/Lazada_29_icon.webp" alt="Lazada"></a>
+      <a class="store-badge store-badge-shopee" href="https://shopee.com.my/themegood" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Shopee" title="Shopee"><img src="photos/shopee.png" alt="Shopee"></a>
+    </div>
+
+    <div class="footer-qr">
+      <h4>Scan QR</h4>
+      <img src="photos/tgqr.png" alt="ThemeGood QR code">
+    </div>
+  </div>
+
+  <p class="footer-bottom">&copy; 2026 ThemeGood. All Rights Reserved.</p>
+</footer>
+
+<script src="script.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const checkoutList = document.getElementById("checkout-items");
+  const checkoutTotal = document.getElementById("checkout-total");
+  const checkoutDiscount = document.getElementById("checkout-discount");
+  const checkoutGrandTotal = document.getElementById("checkout-grand-total");
+  const checkoutForm = document.getElementById("checkoutForm");
+  const totalAmountInput = document.getElementById("total_amount");
+  const result = document.getElementById("result");
+
+  const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
+  const cartPromo = JSON.parse(localStorage.getItem("cart_promo")) || { code: "", percent: 0 };
+
+  function formatMoney(value) {
+    return `RM ${Number(value || 0).toFixed(2)}`;
+  }
+
+  let subtotal = 0;
+  checkoutList.innerHTML = "";
+
+  if (cartItems.length === 0) {
+    checkoutList.innerHTML = `<li class="empty">Your cart is empty.</li>`;
+  } else {
+    cartItems.forEach(item => {
+      const quantity = Number(item.quantity || 1);
+      const price = Number(item.price || 0);
+      const lineTotal = quantity * price;
+      subtotal += lineTotal;
+
+      const metaParts = [item.sizeLabel, item.packageLabel].filter(Boolean);
+      const packageSuffix = metaParts.length ? ` (${metaParts.join(", ")})` : "";
+
+      const li = document.createElement("li");
+      li.innerHTML = `
+        <span>${item.name}${packageSuffix} x ${quantity}</span>
+        <strong>${formatMoney(lineTotal)}</strong>
+      `;
+      checkoutList.appendChild(li);
+    });
+  }
+
+  const discountValue = subtotal * (Number(cartPromo.percent || 0) / 100);
+  const grandTotal = Math.max(0, subtotal - discountValue);
+
+  checkoutTotal.textContent = formatMoney(subtotal);
+  checkoutDiscount.textContent = `-${formatMoney(discountValue)}`;
+  checkoutGrandTotal.textContent = formatMoney(grandTotal);
+  totalAmountInput.value = grandTotal.toFixed(2);
+
+  checkoutForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    if (cartItems.length === 0) {
+      alert("Your cart is empty.");
+      return;
+    }
+
+    const payload = {
+      customer_name: document.getElementById("customer_name").value.trim(),
+      phone: document.getElementById("phone").value.trim(),
+      address: document.getElementById("address").value.trim(),
+      total_amount: Number(totalAmountInput.value),
+      items: cartItems
+    };
+
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to place order");
+      }
+
+      localStorage.removeItem("cart");
+      localStorage.removeItem("cart_promo");
+
+      window.location.href =
+        `order-success.html?orderId=${data.orderId}&total=${payload.total_amount}`;
+
+    } catch (error) {
+      console.error(error);
+      result.textContent = error.message || "Failed to place order.";
+    }
+  });
+});
+</script>
+
+</body>
+</html>

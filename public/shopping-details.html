@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shopping Details | ThemeGood</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="overrides.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Nunito+Sans:wght@400;500;600;700;800&display=swap">
+</head>
+<body class="shopping-details-page">
+
+<header>
+<a href="index.html" class="logo-container">
+<img src="photos/New_Theme Good Logo-02.png" class="logo" alt="ThemeGood logo">
+</a>
+
+<button id="hamburgerBtn" aria-expanded="false" aria-label="Open navigation">
+<i class="fa fa-bars"></i>
+</button>
+
+<nav id="navMenu">
+<ul class="nav-links">
+<li><a href="index.html#home" data-i18n="home">Home</a></li>
+<li><a href="shopping.html" data-i18n="shopping">Shopping</a></li>
+<li><a href="gallery.html" data-i18n="gallery">Gallery</a></li>
+<li><a href="index.html#about" data-i18n="about">About</a></li>
+<li><a href="index.html#testimonials" data-i18n="testimonials">Testimonials</a></li>
+<li><a href="index.html#faq" data-i18n="faq">FAQ</a></li>
+<li><a href="index.html#contact" data-i18n="contact_us">Contact Us</a></li>
+<li><a href="checkout.html" data-i18n="checkout">Checkout</a></li>
+</ul>
+</nav>
+
+<div id="menuOverlay"></div>
+
+<div class="header-store-links" aria-label="Marketplace links">
+<a class="store-badge store-badge-lazada" href="https://www.lazada.com.my/theme-good-121123223/" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Lazada" title="Lazada"><img src="photos/Lazada_29_icon.webp" alt="Lazada"></a>
+<a class="store-badge store-badge-shopee" href="https://shopee.com.my/themegood" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Shopee" title="Shopee"><img src="photos/shopee.png" alt="Shopee"></a>
+</div>
+
+<div class="header-actions">
+<button id="wishlist-toggle">&hearts; Wishlist <span id="wishlist-count">0</span></button>
+<button id="cart-toggle">&#128722; Cart <span id="cart-count">0</span></button>
+<label class="lang-switch" aria-label="Language">
+<span data-i18n="language">Language</span>
+<select class="js-lang-switch">
+<option value="en">EN</option>
+<option value="ms">BM</option>
+<option value="zh">中文</option>
+</select>
+</label>
+</div>
+</header>
+
+<main>
+<section class="section products-hero">
+<h1 class="section-title">Shopping Details</h1>
+<p>Discover complete product information, key benefits, and nutrition highlights before checkout.</p>
+</section>
+
+<section id="products" class="section">
+<div class="detail-grid">
+<article id="product-pomegranate" class="detail-card product-card" data-id="1" data-name="Pomegranate" data-price="55" data-description="Digestive support for daily vitality." data-image="photos/Pomegranate 300g.png" data-hover-image="photos/Pomegranate 600g.png" data-gallery="photos/Pomegranate 300g.png, photos/Pomegranate 600g.png, photos/Pomegranate 800g (1).png">
+<img src="photos/Pomegranate 300g.png" alt="Pomegranate product">
+<h4>Pomegranate</h4>
+<p>Digestive support for daily vitality and gut comfort.</p>
+<ul>
+<li>High fibre support</li>
+<li>Daily digestive balance</li>
+<li>Easy mix wellness drink</li>
+</ul>
+<div class="detail-meta"><span>Price</span><strong>RM 55.00</strong></div>
+<button class="add-to-cart">Add to Cart</button>
+<button class="add-to-wishlist">&hearts; Wishlist</button>
+</article>
+
+<article id="product-bilberry" class="detail-card product-card" data-id="2" data-name="Bilberry" data-price="55" data-description="Vision health for the digital age." data-image="photos/Bilberry 300g.png" data-hover-image="photos/Bilberry 600g.png" data-gallery="photos/Bilberry 300g.png, photos/Bilberry 600g.png, photos/Bilberry 800g.png">
+<img src="photos/Bilberry 300g.png" alt="Bilberry product">
+<h4>Bilberry</h4>
+<p>Targeted support for modern screen-time lifestyles.</p>
+<ul>
+<li>Eye wellness support</li>
+<li>Antioxidant-rich profile</li>
+<li>Suitable for daily intake</li>
+</ul>
+<div class="detail-meta"><span>Price</span><strong>RM 55.00</strong></div>
+<button class="add-to-cart">Add to Cart</button>
+<button class="add-to-wishlist">&hearts; Wishlist</button>
+</article>
+
+<article class="detail-card product-card" data-id="3" data-name="Melon Avocado" data-price="55" data-description="Refreshing blend for daily wellness." data-image="photos/Melon Avocado 300g.png" data-hover-image="photos/Melon Avocado 600g.png" data-gallery="photos/Melon Avocado 300g.png, photos/Melon Avocado 600g.png, photos/Melon Avocado 800g.png">
+<img src="photos/Melon Avocado 300g.png" alt="Melon Avocado product">
+<h4>Melon Avocado</h4>
+<p>Refreshing nutrition blend for everyday wellness routines.</p>
+<ul>
+<li>Balanced fruit nutrients</li>
+<li>Gentle daily formula</li>
+<li>Great for active routines</li>
+</ul>
+<div class="detail-meta"><span>Price</span><strong>RM 55.00</strong></div>
+<button class="add-to-cart">Add to Cart</button>
+<button class="add-to-wishlist">&hearts; Wishlist</button>
+</article>
+
+<article class="detail-card product-card" data-id="4" data-name="Passion Fruit Multigrain" data-price="55" data-description="Energy boosting tropical nutrition." data-image="photos/Passion Fruit 300g.png" data-hover-image="photos/Passion Fruit 600g.png" data-gallery="photos/Passion Fruit 300g.png, photos/Passion Fruit 600g.png, photos/Passion Fruit 800g.png">
+<img src="photos/Passion Fruit 300g.png" alt="Passion Fruit Multigrain product">
+<h4>Passion Fruit Multigrain</h4>
+<p>Multigrain tropical blend for steady daily energy support.</p>
+<ul>
+<li>Multigrain nutrition profile</li>
+<li>Satiety-friendly blend</li>
+<li>Tropical flavour finish</li>
+</ul>
+<div class="detail-meta"><span>Price</span><strong>RM 55.00</strong></div>
+<button class="add-to-cart">Add to Cart</button>
+<button class="add-to-wishlist">&hearts; Wishlist</button>
+</article>
+</div>
+</section>
+
+<section class="section product-cta">
+<h2>Ready to Checkout?</h2>
+<p>Items are saved to cart instantly. Review and complete your order anytime.</p>
+<a href="checkout.html" class="btn">Go to Checkout</a>
+</section>
+</main>
+
+<div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+<button id="backToTop" aria-label="Back to top">&#8593;</button>
+
+<footer>
+<div class="footer-container">
+<div class="footer-brand">
+<a href="index.html" aria-label="Back to main page">
+<img src="photos/New_Theme Good Logo-02.png" class="footer-logo" alt="ThemeGood logo">
+</a>
+<p>ThemeGood Wellness Nutrition</p>
+</div>
+
+<div class="footer-links">
+<h4 data-i18n="quick_links">Quick Links</h4>
+<a href="index.html#home" data-i18n="home">Home</a>
+<a href="shopping.html" data-i18n="shopping">Shopping</a>
+<a href="gallery.html" data-i18n="gallery">Gallery</a>
+<a href="index.html#about" data-i18n="about">About</a>
+<a href="index.html#testimonials" data-i18n="testimonials">Testimonials</a>
+<a href="index.html#faq" data-i18n="faq">FAQ</a>
+<a href="index.html#contact" data-i18n="contact_us">Contact Us</a>
+<a href="checkout.html" data-i18n="checkout">Checkout</a>
+<label class="lang-switch footer-lang" aria-label="Language">
+<span data-i18n="language">Language</span>
+<select class="js-lang-switch">
+<option value="en">EN</option>
+<option value="ms">BM</option>
+<option value="zh">中文</option>
+</select>
+</label>
+</div>
+
+<div class="footer-social">
+<h4 data-i18n="follow_us">Follow Us</h4>
+<a href="https://www.facebook.com/www.themegood.com.my" target="_blank" rel="noopener noreferrer"><i class="fab fa-facebook"></i></a>
+<a href="https://www.instagram.com/themegood_malaysia" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
+<a href="https://api.whatsapp.com/send/?phone=60187786000" target="_blank" rel="noopener noreferrer"><i class="fab fa-whatsapp"></i></a>
+<a class="store-badge store-badge-lazada" href="https://www.lazada.com.my/theme-good-121123223/" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Lazada" title="Lazada"><img src="photos/Lazada_29_icon.webp" alt="Lazada"></a>
+<a class="store-badge store-badge-shopee" href="https://shopee.com.my/themegood" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Shopee" title="Shopee"><img src="photos/shopee.png" alt="Shopee"></a>
+</div>
+
+<div class="footer-qr">
+<h4>Scan QR</h4>
+<img src="photos/tgqr.png" alt="ThemeGood QR code">
+</div>
+</div>
+
+<p class="footer-bottom">&copy; 2026 ThemeGood. All Rights Reserved.</p>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
+
+

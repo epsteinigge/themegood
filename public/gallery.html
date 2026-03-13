@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gallery | ThemeGood</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="overrides.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Nunito+Sans:wght@400;500;600;700;800&display=swap">
+</head>
+<body class="gallery-page">
+
+<header>
+<a href="index.html" class="logo-container">
+<img src="photos/New_Theme Good Logo-02.png" class="logo" alt="ThemeGood logo">
+</a>
+
+<button id="hamburgerBtn" aria-expanded="false" aria-label="Open navigation">
+<i class="fa fa-bars"></i>
+</button>
+
+<nav id="navMenu">
+<ul class="nav-links">
+<li><a href="index.html#home" data-i18n="home">Home</a></li>
+<li><a href="index.html#products" data-i18n="products">Products</a></li>
+<li><a href="gallery.html" data-i18n="gallery">Gallery</a></li>
+<li><a href="index.html#about" data-i18n="about">About</a></li>
+<li><a href="index.html#testimonials" data-i18n="testimonials">Testimonials</a></li>
+<li><a href="index.html#faq" data-i18n="faq">FAQ</a></li>
+<li><a href="index.html#contact" data-i18n="contact_us">Contact Us</a></li>
+</ul>
+</nav>
+
+<div class="header-store-links" aria-label="Marketplace links">
+<a class="store-badge store-badge-lazada" href="https://www.lazada.com.my/theme-good-121123223/" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Lazada" title="Lazada"><img src="photos/Lazada_29_icon.webp" alt="Lazada"></a>
+<a class="store-badge store-badge-shopee" href="https://shopee.com.my/themegood" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Shopee" title="Shopee"><img src="photos/shopee.png" alt="Shopee"></a>
+</div>
+
+<div class="header-actions">
+<a class="btn" href="index.html#products">Shop Now</a>
+<label class="lang-switch" aria-label="Language">
+<span data-i18n="language">Language</span>
+<select class="js-lang-switch">
+<option value="en">EN</option>
+<option value="ms">BM</option>
+<option value="zh">中文</option>
+</select>
+</label>
+</div>
+
+<div id="menuOverlay"></div>
+</header>
+
+<main>
+<section class="section gallery-hero">
+<h1 class="section-title">ThemeGood Gallery</h1>
+<p>Explore our product moments and wellness highlights.</p>
+</section>
+
+<section class="section">
+<div class="gallery-grid">
+<figure class="gallery-item"><img src="photos/tg24.jpg" alt="Passion Fruit Multigrain product"><figcaption>Passion Fruit Multigrain</figcaption></figure>
+<figure class="gallery-item"><img src="photos/tg23.jpg" alt="Melon Avocado product"><figcaption>Melon Avocado</figcaption></figure>
+<figure class="gallery-item"><img src="photos/tg22.jpg" alt="Bilberry product"><figcaption>Bilberry</figcaption></figure>
+<figure class="gallery-item"><img src="photos/tg21.jpg" alt="Pomegranate product"><figcaption>Pomegranate</figcaption></figure>
+<figure class="gallery-item"><img src="photos/tg19.jpg" alt="ThemeGood showcase image"><figcaption>Wellness Collection</figcaption></figure>
+<figure class="gallery-item"><img src="photos/tg18.jpg" alt="ThemeGood showcase image"><figcaption>Daily Vitality</figcaption></figure>
+<figure class="gallery-item"><img src="photos/tg12.jpg" alt="ThemeGood showcase image"><figcaption>Natural Goodness</figcaption></figure>
+<figure class="gallery-item"><img src="photos/bilberry.jpg" alt="Bilberry close-up"><figcaption>Bilberry Focus</figcaption></figure>
+</div>
+</section>
+</main>
+
+<div class="gallery-lightbox" id="galleryLightbox" aria-hidden="true">
+  <button class="lightbox-close" id="lightboxClose" aria-label="Close image">&times;</button>
+  <button class="lightbox-arrow left" id="lightboxPrev" aria-label="Previous image">&#10094;</button>
+  <div class="lightbox-stage" id="lightboxStage">
+    <img id="lightboxImage" alt="Expanded gallery image">
+  </div>
+  <button class="lightbox-arrow right" id="lightboxNext" aria-label="Next image">&#10095;</button>
+  <div class="lightbox-controls">
+    <button id="zoomOut" aria-label="Zoom out">-</button>
+    <span id="zoomLevel">100%</span>
+    <button id="zoomIn" aria-label="Zoom in">+</button>
+  </div>
+</div>
+
+<footer>
+<div class="footer-container">
+<div class="footer-brand">
+<a href="index.html" aria-label="Back to main page">
+<img src="photos/New_Theme Good Logo-02.png" class="footer-logo" alt="ThemeGood logo">
+</a>
+<p>ThemeGood Wellness Nutrition</p>
+</div>
+
+<div class="footer-links">
+<h4 data-i18n="quick_links">Quick Links</h4>
+<a href="index.html#home" data-i18n="home">Home</a>
+<a href="index.html#products" data-i18n="products">Products</a>
+<a href="gallery.html" data-i18n="gallery">Gallery</a>
+<a href="index.html#about" data-i18n="about">About</a>
+<a href="index.html#testimonials" data-i18n="testimonials">Testimonials</a>
+<a href="index.html#faq" data-i18n="faq">FAQ</a>
+<a href="index.html#contact" data-i18n="contact_us">Contact Us</a>
+<label class="lang-switch footer-lang" aria-label="Language">
+<span data-i18n="language">Language</span>
+<select class="js-lang-switch">
+<option value="en">EN</option>
+<option value="ms">BM</option>
+<option value="zh">中文</option>
+</select>
+</label>
+</div>
+
+<div class="footer-social">
+<h4 data-i18n="follow_us">Follow Us</h4>
+<a href="https://www.facebook.com/www.themegood.com.my" target="_blank" rel="noopener noreferrer"><i class="fab fa-facebook"></i></a>
+<a href="https://www.instagram.com/themegood_malaysia" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
+<a href="https://api.whatsapp.com/send/?phone=60187786000" target="_blank" rel="noopener noreferrer"><i class="fab fa-whatsapp"></i></a>
+<a class="store-badge store-badge-lazada" href="https://www.lazada.com.my/theme-good-121123223/" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Lazada" title="Lazada"><img src="photos/Lazada_29_icon.webp" alt="Lazada"></a>
+<a class="store-badge store-badge-shopee" href="https://shopee.com.my/themegood" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Shopee" title="Shopee"><img src="photos/shopee.png" alt="Shopee"></a>
+</div>
+
+<div class="footer-qr">
+<h4>Scan QR</h4>
+<img src="photos/tgqr.png" alt="ThemeGood QR code">
+</div>
+</div>
+
+<p class="footer-bottom">&copy; 2026 ThemeGood. All Rights Reserved.</p>
+</footer>
+
+<script src="script.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const translate = (key, vars = {}) => {
+      if (typeof window.__themegoodT === "function") return window.__themegoodT(key, vars);
+      return key;
+    };
+    const items = Array.from(document.querySelectorAll(".gallery-item img"));
+    const lightbox = document.getElementById("galleryLightbox");
+    const image = document.getElementById("lightboxImage");
+    const prevBtn = document.getElementById("lightboxPrev");
+    const nextBtn = document.getElementById("lightboxNext");
+    const closeBtn = document.getElementById("lightboxClose");
+    const zoomInBtn = document.getElementById("zoomIn");
+    const zoomOutBtn = document.getElementById("zoomOut");
+    const zoomLabel = document.getElementById("zoomLevel");
+    const stage = document.getElementById("lightboxStage");
+
+    let currentIndex = 0;
+    let zoom = 1;
+    const minZoom = 0.6;
+    const maxZoom = 3;
+    let panX = 0;
+    let panY = 0;
+    let isDragging = false;
+    let activePointerId = null;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let dragOriginX = 0;
+    let dragOriginY = 0;
+
+    function clampPan() {
+      const stageRect = stage.getBoundingClientRect();
+      const imageWidth = stageRect.width * zoom;
+      const imageHeight = stageRect.height * zoom;
+      const maxOffsetX = Math.max(0, (imageWidth - stageRect.width) / 2);
+      const maxOffsetY = Math.max(0, (imageHeight - stageRect.height) / 2);
+      panX = Math.max(-maxOffsetX, Math.min(maxOffsetX, panX));
+      panY = Math.max(-maxOffsetY, Math.min(maxOffsetY, panY));
+    }
+
+    function resetPan() {
+      panX = 0;
+      panY = 0;
+    }
+
+    function render() {
+      image.src = items[currentIndex].src;
+      image.alt = items[currentIndex].alt || translate("gallery");
+      if (zoom <= 1) resetPan();
+      clampPan();
+      image.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+      zoomLabel.textContent = `${Math.round(zoom * 100)}%`;
+      stage.classList.toggle("is-zoomed", zoom > 1);
+      stage.classList.toggle("is-dragging", isDragging);
+    }
+
+    function openLightbox(index) {
+      currentIndex = index;
+      zoom = 1;
+      resetPan();
+      lightbox.classList.add("open");
+      lightbox.setAttribute("aria-hidden", "false");
+      document.body.classList.add("no-scroll");
+      render();
+    }
+
+    function closeLightbox() {
+      lightbox.classList.remove("open");
+      lightbox.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("no-scroll");
+    }
+
+    function showNext(step) {
+      currentIndex = (currentIndex + step + items.length) % items.length;
+      zoom = 1;
+      resetPan();
+      render();
+    }
+
+    function adjustZoom(delta) {
+      zoom = Math.max(minZoom, Math.min(maxZoom, zoom + delta));
+      render();
+    }
+
+    function onPointerMove(e) {
+      if (!isDragging || e.pointerId !== activePointerId) return;
+      panX = dragOriginX + (e.clientX - dragStartX);
+      panY = dragOriginY + (e.clientY - dragStartY);
+      clampPan();
+      image.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+    }
+
+    function stopDragging() {
+      isDragging = false;
+      activePointerId = null;
+      stage.classList.remove("is-dragging");
+    }
+
+    items.forEach((img, idx) => {
+      img.style.cursor = "zoom-in";
+      img.addEventListener("click", () => openLightbox(idx));
+    });
+
+    prevBtn.addEventListener("click", () => showNext(-1));
+    nextBtn.addEventListener("click", () => showNext(1));
+    closeBtn.addEventListener("click", closeLightbox);
+    zoomInBtn.addEventListener("click", () => adjustZoom(0.2));
+    zoomOutBtn.addEventListener("click", () => adjustZoom(-0.2));
+
+    lightbox.addEventListener("click", e => {
+      if (e.target === lightbox || e.target === stage) closeLightbox();
+    });
+
+    image.addEventListener("pointerdown", e => {
+      if (zoom <= 1) return;
+      isDragging = true;
+      activePointerId = e.pointerId;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      dragOriginX = panX;
+      dragOriginY = panY;
+      stage.classList.add("is-dragging");
+      image.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+
+    image.addEventListener("pointermove", onPointerMove);
+    image.addEventListener("pointerup", stopDragging);
+    image.addEventListener("pointercancel", stopDragging);
+    image.addEventListener("lostpointercapture", stopDragging);
+
+    document.addEventListener("keydown", e => {
+      if (!lightbox.classList.contains("open")) return;
+      if (e.key === "Escape") closeLightbox();
+      if (e.key === "ArrowRight") showNext(1);
+      if (e.key === "ArrowLeft") showNext(-1);
+      if (e.key === "+" || e.key === "=") adjustZoom(0.2);
+      if (e.key === "-") adjustZoom(-0.2);
+    });
+  });
+</script>
+</body>
+</html>
+
+
+
