@@ -3,221 +3,496 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Orders</title>
+<title>ThemeGood Admin - Orders</title>
 
 <script>
-if (localStorage.getItem("adminLoggedIn") !== "true") {
+if (!localStorage.getItem("adminToken")) {
   window.location.href = "admin-login.html";
 }
 </script>
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap">
+
 <style>
-*{
-  box-sizing:border-box;
+:root{
+  --bg:#f4f7fb;
+  --bg-soft:#eef3f9;
+  --surface:rgba(255,255,255,0.96);
+  --surface-strong:#ffffff;
+  --text:#172033;
+  --muted:#6b7280;
+  --line:#e5e7eb;
+  --line-strong:#d4dae4;
+  --brand:#b32038;
+  --brand-deep:#7f1425;
+  --brand-soft:#fff1f4;
+  --success:#169b53;
+  --warning:#ea7a12;
+  --danger:#d52d2d;
+  --info:#316bff;
+  --shadow-lg:0 24px 60px rgba(15, 23, 42, 0.10);
+  --shadow-md:0 12px 30px rgba(15, 23, 42, 0.08);
+  --radius-xl:24px;
+  --radius-lg:18px;
+  --radius-md:14px;
+}
+
+*{ box-sizing:border-box; }
+
+html, body{
+  margin:0;
+  padding:0;
 }
 
 body{
-  margin:0;
-  font-family:Arial, sans-serif;
-  background:#f5f6fa;
-  color:#222;
+  font-family:"Nunito Sans", Arial, sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(255, 214, 223, 0.55), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(223, 235, 255, 0.6), transparent 24%),
+    linear-gradient(180deg, #f8fafd 0%, var(--bg) 100%);
 }
 
 .admin-layout{
-  display:flex;
   min-height:100vh;
+  display:grid;
+  grid-template-columns:280px 1fr;
 }
 
 .sidebar{
-  width:240px;
-  background:#111827;
-  color:white;
+  background:
+    linear-gradient(180deg, rgba(17,24,39,0.98), rgba(24,33,52,0.98)),
+    linear-gradient(135deg, rgba(179,32,56,0.12), rgba(127,20,37,0.2));
+  color:#fff;
   padding:24px 18px;
+  position:sticky;
+  top:0;
+  height:100vh;
+  border-right:1px solid rgba(255,255,255,0.06);
+}
+
+.brand-box{
+  padding:18px 16px;
+  border-radius:20px;
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.08);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);
+  margin-bottom:18px;
+}
+
+.brand-kicker{
+  display:inline-flex;
+  padding:7px 10px;
+  border-radius:999px;
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.08);
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
 }
 
 .sidebar h2{
-  margin:0 0 24px;
-  font-size:22px;
+  margin:14px 0 6px;
+  font-family:"Montserrat", sans-serif;
+  font-size:24px;
+  line-height:1.1;
+}
+
+.sidebar .sidebar-sub{
+  margin:0;
+  color:#cfd6e3;
+  font-size:13px;
+  line-height:1.55;
 }
 
 .sidebar nav{
-  display:flex;
-  flex-direction:column;
+  display:grid;
   gap:10px;
+  margin-top:18px;
 }
 
 .sidebar a,
 .sidebar button{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  width:100%;
   text-align:left;
   background:none;
   border:none;
-  color:#d1d5db;
-  padding:12px 14px;
-  border-radius:10px;
+  color:#d7deea;
+  padding:13px 14px;
+  border-radius:14px;
   text-decoration:none;
   cursor:pointer;
   font-size:15px;
+  font-weight:700;
+  transition:.2s ease;
 }
 
 .sidebar a:hover,
 .sidebar button:hover,
 .sidebar .active{
-  background:#1f2937;
-  color:white;
+  background:linear-gradient(135deg, rgba(255,255,255,0.10), rgba(255,255,255,0.06));
+  color:#fff;
+}
+
+.nav-icon{
+  width:26px;
+  height:26px;
+  display:grid;
+  place-items:center;
+  border-radius:9px;
+  background:rgba(255,255,255,0.08);
+  font-size:13px;
+}
+
+.sidebar-footer{
+  margin-top:22px;
+  padding:16px;
+  border-radius:18px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.08);
+  color:#d8deea;
+  font-size:13px;
+  line-height:1.55;
 }
 
 .main{
-  flex:1;
-  padding:28px;
+  padding:24px;
+}
+
+.top-shell{
+  background:rgba(255,255,255,0.62);
+  border:1px solid rgba(255,255,255,0.75);
+  backdrop-filter:blur(12px);
+  box-shadow:var(--shadow-md);
+  border-radius:var(--radius-xl);
+  padding:22px;
 }
 
 .top-bar{
   display:flex;
   justify-content:space-between;
-  align-items:center;
+  align-items:flex-start;
+  gap:18px;
+  flex-wrap:wrap;
   margin-bottom:20px;
 }
 
-.top-bar h1{
+.page-heading h1{
   margin:0;
-  font-size:28px;
+  font-family:"Montserrat", sans-serif;
+  font-size:32px;
+  line-height:1.08;
+}
+
+.page-heading p{
+  margin:10px 0 0;
+  color:var(--muted);
+  font-size:15px;
 }
 
 .top-actions{
   display:flex;
   gap:10px;
+  flex-wrap:wrap;
+}
+
+.primary-btn,
+.secondary-btn,
+.logout-btn{
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+  padding:12px 16px;
+  font-size:14px;
+  font-weight:800;
+  transition:.2s ease;
+}
+
+.primary-btn{
+  color:#fff;
+  background:linear-gradient(135deg, var(--brand), var(--brand-deep));
+  box-shadow:0 12px 24px rgba(127,20,37,0.22);
+}
+
+.secondary-btn{
+  color:var(--text);
+  background:#fff;
+  border:1px solid var(--line-strong);
 }
 
 .logout-btn{
-  padding:10px 14px;
-  border:none;
+  color:#fff;
   background:#111827;
-  color:white;
-  border-radius:8px;
-  cursor:pointer;
 }
 
-.card{
-  background:white;
-  border-radius:14px;
-  padding:20px;
-  box-shadow:0 4px 12px rgba(0,0,0,0.06);
+.primary-btn:hover,
+.secondary-btn:hover,
+.logout-btn:hover{
+  transform:translateY(-1px);
 }
 
 .stats-grid{
   display:grid;
-  grid-template-columns:repeat(4,1fr);
+  grid-template-columns:repeat(4, minmax(0, 1fr));
   gap:14px;
   margin-bottom:20px;
 }
 
 .stat-card{
-  background:#fafafa;
-  border:1px solid #e5e7eb;
-  border-radius:12px;
-  padding:16px;
+  position:relative;
+  overflow:hidden;
+  background:var(--surface);
+  border:1px solid rgba(255,255,255,0.85);
+  box-shadow:var(--shadow-md);
+  border-radius:20px;
+  padding:18px;
+}
+
+.stat-card::after{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:4px;
+  background:linear-gradient(90deg, var(--brand), #db5e75);
 }
 
 .stat-card h3{
   margin:0 0 8px;
-  font-size:14px;
-  color:#6b7280;
-  font-weight:600;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.08em;
 }
 
 .stat-card p{
   margin:0;
-  font-size:24px;
-  font-weight:700;
+  font-family:"Montserrat", sans-serif;
+  font-size:30px;
+}
+
+.stat-card .stat-note{
+  margin-top:8px;
+  color:var(--muted);
+  font-size:13px;
+}
+
+.card{
+  background:var(--surface-strong);
+  border:1px solid rgba(255,255,255,0.8);
+  box-shadow:var(--shadow-lg);
+  border-radius:var(--radius-xl);
+  padding:22px;
+}
+
+.section-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:14px;
+  flex-wrap:wrap;
+  margin-bottom:16px;
+}
+
+.section-head h2{
+  margin:0;
+  font-family:"Montserrat", sans-serif;
+  font-size:22px;
+}
+
+.section-head p{
+  margin:8px 0 0;
+  color:var(--muted);
+  font-size:14px;
 }
 
 .filter-row{
   display:grid;
-  grid-template-columns:2fr 1fr 1fr;
+  grid-template-columns:2fr 1fr 1fr auto auto;
   gap:12px;
   margin-bottom:18px;
 }
 
 .filter-row input,
 .filter-row select{
-  padding:10px 12px;
-  border:1px solid #d1d5db;
-  border-radius:10px;
+  width:100%;
+  padding:12px 13px;
+  border:1px solid var(--line-strong);
+  border-radius:12px;
+  background:#fff;
   font-size:14px;
+  color:var(--text);
+  outline:none;
+}
+
+.filter-row input:focus,
+.filter-row select:focus{
+  border-color:#d5a0aa;
+  box-shadow:0 0 0 4px rgba(179,32,56,0.08);
 }
 
 .table-wrap{
-  overflow-x:auto;
+  overflow:auto;
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:#fff;
 }
 
 table{
   width:100%;
+  min-width:1120px;
   border-collapse:collapse;
 }
 
-th,td{
-  padding:14px 12px;
-  border-bottom:1px solid #e5e7eb;
+th, td{
+  padding:15px 14px;
   text-align:left;
   vertical-align:top;
+  border-bottom:1px solid #edf1f6;
   font-size:14px;
 }
 
 th{
-  background:#f9fafb;
-  font-weight:700;
+  position:sticky;
+  top:0;
+  z-index:1;
+  background:#f9fafc;
+  color:#475467;
+  font-size:12px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.05em;
 }
 
-.items-box{
-  margin-top:8px;
-  padding:10px;
-  background:#f9fafb;
-  border:1px solid #e5e7eb;
+tr:hover td{
+  background:#fcfdff;
+}
+
+.select-inline{
+  display:grid;
+  gap:8px;
+}
+
+.select-inline select{
+  width:100%;
+  padding:10px 11px;
+  border:1px solid var(--line-strong);
   border-radius:10px;
+  font-size:14px;
 }
+
+.table-btn{
+  border:none;
+  border-radius:10px;
+  padding:9px 12px;
+  cursor:pointer;
+  font-size:13px;
+  font-weight:800;
+  transition:.2s ease;
+}
+
+.table-btn.save{
+  background:#101828;
+  color:#fff;
+}
+
+.table-btn.view{
+  background:var(--brand-soft);
+  color:var(--brand-deep);
+}
+
+.table-btn.copy{
+  background:#eef4ff;
+  color:#2646a3;
+}
+
+.mini-actions{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.icon-link{
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:34px;
+  height:34px;
+  border-radius:10px;
+  background:#f5f7fb;
+  border:1px solid #e8edf4;
+  font-size:15px;
+}
+
 .badge{
-  padding:4px 8px;
-  border-radius:6px;
+  display:inline-flex;
+  align-items:center;
+  padding:7px 11px;
+  border-radius:999px;
   font-size:12px;
-  font-weight:bold;
-  color:white;
+  font-weight:800;
+  color:#fff;
+  text-transform:capitalize;
 }
+
+.badge-paid{background:var(--success);}
+.badge-unpaid{background:var(--warning);}
+.badge-failed{background:var(--danger);}
+.badge-new{background:var(--info);}
+.badge-confirmed{background:#5b52d6;}
+.badge-packed{background:#7f56d9;}
+.badge-shipped{background:#8f3ee8;}
+.badge-completed{background:var(--success);}
+.badge-cancelled{background:var(--danger);}
 
 .modal{
   position:fixed;
   inset:0;
   z-index:9999;
+  display:none;
 }
 
 .modal-overlay{
   position:absolute;
   inset:0;
-  background:rgba(0,0,0,0.45);
+  background:rgba(9, 14, 23, 0.56);
+  backdrop-filter:blur(4px);
 }
 
 .modal-content{
   position:relative;
   z-index:2;
-  width:min(720px, 92vw);
-  max-height:85vh;
+  width:min(820px, 94vw);
+  max-height:88vh;
   overflow:auto;
-  margin:40px auto;
-  background:white;
-  border-radius:16px;
+  margin:28px auto;
+  background:rgba(255,255,255,0.98);
+  border:1px solid rgba(255,255,255,0.85);
+  border-radius:26px;
   padding:24px;
-  box-shadow:0 10px 30px rgba(0,0,0,0.18);
+  box-shadow:0 30px 80px rgba(15, 23, 42, 0.24);
 }
 
 .modal-close{
   position:absolute;
-  top:12px;
-  right:12px;
+  top:14px;
+  right:14px;
+  width:40px;
+  height:40px;
   border:none;
+  border-radius:999px;
   background:#111827;
-  color:white;
-  width:36px;
-  height:36px;
-  border-radius:50%;
+  color:#fff;
   cursor:pointer;
   font-size:20px;
 }
@@ -225,74 +500,129 @@ th{
 .detail-grid{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:12px;
+  gap:14px;
   margin-bottom:18px;
 }
 
 .detail-card{
-  background:#f9fafb;
-  border:1px solid #e5e7eb;
-  border-radius:12px;
-  padding:14px;
+  background:#fbfcfe;
+  border:1px solid #edf1f6;
+  border-radius:18px;
+  padding:16px;
 }
 
 .detail-card h3{
   margin:0 0 10px;
-  font-size:14px;
-  color:#6b7280;
+  color:var(--muted);
+  font-size:13px;
+  text-transform:uppercase;
+  letter-spacing:.06em;
 }
 
 .detail-card p{
-  margin:6px 0;
+  margin:7px 0;
 }
 
 .detail-items{
   margin-top:16px;
+  background:#fbfcfe;
+  border:1px solid #edf1f6;
+  border-radius:18px;
+  padding:16px;
+}
+
+.detail-items h3{
+  margin-top:0;
 }
 
 .detail-item{
   padding:12px 0;
-  border-bottom:1px solid #e5e7eb;
+  border-bottom:1px solid #eef2f6;
+}
+
+.detail-item:last-child{
+  border-bottom:none;
 }
 
 .detail-total{
   margin-top:16px;
-  font-size:18px;
-  font-weight:bold;
+  font-family:"Montserrat", sans-serif;
+  font-size:20px;
+  color:var(--brand-deep);
 }
 
-.badge-paid{background:#16a34a;}
-.badge-unpaid{background:#ea580c;}
-.badge-failed{background:#dc2626;}
+#toast{
+  position:fixed;
+  right:20px;
+  bottom:20px;
+  z-index:10000;
+  min-width:260px;
+  max-width:360px;
+  padding:14px 16px;
+  border-radius:16px;
+  color:#fff;
+  box-shadow:0 18px 40px rgba(0,0,0,0.18);
+  opacity:0;
+  transform:translateY(8px);
+  pointer-events:none;
+  transition:0.22s ease;
+  font-weight:800;
+}
 
-.badge-new{background:#2563eb;}
-.badge-confirmed{background:#4f46e5;}
-.badge-packed{background:#7c3aed;}
-.badge-shipped{background:#9333ea;}
-.badge-completed{background:#16a34a;}
-.badge-cancelled{background:#dc2626;}
+#toast.show{
+  opacity:1;
+  transform:translateY(0);
+}
 
-@media (max-width: 1100px){
+#toast.success{ background:#15803d; }
+#toast.error{ background:#b91c1c; }
+#toast.info{ background:#1d4ed8; }
+
+@media (max-width:1200px){
   .stats-grid{
-    grid-template-columns:repeat(2,1fr);
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+  }
+
+  .filter-row{
+    grid-template-columns:1fr 1fr;
+  }
+}
+
+@media (max-width:900px){
+  .admin-layout{
+    grid-template-columns:1fr;
+  }
+
+  .sidebar{
+    position:relative;
+    height:auto;
+  }
+
+  .main{
+    padding:16px;
+  }
+
+  .detail-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+@media (max-width:700px){
+  .stats-grid{
+    grid-template-columns:1fr;
   }
 
   .filter-row{
     grid-template-columns:1fr;
   }
-}
 
-@media (max-width: 800px){
-  .admin-layout{
-    flex-direction:column;
+  .top-shell,
+  .card{
+    padding:16px;
   }
 
-  .sidebar{
-    width:100%;
-  }
-
-  .stats-grid{
-    grid-template-columns:1fr;
+  .page-heading h1{
+    font-size:26px;
   }
 }
 </style>
@@ -300,114 +630,132 @@ th{
 <body>
 
 <div class="admin-layout">
-
   <aside class="sidebar">
-    <h2>ThemeGood Admin</h2>
+    <div class="brand-box">
+      <div class="brand-kicker">ThemeGood Admin</div>
+      <h2>Orders Control</h2>
+      <p class="sidebar-sub">Review purchases, update fulfilment, and manage customer orders smoothly.</p>
+    </div>
+
     <nav>
-      <a href="admin-orders.html" class="active">Orders</a>
-      <a href="#">Customers</a>
-      <a href="admin-products.html">Products</a>
-      <a href="#">Reports</a>
-      <button onclick="logoutAdmin()">Logout</button>
+      <a href="admin-orders.html" class="active"><span class="nav-icon">🧾</span> Orders</a>
+      <a href="admin-products.html"><span class="nav-icon">📦</span> Products</a>
+      <button onclick="logoutAdmin()"><span class="nav-icon">↩</span> Logout</button>
     </nav>
+
+    <div class="sidebar-footer">
+      Use this panel to monitor new orders, verify payment status, and keep delivery progress updated.
+    </div>
   </aside>
 
   <main class="main">
-    <div class="top-bar">
-      <h1>Orders Dashboard</h1>
-      <div class="top-actions">
-        <button class="logout-btn" onclick="logoutAdmin()">Logout</button>
+    <div class="top-shell">
+      <div class="top-bar">
+        <div class="page-heading">
+          <h1>Orders Dashboard</h1>
+          <p>Track live order activity, customer details, and fulfilment progress in one premium workspace.</p>
+        </div>
+
+        <div class="top-actions">
+          <button class="secondary-btn" type="button" onclick="loadOrders()">Refresh</button>
+          <button class="secondary-btn" type="button" onclick="exportOrders()">Export CSV</button>
+          <button class="logout-btn" type="button" onclick="logoutAdmin()">Logout</button>
+        </div>
       </div>
-    </div>
 
-    <div class="card">
-
-      <div class="stats-grid">
-        <div class="stat-card">
+      <section class="stats-grid">
+        <article class="stat-card">
           <h3>Total Orders</h3>
           <p id="stat-total-orders">0</p>
-        </div>
+          <div class="stat-note">All orders received</div>
+        </article>
 
-        <div class="stat-card">
+        <article class="stat-card">
           <h3>Unpaid</h3>
           <p id="stat-unpaid-orders">0</p>
-        </div>
+          <div class="stat-note">Pending payment follow-up</div>
+        </article>
 
-        <div class="stat-card">
+        <article class="stat-card">
           <h3>Paid</h3>
           <p id="stat-paid-orders">0</p>
-        </div>
+          <div class="stat-note">Ready for fulfilment</div>
+        </article>
 
-        <div class="stat-card">
+        <article class="stat-card">
           <h3>Revenue</h3>
           <p id="stat-revenue">RM 0.00</p>
+          <div class="stat-note">Paid order total</div>
+        </article>
+      </section>
+
+      <section class="card">
+        <div class="section-head">
+          <div>
+            <h2>Manage Orders</h2>
+            <p id="orderCount">Showing 0 orders</p>
+          </div>
         </div>
-      </div>
 
-      <div class="filter-row">
-        <input
-          type="text"
-          id="searchInput"
-          placeholder="Search by Order ID, Customer Name or Phone"
-        >
+        <div class="filter-row">
+          <input id="searchInput" type="text" placeholder="Search by order ID, customer, phone, or address">
+          <select id="paymentFilter">
+            <option value="">All Payment Statuses</option>
+            <option value="unpaid">Unpaid</option>
+            <option value="paid">Paid</option>
+            <option value="failed">Failed</option>
+          </select>
+          <select id="statusFilter">
+            <option value="">All Order Statuses</option>
+            <option value="new">New</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="packed">Packed</option>
+            <option value="shipped">Shipped</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+          <button class="secondary-btn" type="button" onclick="clearFilters()">Clear</button>
+          <button class="primary-btn" type="button" onclick="applyFilters()">Apply</button>
+        </div>
 
-        <select id="paymentFilter">
-          <option value="">All Payments</option>
-          <option value="unpaid">unpaid</option>
-          <option value="paid">paid</option>
-          <option value="failed">failed</option>
-        </select>
-
-        <select id="statusFilter">
-          <option value="">All Status</option>
-          <option value="new">new</option>
-          <option value="confirmed">confirmed</option>
-          <option value="packed">packed</option>
-          <option value="shipped">shipped</option>
-          <option value="completed">completed</option>
-          <option value="cancelled">cancelled</option>
-        </select>
-      </div>
-
-      <button onclick="exportOrders()">Export Orders</button>
-
-      <p id="orderCount" style="margin-bottom:10px; color:#555;"></p>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Order ID</th>
-              <th>Customer</th>
-              <th>Phone</th>
-              <th>Address</th>
-              <th>Total</th>
-              <th>Payment</th>
-              <th>Status</th>
-              <th>Date</th>
-              <th>Items</th>
-            </tr>
-          </thead>
-
-          <tbody id="ordersBody"></tbody>
-        </table>
-      </div>
-
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Customer</th>
+                <th>Contact</th>
+                <th>Address</th>
+                <th>Total</th>
+                <th>Payment</th>
+                <th>Payment Badge</th>
+                <th>Status Badge</th>
+                <th>Update</th>
+                <th>Created</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody id="ordersBody">
+              <tr>
+                <td colspan="11">Loading orders.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   </main>
-
 </div>
 
-<div id="orderModal" class="modal" style="display:none;">
+<div id="orderModal" class="modal">
   <div class="modal-overlay" onclick="closeOrderModal()"></div>
-
   <div class="modal-content">
-    <button class="modal-close" onclick="closeOrderModal()">×</button>
-    <div id="orderModalBody">
-      Loading...
-    </div>
+    <button class="modal-close" type="button" onclick="closeOrderModal()">&times;</button>
+    <div id="orderModalBody"></div>
   </div>
 </div>
+
+<div id="toast"></div>
 
 <script src="admin-orders.js"></script>
 </body>

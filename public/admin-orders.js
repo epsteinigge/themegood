@@ -1,7 +1,69 @@
 let allOrders = [];
 
-    function badge(type){
-  return `<span class="badge badge-${type}">${type}</span>`;
+function getAdminToken() {
+  return localStorage.getItem("adminToken") || "";
+}
+
+function getAdminHeaders(extra = {}) {
+  return {
+    "x-admin-token": getAdminToken(),
+    ...extra
+  };
+}
+
+function handleUnauthorized(status) {
+  if (status === 401) {
+    localStorage.removeItem("adminToken");
+    showToast("Your admin session expired. Please log in again.", "error");
+    setTimeout(() => {
+      window.location.href = "admin-login.html";
+    }, 700);
+    return true;
+  }
+  return false;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value);
+}
+
+function showToast(message, type = "info") {
+  const toast = document.getElementById("toast");
+  if (!toast) return;
+
+  toast.textContent = message;
+  toast.className = `${type} show`;
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(() => {
+    toast.className = "";
+  }, 2400);
+}
+
+function badge(type) {
+  const safeType = String(type || "").toLowerCase();
+  return `<span class="badge badge-${escapeAttr(safeType)}">${escapeHtml(safeType)}</span>`;
+}
+
+function formatPhoneForWhatsApp(phone) {
+  const digits = String(phone || "").replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("60")) return digits;
+  if (digits.startsWith("0")) return `6${digits}`;
+  return digits;
+}
+
+function csvCell(value) {
+  const stringValue = String(value ?? "");
+  return `"${stringValue.replace(/"/g, '""')}"`;
 }
 
 function updateStats(orders) {
@@ -27,64 +89,71 @@ function renderOrders(orders) {
   const ordersBody = document.getElementById("ordersBody");
   if (!ordersBody) return;
 
+  const orderCount = document.getElementById("orderCount");
+  if (orderCount) {
+    orderCount.textContent = `Showing ${orders.length} order${orders.length === 1 ? "" : "s"}`;
+  }
+
   if (!Array.isArray(orders) || orders.length === 0) {
     ordersBody.innerHTML = `
       <tr>
-        <td colspan="9">No orders found.</td>
+        <td colspan="11">No orders found.</td>
       </tr>
     `;
     return;
   }
 
-  const orderCount = document.getElementById("orderCount");
-if(orderCount){
-  orderCount.textContent = `Showing ${orders.length} orders`;
-}
-
   ordersBody.innerHTML = "";
 
   orders.forEach(order => {
     const row = document.createElement("tr");
+    const safePhone = String(order.phone || "");
+    const whatsappPhone = formatPhoneForWhatsApp(safePhone);
 
     row.innerHTML = `
-      <td>${order.id}</td>
-      <td>${order.customer_name}</td>
+      <td><strong>#${Number(order.id)}</strong></td>
+      <td>${escapeHtml(order.customer_name)}</td>
       <td>
-       ${order.phone}
-       <button onclick="copyPhone('${order.phone}')">📋</button>
-      <a href="https://wa.me/6${order.phone.replace(/\D/g,'')}" target="_blank">💬</a>
+        <div class="mini-actions">
+          <span>${escapeHtml(safePhone)}</span>
+          <button class="table-btn" type="button" onclick="copyPhone(${JSON.stringify(safePhone)})">Copy</button>
+          ${
+            whatsappPhone
+              ? `<a class="icon-link" href="https://wa.me/${encodeURIComponent(whatsappPhone)}" target="_blank" rel="noopener noreferrer" title="Open WhatsApp">💬</a>`
+              : ""
+          }
+        </div>
       </td>
-      <td>${order.address}</td>
-      <td>RM ${Number(order.total_amount).toFixed(2)}</td>
-
+      <td>${escapeHtml(order.address)}</td>
+      <td><strong>RM ${Number(order.total_amount || 0).toFixed(2)}</strong></td>
       <td>
-        <select id="payment-${order.id}">
-          <option value="unpaid" ${order.payment_status === "unpaid" ? "selected" : ""}>unpaid</option>
-          <option value="paid" ${order.payment_status === "paid" ? "selected" : ""}>paid</option>
-          <option value="failed" ${order.payment_status === "failed" ? "selected" : ""}>failed</option>
-        </select>
+        <div class="select-inline">
+          <select id="payment-${Number(order.id)}">
+            <option value="unpaid" ${order.payment_status === "unpaid" ? "selected" : ""}>unpaid</option>
+            <option value="paid" ${order.payment_status === "paid" ? "selected" : ""}>paid</option>
+            <option value="failed" ${order.payment_status === "failed" ? "selected" : ""}>failed</option>
+          </select>
+        </div>
       </td>
-
-<td>${badge(order.payment_status)}</td>
-<td>${badge(order.order_status)}</td>
-
+      <td>${badge(order.payment_status)}</td>
+      <td>${badge(order.order_status)}</td>
       <td>
-        <select id="status-${order.id}">
-          <option value="new" ${order.order_status === "new" ? "selected" : ""}>new</option>
-          <option value="confirmed" ${order.order_status === "confirmed" ? "selected" : ""}>confirmed</option>
-          <option value="packed" ${order.order_status === "packed" ? "selected" : ""}>packed</option>
-          <option value="shipped" ${order.order_status === "shipped" ? "selected" : ""}>shipped</option>
-          <option value="completed" ${order.order_status === "completed" ? "selected" : ""}>completed</option>
-          <option value="cancelled" ${order.order_status === "cancelled" ? "selected" : ""}>cancelled</option>
-        </select>
-        <button onclick="saveOrder(${order.id})">Save</button>
+        <div class="select-inline">
+          <select id="status-${Number(order.id)}">
+            <option value="new" ${order.order_status === "new" ? "selected" : ""}>new</option>
+            <option value="confirmed" ${order.order_status === "confirmed" ? "selected" : ""}>confirmed</option>
+            <option value="packed" ${order.order_status === "packed" ? "selected" : ""}>packed</option>
+            <option value="shipped" ${order.order_status === "shipped" ? "selected" : ""}>shipped</option>
+            <option value="completed" ${order.order_status === "completed" ? "selected" : ""}>completed</option>
+            <option value="cancelled" ${order.order_status === "cancelled" ? "selected" : ""}>cancelled</option>
+          </select>
+          <button class="table-btn save" type="button" onclick="saveOrder(${Number(order.id)})">Save</button>
+        </div>
       </td>
-
       <td>${new Date(order.created_at).toLocaleString()}</td>
-
-<td>
-  <button onclick="openOrderModal(${order.id})">View Details</button>
-</td>
+      <td>
+        <button class="table-btn view" type="button" onclick="openOrderModal(${Number(order.id)})">View</button>
+      </td>
     `;
 
     ordersBody.appendChild(row);
@@ -93,52 +162,59 @@ if(orderCount){
 
 async function loadOrders() {
   const ordersBody = document.getElementById("ordersBody");
-  if (!ordersBody) return;
-
-  ordersBody.innerHTML = `
-    <tr>
-      <td colspan="9">Loading orders...</td>
-    </tr>
-  `;
+  if (ordersBody) {
+    ordersBody.innerHTML = `
+      <tr>
+        <td colspan="11">Loading orders.</td>
+      </tr>
+    `;
+  }
 
   try {
-    const response = await fetch("/api/orders");
+    const response = await fetch("/api/orders", {
+      headers: getAdminHeaders()
+    });
+
     const orders = await response.json();
 
     if (!response.ok) {
+      if (handleUnauthorized(response.status)) return;
       throw new Error(orders.error || "Failed to load orders");
     }
 
     allOrders = Array.isArray(orders) ? orders : [];
+    allOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-allOrders.sort((a, b) => {
-  return new Date(b.created_at) - new Date(a.created_at);
-});
     updateStats(allOrders);
     applyFilters();
   } catch (error) {
     console.error("Failed to load orders:", error);
-    ordersBody.innerHTML = `
-      <tr>
-        <td colspan="9">Failed to load orders.</td>
-      </tr>
-    `;
+    if (ordersBody) {
+      ordersBody.innerHTML = `
+        <tr>
+          <td colspan="11">Failed to load orders.</td>
+        </tr>
+      `;
+    }
+    showToast(error.message || "Failed to load orders", "error");
   }
 }
 
 function applyFilters() {
   const searchValue = (document.getElementById("searchInput")?.value || "").trim().toLowerCase();
-  const paymentValue = document.getElementById("paymentFilter")?.value || "";
-  const statusValue = document.getElementById("statusFilter")?.value || "";
+  const paymentValue = (document.getElementById("paymentFilter")?.value || "").trim().toLowerCase();
+  const statusValue = (document.getElementById("statusFilter")?.value || "").trim().toLowerCase();
 
   const filtered = allOrders.filter(order => {
     const matchesSearch =
-      String(order.id).toLowerCase().includes(searchValue) ||
+      !searchValue ||
+      String(order.id || "").toLowerCase().includes(searchValue) ||
       String(order.customer_name || "").toLowerCase().includes(searchValue) ||
-      String(order.phone || "").toLowerCase().includes(searchValue);
+      String(order.phone || "").toLowerCase().includes(searchValue) ||
+      String(order.address || "").toLowerCase().includes(searchValue);
 
-    const matchesPayment = !paymentValue || order.payment_status === paymentValue;
-    const matchesStatus = !statusValue || order.order_status === statusValue;
+    const matchesPayment = !paymentValue || String(order.payment_status || "").toLowerCase() === paymentValue;
+    const matchesStatus = !statusValue || String(order.order_status || "").toLowerCase() === statusValue;
 
     return matchesSearch && matchesPayment && matchesStatus;
   });
@@ -146,49 +222,16 @@ function applyFilters() {
   renderOrders(filtered);
 }
 
-async function toggleItems(orderId, button) {
-  const box = document.getElementById(`items-${orderId}`);
-  if (!box) return;
+function clearFilters() {
+  const searchInput = document.getElementById("searchInput");
+  const paymentFilter = document.getElementById("paymentFilter");
+  const statusFilter = document.getElementById("statusFilter");
 
-  if (box.style.display === "block") {
-    box.style.display = "none";
-    button.textContent = "View Items";
-    return;
-  }
+  if (searchInput) searchInput.value = "";
+  if (paymentFilter) paymentFilter.value = "";
+  if (statusFilter) statusFilter.value = "";
 
-  box.style.display = "block";
-  box.innerHTML = "Loading items...";
-
-  try {
-    const response = await fetch(`/api/order-items/${orderId}`);
-    const items = await response.json();
-
-    if (!response.ok) {
-      throw new Error(items.error || "Failed to load items");
-    }
-
-    if (!Array.isArray(items) || items.length === 0) {
-      box.innerHTML = "No items found.";
-      button.textContent = "Hide Items";
-      return;
-    }
-
-    box.innerHTML = items.map(item => `
-      <div>
-        <strong>${item.product_name}</strong><br>
-        Qty: ${item.quantity} |
-        RM ${Number(item.unit_price).toFixed(2)}
-        ${item.size_label ? `| Size: ${item.size_label}` : ""}
-        ${item.package_label ? `| Package: ${item.package_label}` : ""}
-      </div>
-      <hr>
-    `).join("");
-
-    button.textContent = "Hide Items";
-  } catch (error) {
-    console.error("Failed to load items:", error);
-    box.innerHTML = "Failed to load items.";
-  }
+  applyFilters();
 }
 
 async function saveOrder(orderId) {
@@ -203,9 +246,9 @@ async function saveOrder(orderId) {
   try {
     const response = await fetch("/api/update-order", {
       method: "POST",
-      headers: {
+      headers: getAdminHeaders({
         "Content-Type": "application/json"
-      },
+      }),
       body: JSON.stringify({
         order_id: orderId,
         payment_status: paymentStatus,
@@ -216,23 +259,25 @@ async function saveOrder(orderId) {
     const result = await response.json();
 
     if (!response.ok) {
+      if (handleUnauthorized(response.status)) return;
       throw new Error(result.error || "Failed to update order");
     }
 
-    alert("Order updated successfully");
-
-    const target = allOrders.find(order => order.id === orderId);
+    const target = allOrders.find(order => Number(order.id) === Number(orderId));
     if (target) {
       target.payment_status = paymentStatus;
       target.order_status = orderStatus;
-      updateStats(allOrders);
-      applyFilters();
     }
+
+    updateStats(allOrders);
+    applyFilters();
+    showToast(`Order #${orderId} updated.`, "success");
   } catch (error) {
     console.error("Failed to update order:", error);
-    alert("Failed to update order");
+    showToast(error.message || "Failed to update order", "error");
   }
 }
+
 async function openOrderModal(orderId) {
   const modal = document.getElementById("orderModal");
   const modalBody = document.getElementById("orderModalBody");
@@ -240,7 +285,7 @@ async function openOrderModal(orderId) {
   if (!modal || !modalBody) return;
 
   modal.style.display = "block";
-  modalBody.innerHTML = "Loading order details...";
+  modalBody.innerHTML = "Loading order details.";
 
   try {
     const order = allOrders.find(o => Number(o.id) === Number(orderId));
@@ -250,22 +295,26 @@ async function openOrderModal(orderId) {
       return;
     }
 
-    const response = await fetch(`/api/order-items/${orderId}`);
+    const response = await fetch(`/api/order-items/${orderId}`, {
+      headers: getAdminHeaders()
+    });
+
     const items = await response.json();
 
     if (!response.ok) {
+      if (handleUnauthorized(response.status)) return;
       throw new Error(items.error || "Failed to load order items");
     }
 
     modalBody.innerHTML = `
-      <h2 style="margin-top:0;">Order #${order.id}</h2>
+      <h2 style="margin-top:0;">Order #${Number(order.id)}</h2>
 
       <div class="detail-grid">
         <div class="detail-card">
           <h3>Customer Info</h3>
-          <p><strong>Name:</strong> ${order.customer_name}</p>
-          <p><strong>Phone:</strong> ${order.phone}</p>
-          <p><strong>Address:</strong> ${order.address}</p>
+          <p><strong>Name:</strong> ${escapeHtml(order.customer_name)}</p>
+          <p><strong>Phone:</strong> ${escapeHtml(order.phone)}</p>
+          <p><strong>Address:</strong> ${escapeHtml(order.address)}</p>
         </div>
 
         <div class="detail-card">
@@ -282,12 +331,12 @@ async function openOrderModal(orderId) {
           Array.isArray(items) && items.length > 0
             ? items.map(item => `
               <div class="detail-item">
-                <p><strong>${item.product_name}</strong></p>
+                <p><strong>${escapeHtml(item.product_name)}</strong></p>
                 <p>
-                  Qty: ${item.quantity}
-                  | Price: RM ${Number(item.unit_price).toFixed(2)}
-                  ${item.size_label ? `| Size: ${item.size_label}` : ""}
-                  ${item.package_label ? `| Package: ${item.package_label}` : ""}
+                  Qty: ${Number(item.quantity || 0)}
+                  | Price: RM ${Number(item.unit_price || 0).toFixed(2)}
+                  ${item.size_label ? `| Size: ${escapeHtml(item.size_label)}` : ""}
+                  ${item.package_label ? `| Package: ${escapeHtml(item.package_label)}` : ""}
                 </p>
               </div>
             `).join("")
@@ -296,7 +345,7 @@ async function openOrderModal(orderId) {
       </div>
 
       <div class="detail-total">
-        Total: RM ${Number(order.total_amount).toFixed(2)}
+        Total: RM ${Number(order.total_amount || 0).toFixed(2)}
       </div>
     `;
   } catch (error) {
@@ -312,40 +361,64 @@ function closeOrderModal() {
   }
 }
 
-function logoutAdmin() {
-  localStorage.removeItem("adminLoggedIn");
-  localStorage.removeItem("adminToken");
-  window.location.href = "admin-login.html";
+async function logoutAdmin() {
+  const token = getAdminToken();
+
+  try {
+    if (token) {
+      await fetch("/api/admin-logout", {
+        method: "POST",
+        headers: getAdminHeaders()
+      });
+    }
+  } catch (error) {
+    console.error("Logout request failed:", error);
+  } finally {
+    localStorage.removeItem("adminToken");
+    window.location.href = "admin-login.html";
+  }
 }
 
-  document.getElementById("searchInput")?.addEventListener("input", applyFilters);
-  document.getElementById("paymentFilter")?.addEventListener("change", applyFilters);
-  document.getElementById("statusFilter")?.addEventListener("change", applyFilters);
-;
-
-function exportOrders(){
+function exportOrders() {
   let csv = "Order ID,Customer,Phone,Address,Total,Payment Status,Order Status,Date\n";
 
-  allOrders.forEach(order=>{
-    csv += `${order.id},${order.customer_name},${order.phone},${order.address},${order.total_amount},${order.payment_status},${order.order_status},${order.created_at}\n`;
+  allOrders.forEach(order => {
+    csv += [
+      csvCell(order.id),
+      csvCell(order.customer_name),
+      csvCell(order.phone),
+      csvCell(order.address),
+      csvCell(order.total_amount),
+      csvCell(order.payment_status),
+      csvCell(order.order_status),
+      csvCell(order.created_at)
+    ].join(",") + "\n";
   });
 
-  const blob = new Blob([csv],{type:"text/csv"});
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
 
   const a = document.createElement("a");
   a.href = url;
   a.download = "orders.csv";
+  document.body.appendChild(a);
   a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+
+  showToast("Orders exported to CSV.", "info");
 }
 
-function copyPhone(phone){
-  navigator.clipboard.writeText(phone);
-  alert("Phone copied: " + phone);
+function copyPhone(phone) {
+  navigator.clipboard.writeText(String(phone || ""));
+  showToast(`Phone copied: ${phone}`, "info");
 }
+
+document.getElementById("searchInput")?.addEventListener("input", applyFilters);
+document.getElementById("paymentFilter")?.addEventListener("change", applyFilters);
+document.getElementById("statusFilter")?.addEventListener("change", applyFilters);
 
 window.addEventListener("DOMContentLoaded", () => {
   loadOrders();
-
-  setInterval(loadOrders, 10000);
+  setInterval(loadOrders, 900000);
 });
