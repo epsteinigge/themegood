@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThemeGood | Functional Multigrain Nutrition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #c61d2c; /* Pomegranate Red */
+            --primary-light: #f7e9ea;
+            --secondary: #5f7f63; /* Leaf Green */
+            --dark: #1a1a1a;
+            --gray: #666;
+            --white: #ffffff;
+            --transition: all 0.3s ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: var(--dark);
+            line-height: 1.6;
+            background: #fff;
+        }
+
+        /* --- Header & Navigation --- */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 80px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        nav a {
+            margin-left: 35px;
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 400;
+            font-size: 15px;
+            transition: var(--transition);
+        }
+
+        nav a:hover { color: var(--primary); }
+
+        /* --- Hero Slider --- */
+        .hero {
+            position: relative;
+            height: 80vh;
+            min-height: 500px;
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            display: flex;
+            align-items: center;
+        }
+
+        .slide.active { opacity: 1; }
+
+        .slide img {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1;
+        }
+
+        .hero-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to right, rgba(255,255,255,0.8) 30%, transparent 100%);
+        }
+
+        .hero-content {
+            position: relative;
+            padding: 0 80px;
+            max-width: 700px;
+            z-index: 10;
+        }
+
+        .hero-content h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(32px, 5vw, 56px);
+            line-height: 1.1;
+            margin-bottom: 20px;
+            color: var(--primary);
+            animation: fadeInUp 0.8s ease forwards;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 35px;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: var(--transition);
+            border: 2px solid var(--primary);
+        }
+
+        .btn:hover {
+            background: transparent;
+            color: var(--primary);
+        }
+
+        /* Slider Controls */
+        .arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            z-index: 20;
+            font-size: 20px;
+        }
+
+        .left { left: 20px; }
+        .right { right: 20px; }
+
+        .dots {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 20;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .dot.active { background: var(--primary); width: 30px; border-radius: 10px; }
+
+        /* --- Product Section --- */
+        .section { padding: 80px 80px; text-align: center; }
+        
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 38px;
+            margin-bottom: 50px;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .card {
+            background: #fff;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.05);
+            transition: var(--transition);
+            border: 1px solid #f0f0f0;
+            text-align: left;
+        }
+
+        .card:hover { transform: translateY(-10px); }
+
+        .card h4 {
+            color: var(--primary);
+            font-size: 22px;
+            margin-bottom: 15px;
+        }
+
+        /* --- Footer --- */
+        footer {
+            background: #f9f9f9;
+            padding: 40px 80px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: var(--gray);
+            border-top: 1px solid #eee;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Mobile Responsive --- */
+        @media (max-width: 768px) {
+            header { padding: 15px 25px; }
+            nav { display: none; } /* Simplified for example */
+            .hero-content { padding: 0 25px; }
+            .section { padding: 60px 25px; }
+            footer { flex-direction: column; text-align: center; gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="#" class="logo">ThemeGood</a>
+    <nav>
+        <a href="#home">Home</a>
+    <a href="#products">Products</a>
+        <a href="#healthtips">Health Tips</a>
+        <a href="#contact">Contact</a>
+    </nav>
+</header>
+
+<section class="hero">
+    <div class="slide active">
+        <img src="photos/pomegranate.jpg" alt="Pomegranate">
+        <div class="hero-text">
+            <h2>Pomegranate<br>Power</h2>
+            <p>Premium multigrain wellness for better digestion.</p><br>
+            <a href="#" class="btn">Learn More</a>
+        </div>
+    </div>
+
+    <div class="slide">
+        <img src="photos/bilberry.jpg " alt="Bilberry">
+        <div class="hero-text">
+            <h2>Bilberry<br>Vision</h2>
+            <p>Protect your eyes and filter harmful blue light.</p><br>
+            <a href="#" class="btn">Shop Now</a>
+        </div>
+    </div>
+
+    <button class="arrow left" onclick="changeSlide(-1)">❮</button>
+    <button class="arrow right" onclick="changeSlide(1)">❯</button>
+
+    <div class="dots">
+        <span class="dot active" onclick="goToSlide(0)"></span>
+        <span class="dot" onclick="goToSlide(1)"></span>
+    </div>
+</section>
+
+<section class="section">
+    <h3 class="section-title">Functional Wellness</h3>
+    <div class="products-grid">
+        <div class="card">
+            <h4>🍎 Digestion Care</h4>
+            <p>Pomegranate extracts combined with 22 types of grains help prevent constipation and improve gut microbiome.</p>
+        </div>
+        <div class="card">
+            <h4>👁️ Eye Protection</h4>
+            <p>Lutein and Bilberry extracts designed to reduce dry eye syndrome and provide a shield against digital blue light.</p>
+        </div>
+        <div class="card">
+            <h4>🌱 100% Natural</h4>
+            <p>Free from artificial coloring and preservatives. Only premium plant-based nutrition for modern living.</p>
+        </div>
+    </div>
+</section>
+
+<section id="contact" class="section">
+    <h3>Get In Touch</h3>
+    <div style="max-width: 600px; margin: 0 auto; text-align: left;">
+        <form action="#" method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+            <input type="text" placeholder="Your Name" style="padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
+            <input type="email" placeholder="Your Email" style="padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
+            <textarea placeholder="Your Message" rows="5" style="padding: 15px; border: 1px solid #ddd; border-radius: 8px;"></textarea>
+            <button type="submit" class="btn" style="border: none; cursor: pointer;">Send Message</button>
+        </form>
+    </div>
+</section>
+
+<footer>
+    <div>© 2026 ThemeGood Global. All Rights Reserved.</div>
+    <div>Natural Nutrition | Functional Food | Wellness</div>
+</footer>
+
+<script>
+    let currentIndex = 0;
+    const slides = document.querySelectorAll('.slide');
+    const dots = document.querySelectorAll('.dot');
+
+    function updateSlides() {
+        slides.forEach((slide, i) => {
+            slide.classList.toggle('active', i === currentIndex);
+            dots[i].classList.toggle('active', i === currentIndex);
+        });
+    }
+
+    function changeSlide(direction) {
+        currentIndex = (currentIndex + direction + slides.length) % slides.length;
+        updateSlides();
+    }
+
+    function goToSlide(index) {
+        currentIndex = index;
+        updateSlides();
+    }
+
+    // Auto play
+    setInterval(() => changeSlide(1), 6000);
+</script>
+
+<form action="https://formspree.io/f/YOUR_UNIQUE_ID" method="POST">
+    <input type="text" name="name" placeholder="Your Name" required>
+    <input type="email" name="email" placeholder="Your Email" required>
+    <textarea name="message" placeholder="Your Message" rows="5" required></textarea>
+    <button type="submit" class="btn">Send Message</button>
+</form>
+
+<a href="#home" class="back-to-top" id="topBtn">↑</a>
+
+<script>
+    window.onscroll = function() {
+        let btn = document.getElementById("topBtn");
+        if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+            btn.style.display = "block";
+        } else {
+            btn.style.display = "none";
+        }
+    };
+</script>
+
+</body>
+</html>

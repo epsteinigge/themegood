@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Checkout</title>
+  <style>
+    body {
+      font-family: 'Poppins', Arial, sans-serif;
+      background: #f9f9f9;
+      margin: 0;
+      padding: 40px;
+    }
+
+    .checkout-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      max-width: 1000px;
+      margin: auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+
+    .summary, .payment {
+      padding: 20px;
+    }
+
+    h2 {
+      margin-top: 0;
+      font-size: 1.4rem;
+      color: #333;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 10px;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      margin: 10px 0;
+      padding: 8px;
+      background: #f8f9fa;
+      border-radius: 6px;
+    }
+
+    label {
+      display: block;
+      margin: 12px 0 6px;
+      font-weight: 500;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 12px 20px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #218838;
+    }
+  </style>
+</head>
+<body>
+    <!-- Progress Indicator -->
+<div class="progress-steps">
+  <div class="step completed">Cart</div>
+  <div class="step active">Checkout</div>
+  <div class="step">Payment</div>
+</div>
+
+  <div class="checkout-container">
+    <!-- Order Summary -->
+    <div class="summary">
+      <h2>Order Summary</h2>
+      <ul id="checkout-items"></ul>
+      <p><strong>Total:</strong> $<span id="checkout-total">0.00</span></p>
+    </div>
+
+    <!-- Payment Form -->
+    <div class="payment">
+      <h2>Payment Details</h2>
+      <form id="payment-form">
+        <label for="name">Full Name</label>
+        <input type="text" id="name" required>
+
+        <label for="card">Card Number</label>
+        <input type="text" id="card" placeholder="1234 5678 9012 3456" required>
+
+        <label for="expiry">Expiry Date</label>
+        <input type="text" id="expiry" placeholder="MM/YY" required>
+
+        <label for="cvv">CVV</label>
+        <input type="text" id="cvv" placeholder="123" required>
+
+        <button type="submit">Pay Now</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Load cart from localStorage
+    const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
+    const checkoutList = document.getElementById("checkout-items");
+    const checkoutTotal = document.getElementById("checkout-total");
+
+    let total = 0;
+    cartItems.forEach(item => {
+      const li = document.createElement("li");
+      li.textContent = `${item.name} - $${item.price} x ${item.quantity}`;
+      checkoutList.appendChild(li);
+      total += item.price * item.quantity;
+    });
+    checkoutTotal.textContent = total.toFixed(2);
+
+    // Fake payment form submission
+    document.getElementById("payment-form").addEventListener("submit", e => {
+      e.preventDefault();
+      alert("Payment submitted! (Fake form — integrate Stripe/PayPal later)");
+      localStorage.removeItem("cart");
+      window.location.href = "index.html"; // back to shop
+    });
+  </script>
+</body>
+</html>
+
