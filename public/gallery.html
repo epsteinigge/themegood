@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gallery | ThemeGood</title>
+<link rel="icon" type="image/png" href="/tgi.png">
+<link rel="apple-touch-icon" href="/tgi.png">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="overrides.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -25,7 +27,7 @@
 <li><a href="index.html#home" data-i18n="home">Home</a></li>
 <li><a href="index.html#products" data-i18n="products">Products</a></li>
 <li><a href="gallery.html" data-i18n="gallery">Gallery</a></li>
-<li><a href="index.html#about" data-i18n="about">About</a></li>
+<li><a href="track-order.html" data-i18n="track_order">Track Order</a></li>
 <li><a href="index.html#testimonials" data-i18n="testimonials">Testimonials</a></li>
 <li><a href="index.html#faq" data-i18n="faq">FAQ</a></li>
 <li><a href="index.html#contact" data-i18n="contact_us">Contact Us</a></li>
@@ -38,7 +40,7 @@
 </div>
 
 <div class="header-actions">
-<a class="btn" href="index.html#products">Shop Now</a>
+<button id="cart-toggle">&#128722; Cart <span id="cart-count">0</span></button>
 <label class="lang-switch" aria-label="Language">
 <span data-i18n="language">Language</span>
 <select class="js-lang-switch">
@@ -59,16 +61,7 @@
 </section>
 
 <section class="section">
-<div class="gallery-grid">
-<figure class="gallery-item"><img src="photos/tg24.jpg" alt="Passion Fruit Multigrain product"><figcaption>Passion Fruit Multigrain</figcaption></figure>
-<figure class="gallery-item"><img src="photos/tg23.jpg" alt="Melon Avocado product"><figcaption>Melon Avocado</figcaption></figure>
-<figure class="gallery-item"><img src="photos/tg22.jpg" alt="Bilberry product"><figcaption>Bilberry</figcaption></figure>
-<figure class="gallery-item"><img src="photos/tg21.jpg" alt="Pomegranate product"><figcaption>Pomegranate</figcaption></figure>
-<figure class="gallery-item"><img src="photos/tg19.jpg" alt="ThemeGood showcase image"><figcaption>Wellness Collection</figcaption></figure>
-<figure class="gallery-item"><img src="photos/tg18.jpg" alt="ThemeGood showcase image"><figcaption>Daily Vitality</figcaption></figure>
-<figure class="gallery-item"><img src="photos/tg12.jpg" alt="ThemeGood showcase image"><figcaption>Natural Goodness</figcaption></figure>
-<figure class="gallery-item"><img src="photos/bilberry.jpg" alt="Bilberry close-up"><figcaption>Bilberry Focus</figcaption></figure>
-</div>
+<div id="galleryGrid" class="gallery-grid"></div>
 </section>
 </main>
 
@@ -100,7 +93,7 @@
 <a href="index.html#home" data-i18n="home">Home</a>
 <a href="index.html#products" data-i18n="products">Products</a>
 <a href="gallery.html" data-i18n="gallery">Gallery</a>
-<a href="index.html#about" data-i18n="about">About</a>
+<a href="track-order.html" data-i18n="track_order">Track Order</a>
 <a href="index.html#testimonials" data-i18n="testimonials">Testimonials</a>
 <a href="index.html#faq" data-i18n="faq">FAQ</a>
 <a href="index.html#contact" data-i18n="contact_us">Contact Us</a>
@@ -132,148 +125,8 @@
 <p class="footer-bottom">&copy; 2026 ThemeGood. All Rights Reserved.</p>
 </footer>
 
-<script src="script.js"></script>
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const translate = (key, vars = {}) => {
-      if (typeof window.__themegoodT === "function") return window.__themegoodT(key, vars);
-      return key;
-    };
-    const items = Array.from(document.querySelectorAll(".gallery-item img"));
-    const lightbox = document.getElementById("galleryLightbox");
-    const image = document.getElementById("lightboxImage");
-    const prevBtn = document.getElementById("lightboxPrev");
-    const nextBtn = document.getElementById("lightboxNext");
-    const closeBtn = document.getElementById("lightboxClose");
-    const zoomInBtn = document.getElementById("zoomIn");
-    const zoomOutBtn = document.getElementById("zoomOut");
-    const zoomLabel = document.getElementById("zoomLevel");
-    const stage = document.getElementById("lightboxStage");
-
-    let currentIndex = 0;
-    let zoom = 1;
-    const minZoom = 0.6;
-    const maxZoom = 3;
-    let panX = 0;
-    let panY = 0;
-    let isDragging = false;
-    let activePointerId = null;
-    let dragStartX = 0;
-    let dragStartY = 0;
-    let dragOriginX = 0;
-    let dragOriginY = 0;
-
-    function clampPan() {
-      const stageRect = stage.getBoundingClientRect();
-      const imageWidth = stageRect.width * zoom;
-      const imageHeight = stageRect.height * zoom;
-      const maxOffsetX = Math.max(0, (imageWidth - stageRect.width) / 2);
-      const maxOffsetY = Math.max(0, (imageHeight - stageRect.height) / 2);
-      panX = Math.max(-maxOffsetX, Math.min(maxOffsetX, panX));
-      panY = Math.max(-maxOffsetY, Math.min(maxOffsetY, panY));
-    }
-
-    function resetPan() {
-      panX = 0;
-      panY = 0;
-    }
-
-    function render() {
-      image.src = items[currentIndex].src;
-      image.alt = items[currentIndex].alt || translate("gallery");
-      if (zoom <= 1) resetPan();
-      clampPan();
-      image.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
-      zoomLabel.textContent = `${Math.round(zoom * 100)}%`;
-      stage.classList.toggle("is-zoomed", zoom > 1);
-      stage.classList.toggle("is-dragging", isDragging);
-    }
-
-    function openLightbox(index) {
-      currentIndex = index;
-      zoom = 1;
-      resetPan();
-      lightbox.classList.add("open");
-      lightbox.setAttribute("aria-hidden", "false");
-      document.body.classList.add("no-scroll");
-      render();
-    }
-
-    function closeLightbox() {
-      lightbox.classList.remove("open");
-      lightbox.setAttribute("aria-hidden", "true");
-      document.body.classList.remove("no-scroll");
-    }
-
-    function showNext(step) {
-      currentIndex = (currentIndex + step + items.length) % items.length;
-      zoom = 1;
-      resetPan();
-      render();
-    }
-
-    function adjustZoom(delta) {
-      zoom = Math.max(minZoom, Math.min(maxZoom, zoom + delta));
-      render();
-    }
-
-    function onPointerMove(e) {
-      if (!isDragging || e.pointerId !== activePointerId) return;
-      panX = dragOriginX + (e.clientX - dragStartX);
-      panY = dragOriginY + (e.clientY - dragStartY);
-      clampPan();
-      image.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
-    }
-
-    function stopDragging() {
-      isDragging = false;
-      activePointerId = null;
-      stage.classList.remove("is-dragging");
-    }
-
-    items.forEach((img, idx) => {
-      img.style.cursor = "zoom-in";
-      img.addEventListener("click", () => openLightbox(idx));
-    });
-
-    prevBtn.addEventListener("click", () => showNext(-1));
-    nextBtn.addEventListener("click", () => showNext(1));
-    closeBtn.addEventListener("click", closeLightbox);
-    zoomInBtn.addEventListener("click", () => adjustZoom(0.2));
-    zoomOutBtn.addEventListener("click", () => adjustZoom(-0.2));
-
-    lightbox.addEventListener("click", e => {
-      if (e.target === lightbox || e.target === stage) closeLightbox();
-    });
-
-    image.addEventListener("pointerdown", e => {
-      if (zoom <= 1) return;
-      isDragging = true;
-      activePointerId = e.pointerId;
-      dragStartX = e.clientX;
-      dragStartY = e.clientY;
-      dragOriginX = panX;
-      dragOriginY = panY;
-      stage.classList.add("is-dragging");
-      image.setPointerCapture(e.pointerId);
-      e.preventDefault();
-    });
-
-    image.addEventListener("pointermove", onPointerMove);
-    image.addEventListener("pointerup", stopDragging);
-    image.addEventListener("pointercancel", stopDragging);
-    image.addEventListener("lostpointercapture", stopDragging);
-
-    document.addEventListener("keydown", e => {
-      if (!lightbox.classList.contains("open")) return;
-      if (e.key === "Escape") closeLightbox();
-      if (e.key === "ArrowRight") showNext(1);
-      if (e.key === "ArrowLeft") showNext(-1);
-      if (e.key === "+" || e.key === "=") adjustZoom(0.2);
-      if (e.key === "-") adjustZoom(-0.2);
-    });
-  });
-</script>
+<script src="gallery.js"></script>
+<script src="script.js?v=4"></script>
 </body>
 </html>
 

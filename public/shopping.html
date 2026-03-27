@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Shopping | ThemeGood</title>
+<link rel="icon" type="image/png" href="/tgi.png">
+<link rel="apple-touch-icon" href="/tgi.png">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="overrides.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -25,7 +27,7 @@
 <li><a href="index.html#home" data-i18n="home">Home</a></li>
 <li><a href="shopping.html" data-i18n="shopping">Shopping</a></li>
 <li><a href="gallery.html" data-i18n="gallery">Gallery</a></li>
-<li><a href="index.html#about" data-i18n="about">About</a></li>
+<li><a href="track-order.html" data-i18n="track_order">Track Order</a></li>
 <li><a href="index.html#testimonials" data-i18n="testimonials">Testimonials</a></li>
 <li><a href="index.html#faq" data-i18n="faq">FAQ</a></li>
 <li><a href="index.html#contact" data-i18n="contact_us">Contact Us</a></li>
@@ -41,7 +43,6 @@
 </div>
 
 <div class="header-actions">
-<button id="wishlist-toggle">&hearts; Wishlist <span id="wishlist-count">0</span></button>
 <button id="cart-toggle">&#128722; Cart <span id="cart-count">0</span></button>
 <label class="lang-switch" aria-label="Language">
 <span data-i18n="language">Language</span>
@@ -60,13 +61,56 @@
 <p>Premium wellness nutrition formulated for modern daily routines.</p>
 </section>
 
-<section id="products" class="section">
-    <div class="products-grid" id="productGrid"></div>
-<div class="product-search-bar" role="search" aria-label="Search products">
-<input id="productSearchInput" type="search" placeholder="Search products by keyword">
-<button id="productSearchButton" type="button">Search</button>
+<section class="section shopping-featured-section" id="shoppingBestSellerSection">
+<div class="shopping-featured-heading">
+<h2 id="shoppingBestSellerTitle">Best Sellers</h2>
+<p id="shoppingBestSellerSubtitle">The three products shoppers reach for first, curated to stand out clearly.</p>
 </div>
+<div id="shoppingBestSellerGrid" class="shopping-featured-grid"></div>
+</section>
 
+<section class="section shopping-featured-section" id="shoppingFeaturedSection">
+<div class="shopping-featured-heading">
+<h2 id="shoppingFeaturedTitle">Customer Favourites</h2>
+<p id="shoppingFeaturedSubtitle">Limited-time picks, top-loved products, and premium wellness essentials worth seeing first.</p>
+</div>
+<div id="shoppingFeaturedGrid" class="shopping-featured-grid"></div>
+</section>
+
+<section id="products" class="section">
+<div class="shopping-layout">
+  <aside class="shopping-filters" aria-label="Product filters">
+    <h2>Filter Products</h2>
+
+    <div class="shopping-filter-group">
+      <label for="productSearchInput">Search</label>
+      <input id="productSearchInput" type="search" placeholder="Search products by keyword">
+      <button id="productSearchButton" type="button">Search</button>
+    </div>
+
+    <div class="shopping-filter-group">
+      <label for="productSizeFilter">Size</label>
+      <select id="productSizeFilter">
+        <option value="">All Sizes</option>
+        <option value="small">300g</option>
+        <option value="medium">600g</option>
+        <option value="large">800g</option>
+      </select>
+    </div>
+
+    <div class="shopping-filter-group">
+      <label for="productPackageFilter">Package</label>
+      <select id="productPackageFilter">
+        <option value="">All Packages</option>
+      </select>
+    </div>
+
+    <button id="clearShoppingFiltersBtn" class="btn" type="button">Clear Filters</button>
+  </aside>
+
+  <div class="shopping-results">
+    <div class="products-grid" id="products-grid"></div>
+  </div>
 </div>
 </section>
 
@@ -94,7 +138,7 @@
 <a href="index.html#home" data-i18n="home">Home</a>
 <a href="shopping.html" data-i18n="shopping">Shopping</a>
 <a href="gallery.html" data-i18n="gallery">Gallery</a>
-<a href="index.html#about" data-i18n="about">About</a>
+<a href="track-order.html" data-i18n="track_order">Track Order</a>
 <a href="index.html#testimonials" data-i18n="testimonials">Testimonials</a>
 <a href="index.html#faq" data-i18n="faq">FAQ</a>
 <a href="index.html#contact" data-i18n="contact_us">Contact Us</a>
@@ -127,10 +171,8 @@
 <p class="footer-bottom">&copy; 2026 ThemeGood. All Rights Reserved.</p>
 </footer>
 
-<script src="script.js"></script>
+<script src="site-content.js"></script>
+<script src="script.js?v=4"></script>
 <script src="shop-products.js"></script>
 </body>
 </html>
-
-
-

@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Track Order | ThemeGood</title>
+  <link rel="icon" type="image/png" href="/tgi.png">
+  <link rel="apple-touch-icon" href="/tgi.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap">
+  <style>
+    :root {
+      --brand: #b32038;
+      --brand-deep: #7f1425;
+      --accent: #fce7ea;
+      --ink: #182132;
+      --muted: #697386;
+      --line: rgba(127, 20, 37, 0.14);
+      --surface: rgba(255, 255, 255, 0.94);
+      --shadow: 0 24px 60px rgba(18, 33, 50, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Nunito Sans", Arial, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(255, 210, 221, 0.55), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(219, 232, 255, 0.45), transparent 28%),
+        linear-gradient(180deg, #fff7f9 0%, #f5f8fd 100%);
+      padding: 26px 16px 34px;
+    }
+
+    .page {
+      width: min(1080px, 100%);
+      margin: 0 auto;
+      display: grid;
+      gap: 24px;
+    }
+
+    .hero,
+    .panel {
+      background: var(--surface);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.08fr 0.92fr;
+      min-height: 360px;
+    }
+
+    .hero-copy {
+      padding: 36px;
+      background:
+        linear-gradient(155deg, rgba(179, 32, 56, 0.95), rgba(127, 20, 37, 0.96)),
+        url("photos/tg18.jpg") center / cover no-repeat;
+      color: #fff8fa;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .pill {
+      display: inline-flex;
+      width: max-content;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      font-family: "Montserrat", sans-serif;
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .hero h1 {
+      margin: 18px 0 14px;
+      font-family: "Montserrat", sans-serif;
+      font-size: clamp(2rem, 4.2vw, 3.4rem);
+      line-height: 0.98;
+      max-width: 10ch;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 38ch;
+      line-height: 1.75;
+      color: rgba(255, 245, 248, 0.9);
+    }
+
+    .hero-points {
+      display: grid;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .hero-points span {
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      font-size: 0.94rem;
+    }
+
+    .lookup {
+      padding: 34px;
+      display: grid;
+      align-content: center;
+      gap: 18px;
+    }
+
+    .lookup h2,
+    .panel h2 {
+      margin: 0;
+      font-family: "Montserrat", sans-serif;
+      font-size: 1.5rem;
+      color: var(--brand-deep);
+    }
+
+    .lookup p,
+    .panel-subtext {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .lookup-form {
+      display: grid;
+      gap: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field label {
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .field input {
+      width: 100%;
+      min-height: 52px;
+      padding: 14px 16px;
+      border: 1px solid rgba(118, 129, 150, 0.22);
+      border-radius: 16px;
+      background: #fff;
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    .field input:focus {
+      border-color: rgba(179, 32, 56, 0.55);
+      box-shadow: 0 0 0 4px rgba(179, 32, 56, 0.1);
+    }
+
+    .btn {
+      min-height: 54px;
+      border: 0;
+      border-radius: 16px;
+      padding: 14px 18px;
+      cursor: pointer;
+      font-family: "Montserrat", sans-serif;
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #cc3b53, #b32038 58%, #7f1425);
+      color: #fff;
+      box-shadow: 0 16px 32px rgba(179, 32, 56, 0.22);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      background: #fff;
+      color: var(--brand-deep);
+      border: 1px solid rgba(127, 20, 37, 0.16);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .result {
+      display: none;
+      padding: 28px;
+    }
+
+    .result.is-visible {
+      display: block;
+    }
+
+    .result-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .status-card,
+    .detail-card,
+    .item-card {
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(251, 245, 247, 0.98));
+    }
+
+    .status-card {
+      padding: 18px 18px 20px;
+    }
+
+    .status-label {
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .status-value {
+      display: inline-flex;
+      align-items: center;
+      padding: 9px 14px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: var(--brand-deep);
+      font-family: "Montserrat", sans-serif;
+      font-size: 0.94rem;
+      font-weight: 700;
+      text-transform: capitalize;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .timeline-step {
+      display: grid;
+      grid-template-columns: 48px minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+      opacity: 0.48;
+    }
+
+    .timeline-step.is-complete,
+    .timeline-step.is-current {
+      opacity: 1;
+    }
+
+    .timeline-dot {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      font-family: "Montserrat", sans-serif;
+      font-weight: 700;
+      background: #eef2f6;
+      color: #596172;
+      border: 1px solid rgba(89, 97, 114, 0.12);
+    }
+
+    .timeline-step.is-complete .timeline-dot {
+      background: #e8f7ee;
+      color: #0f8a43;
+      border-color: rgba(15, 138, 67, 0.16);
+    }
+
+    .timeline-step.is-current .timeline-dot {
+      background: var(--accent);
+      color: var(--brand-deep);
+      border-color: rgba(127, 20, 37, 0.16);
+    }
+
+    .timeline-copy strong {
+      display: block;
+      margin-bottom: 4px;
+      font-family: "Montserrat", sans-serif;
+      color: var(--ink);
+      text-transform: capitalize;
+    }
+
+    .timeline-copy span {
+      color: var(--muted);
+      line-height: 1.55;
+      display: block;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .detail-card {
+      padding: 18px;
+    }
+
+    .detail-card h3 {
+      margin: 0 0 12px;
+      font-family: "Montserrat", sans-serif;
+      font-size: 1rem;
+      color: var(--brand-deep);
+    }
+
+    .detail-row {
+      display: grid;
+      gap: 4px;
+      padding-bottom: 10px;
+      margin-bottom: 10px;
+      border-bottom: 1px dashed rgba(127, 20, 37, 0.12);
+    }
+
+    .detail-row:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .detail-row span {
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .detail-row strong {
+      color: var(--ink);
+      word-break: break-word;
+    }
+
+    .items-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .item-card {
+      padding: 18px;
+    }
+
+    .item-card h4 {
+      margin: 0 0 8px;
+      font-family: "Montserrat", sans-serif;
+      font-size: 1rem;
+      color: var(--ink);
+    }
+
+    .item-meta {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .tracking-note-card {
+      margin-bottom: 22px;
+      padding: 18px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(252, 242, 245, 0.98));
+    }
+
+    .tracking-note-card h3 {
+      margin: 0 0 10px;
+      font-family: "Montserrat", sans-serif;
+      font-size: 1rem;
+      color: var(--brand-deep);
+    }
+
+    .tracking-note-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+
+    .message {
+      display: none;
+      padding: 14px 16px;
+      border-radius: 16px;
+      font-weight: 700;
+    }
+
+    .message.is-visible {
+      display: block;
+    }
+
+    .message.error {
+      background: #fff1f2;
+      color: #b42318;
+      border: 1px solid rgba(180, 35, 24, 0.12);
+    }
+
+    .message.info {
+      background: #f7f8fb;
+      color: #4b5565;
+      border: 1px solid rgba(75, 85, 101, 0.12);
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    @media (max-width: 920px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 14px 12px 22px;
+      }
+
+      .hero-copy,
+      .lookup,
+      .result {
+        padding: 22px;
+      }
+
+      .status-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .actions {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="hero-copy">
+        <div>
+          <div class="pill">Track Your Order</div>
+          <h1>Check your payment and delivery progress anytime.</h1>
+          <p>
+            Enter your order ID and phone number to view the latest payment confirmation
+            and fulfilment status from ThemeGood.
+          </p>
+        </div>
+
+        <div class="hero-points">
+          <span>Live payment status from the admin order dashboard.</span>
+          <span>Delivery progress updates from new to shipped and completed.</span>
+          <span>Clear view of your order summary and purchased items.</span>
+        </div>
+      </div>
+
+      <div class="lookup">
+        <div>
+          <h2>Find your order</h2>
+          <p>Use the same phone number you entered during checkout.</p>
+        </div>
+
+        <form id="trackOrderForm" class="lookup-form">
+          <div class="field">
+            <label for="trackOrderId">Order ID</label>
+            <input id="trackOrderId" name="orderId" type="number" min="1" inputmode="numeric" placeholder="Example: 1024" required>
+          </div>
+
+          <div class="field">
+            <label for="trackPhone">Phone Number</label>
+            <input id="trackPhone" name="phone" type="tel" placeholder="Example: 0187786000" required>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Track Order</button>
+        </form>
+
+        <div id="trackMessage" class="message info"></div>
+
+        <div class="actions">
+          <a class="btn btn-secondary" href="shopping.html">Continue Shopping</a>
+          <a class="btn btn-secondary" href="index.html">Back to Home</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="trackResult" class="panel result" aria-live="polite">
+      <div class="result-head">
+        <div>
+          <h2>Order status</h2>
+          <p class="panel-subtext">These statuses update whenever the admin team changes your order.</p>
+        </div>
+      </div>
+
+      <div class="status-grid">
+        <article class="status-card">
+          <div class="status-label">Payment Status</div>
+          <div class="status-value" id="paymentStatusValue">Awaiting update</div>
+        </article>
+
+        <article class="status-card">
+          <div class="status-label">Delivery Status</div>
+          <div class="status-value" id="orderStatusValue">Awaiting update</div>
+        </article>
+      </div>
+
+      <div id="orderTimeline" class="timeline"></div>
+
+      <div id="trackingNotesCard" class="tracking-note-card" style="display:none;">
+        <h3>Latest Tracking Note</h3>
+        <p id="trackingNotesValue"></p>
+      </div>
+
+      <div class="detail-grid">
+        <article class="detail-card">
+          <h3>Customer Info</h3>
+          <div class="detail-row">
+            <span>Name</span>
+            <strong id="detailCustomerName">-</strong>
+          </div>
+          <div class="detail-row">
+            <span>Phone</span>
+            <strong id="detailPhone">-</strong>
+          </div>
+        </article>
+
+        <article class="detail-card">
+          <h3>Order Info</h3>
+          <div class="detail-row">
+            <span>Order ID</span>
+            <strong id="detailOrderId">-</strong>
+          </div>
+          <div class="detail-row">
+            <span>Created</span>
+            <strong id="detailCreatedAt">-</strong>
+          </div>
+        </article>
+
+        <article class="detail-card">
+          <h3>Payment Summary</h3>
+          <div class="detail-row">
+            <span>Total Amount</span>
+            <strong id="detailTotalAmount">RM 0.00</strong>
+          </div>
+          <div class="detail-row">
+            <span>Delivery Address</span>
+            <strong id="detailAddress">-</strong>
+          </div>
+        </article>
+      </div>
+
+      <div>
+        <h2 style="margin-bottom:12px;">Items in your order</h2>
+        <div id="orderItems" class="items-grid"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const ORDER_STATUS_STEPS = [
+      {
+        key: "new",
+        title: "New",
+        description: "Your order has been received and is waiting for review."
+      },
+      {
+        key: "confirmed",
+        title: "Confirmed",
+        description: "Payment or order details have been confirmed by the team."
+      },
+      {
+        key: "packed",
+        title: "Packed",
+        description: "Your items are being prepared and packed for shipment."
+      },
+      {
+        key: "shipped",
+        title: "Shipped",
+        description: "Your order is on the way."
+      },
+      {
+        key: "completed",
+        title: "Completed",
+        description: "Your order has been completed successfully."
+      }
+    ];
+    const MALAYSIA_TIME_ZONE = "Asia/Kuala_Lumpur";
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function formatMoney(value) {
+      return `RM ${Number(value || 0).toFixed(2)}`;
+    }
+
+    function parsePackageUnits(packageLabel) {
+      const match = String(packageLabel || "").match(/(\d+)\s*x/i);
+      const units = Number(match?.[1] || 0);
+      return Number.isInteger(units) && units > 0 ? units : 1;
+    }
+
+    function formatItemSummary(item) {
+      const quantity = Math.max(1, Number(item?.quantity || 1));
+      const packageLabel = String(item?.package_label || "").trim();
+      const sizeLabel = String(item?.size_label || "").trim();
+      const parts = [`Ordered: ${quantity}`];
+
+      if (packageLabel) {
+        const unitsPerPack = parsePackageUnits(packageLabel);
+        const totalUnits = quantity * unitsPerPack;
+        parts.push(`Package: ${packageLabel}`);
+        if (unitsPerPack > 1) {
+          parts.push(`Total units from package: ${totalUnits}`);
+        }
+      }
+
+      if (sizeLabel) {
+        parts.push(`Size: ${sizeLabel}`);
+      }
+
+      parts.push(`Unit price: ${formatMoney(item?.unit_price)}`);
+      return parts.join(" | ");
+    }
+
+    function formatDate(value) {
+      const parsed = new Date(value);
+      return Number.isNaN(parsed.getTime())
+        ? "-"
+        : parsed.toLocaleString("en-MY", {
+            timeZone: MALAYSIA_TIME_ZONE,
+            year: "numeric",
+            month: "short",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true
+          });
+    }
+
+    function setMessage(message, type = "info") {
+      const messageEl = document.getElementById("trackMessage");
+      if (!messageEl) return;
+      messageEl.textContent = message;
+      messageEl.className = `message ${type} is-visible`;
+    }
+
+    function clearMessage() {
+      const messageEl = document.getElementById("trackMessage");
+      if (!messageEl) return;
+      messageEl.textContent = "";
+      messageEl.className = "message info";
+    }
+
+    function renderTimeline(status) {
+      const timeline = document.getElementById("orderTimeline");
+      if (!timeline) return;
+
+      if (status === "cancelled") {
+        timeline.innerHTML = `
+          <div class="timeline-step is-current">
+            <div class="timeline-dot">!</div>
+            <div class="timeline-copy">
+              <strong>Cancelled</strong>
+              <span>This order has been cancelled. Please contact ThemeGood if you need help.</span>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      const currentIndex = ORDER_STATUS_STEPS.findIndex((step) => step.key === status);
+
+      timeline.innerHTML = ORDER_STATUS_STEPS.map((step, index) => {
+        const stateClass = currentIndex === index
+          ? "is-current"
+          : currentIndex > index
+            ? "is-complete"
+            : "";
+
+        return `
+          <div class="timeline-step ${stateClass}">
+            <div class="timeline-dot">${index + 1}</div>
+            <div class="timeline-copy">
+              <strong>${escapeHtml(step.title)}</strong>
+              <span>${escapeHtml(step.description)}</span>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderItems(items) {
+      const container = document.getElementById("orderItems");
+      if (!container) return;
+
+      if (!Array.isArray(items) || items.length === 0) {
+        container.innerHTML = `<article class="item-card"><div class="item-meta">No order items found.</div></article>`;
+        return;
+      }
+
+      container.innerHTML = items.map((item) => `
+        <article class="item-card">
+          <h4>${escapeHtml(item.product_name || "Product")}</h4>
+          <div class="item-meta">${escapeHtml(formatItemSummary(item))}</div>
+        </article>
+      `).join("");
+    }
+
+    function renderResult(payload) {
+      const resultPanel = document.getElementById("trackResult");
+      const order = payload?.order || {};
+      const paymentStatus = order.payment_status || order.paymentStatus || "Awaiting update";
+      const deliveryStatus = order.delivery_status || order.deliveryStatus || order.order_status || order.orderStatus || "Awaiting update";
+      const customerName = order.customer_name || order.customerName || "-";
+      const phone = order.phone || "-";
+      const orderId = order.id || "-";
+      const createdAt = order.created_at || order.createdAt || "";
+      const totalAmount = order.total_amount ?? order.totalAmount ?? 0;
+      const address = order.address || "-";
+
+      document.getElementById("paymentStatusValue").textContent = paymentStatus;
+      document.getElementById("orderStatusValue").textContent = deliveryStatus;
+      document.getElementById("detailCustomerName").textContent = customerName;
+      document.getElementById("detailPhone").textContent = phone;
+      document.getElementById("detailOrderId").textContent = orderId;
+      document.getElementById("detailCreatedAt").textContent = `${formatDate(createdAt)} (Malaysia Time)`;
+      document.getElementById("detailTotalAmount").textContent = formatMoney(totalAmount);
+      document.getElementById("detailAddress").textContent = address;
+
+      const trackingNotesCard = document.getElementById("trackingNotesCard");
+      const trackingNotesValue = document.getElementById("trackingNotesValue");
+      const trackingNotes = order.tracking_notes || order.trackingNotes || "";
+      if (trackingNotesCard && trackingNotesValue) {
+        if (trackingNotes) {
+          trackingNotesValue.textContent = trackingNotes;
+          trackingNotesCard.style.display = "block";
+        } else {
+          trackingNotesValue.textContent = "";
+          trackingNotesCard.style.display = "none";
+        }
+      }
+
+      renderTimeline(String(deliveryStatus).toLowerCase());
+      renderItems(payload.items || order.items);
+
+      resultPanel.classList.add("is-visible");
+      resultPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    async function lookupOrder(orderId, phone) {
+      const response = await fetch(`/api/track-order?orderId=${encodeURIComponent(orderId)}&phone=${encodeURIComponent(phone)}`);
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error || "Failed to track order");
+      }
+
+      return payload;
+    }
+
+    document.getElementById("trackOrderForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      clearMessage();
+
+      const orderId = document.getElementById("trackOrderId").value.trim();
+      const phone = document.getElementById("trackPhone").value.trim();
+
+      if (!orderId || !phone) {
+        setMessage("Please enter both your order ID and phone number.", "error");
+        return;
+      }
+
+      try {
+        setMessage("Checking your latest order status...", "info");
+        const payload = await lookupOrder(orderId, phone);
+        clearMessage();
+        renderResult(payload);
+      } catch (error) {
+        document.getElementById("trackResult").classList.remove("is-visible");
+        setMessage(error.message || "Failed to track order.", "error");
+      }
+    });
+
+    (function preloadFromQuery() {
+      const params = new URLSearchParams(window.location.search);
+      const orderId = params.get("orderId") || "";
+      const phone = params.get("phone") || "";
+
+      if (orderId) {
+        document.getElementById("trackOrderId").value = orderId;
+      }
+
+      if (phone) {
+        document.getElementById("trackPhone").value = phone;
+      }
+
+      if (orderId && phone) {
+        document.getElementById("trackOrderForm").requestSubmit();
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Checkout | ThemeGood</title>
+  <link rel="icon" type="image/png" href="/tgi.png">
+  <link rel="apple-touch-icon" href="/tgi.png">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="overrides.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -25,7 +27,7 @@
       <li><a href="index.html#home">Home</a></li>
       <li><a href="shopping.html">Products</a></li>
       <li><a href="gallery.html">Gallery</a></li>
-      <li><a href="index.html#about">About</a></li>
+      <li><a href="track-order.html">Track Order</a></li>
       <li><a href="index.html#testimonials">Testimonials</a></li>
       <li><a href="index.html#faq">FAQ</a></li>
       <li><a href="index.html#contact">Contact Us</a></li>
@@ -41,7 +43,6 @@
   </div>
 
   <div class="header-actions">
-    <button id="wishlist-toggle">&hearts; Wishlist <span id="wishlist-count">0</span></button>
     <button id="cart-toggle">&#128722; Cart <span id="cart-count">0</span></button>
   </div>
 </header>
@@ -125,7 +126,7 @@
       <a href="index.html#home">Home</a>
       <a href="shopping.html">Products</a>
       <a href="gallery.html">Gallery</a>
-      <a href="index.html#about">About</a>
+      <a href="track-order.html">Track Order</a>
       <a href="index.html#testimonials">Testimonials</a>
       <a href="index.html#faq">FAQ</a>
       <a href="index.html#contact">Contact Us</a>
@@ -149,10 +150,10 @@
   <p class="footer-bottom">&copy; 2026 ThemeGood. All Rights Reserved.</p>
 </footer>
 
-<script src="script.js"></script>
+<script src="script.js?v=4"></script>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const checkoutList = document.getElementById("checkout-items");
   const checkoutTotal = document.getElementById("checkout-total");
   const checkoutDiscount = document.getElementById("checkout-discount");
@@ -162,10 +163,172 @@ document.addEventListener("DOMContentLoaded", () => {
   const result = document.getElementById("result");
 
   const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
-  const cartPromo = JSON.parse(localStorage.getItem("cart_promo")) || { code: "", percent: 0 };
+  let cartPromo = JSON.parse(localStorage.getItem("cart_promo")) || { code: "", percent: 0 };
+  const t = (key, vars = {}, fallback = key) =>
+    typeof window.__themegoodT === "function" ? window.__themegoodT(key, vars) : fallback;
 
   function formatMoney(value) {
     return `RM ${Number(value || 0).toFixed(2)}`;
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function formatBundleSelectionSummary(bundleSelections = [], bundleBreakdown = []) {
+    if (!Array.isArray(bundleSelections) || bundleSelections.length === 0) return "";
+
+    if (Array.isArray(bundleBreakdown) && bundleBreakdown.length > 0) {
+      return bundleBreakdown
+        .map((row) => {
+          const extraText = Number(row.extra || 0) > 0 ? ` (+RM ${Number(row.extra).toFixed(2)})` : "";
+          return `${row.label}${row.size ? ` (${row.size})` : ""}${extraText}`;
+        })
+        .join(" • ");
+    }
+
+    return bundleSelections
+      .map((row) => `Selection #${row.slot_id}: Variant #${row.variant_id}`)
+      .join(" • ");
+  }
+
+  async function loadPromoConfig() {
+    try {
+      const response = await fetch("/api/promo-settings");
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error || t("failed_to_load_promo", {}, "Failed to load promo settings."));
+      }
+
+      return {
+        active: Boolean(payload.active),
+        code: String(payload.code || "").trim().toUpperCase(),
+        percent: Number(payload.percent || 0)
+      };
+    } catch (error) {
+      console.error(error);
+      return { active: false, code: "", percent: 0 };
+    }
+  }
+
+  function formatCheckoutBundleSelectionSummary(bundleSelections = [], bundleBreakdown = []) {
+    if (!Array.isArray(bundleSelections) || bundleSelections.length === 0) return "";
+
+    if (Array.isArray(bundleBreakdown) && bundleBreakdown.length > 0) {
+      return bundleBreakdown
+        .map((row) => {
+          const extraText = Number(row.extra || 0) > 0 ? ` (+RM ${Number(row.extra).toFixed(2)})` : "";
+          return `${row.label}${row.size ? ` (${row.size})` : ""}${extraText}`;
+        })
+        .join(" • ");
+    }
+
+    return bundleSelections
+      .map((row) => t("selection_fallback", { slotId: row.slot_id, variantId: row.variant_id }, `Selection #${row.slot_id}: Variant #${row.variant_id}`))
+      .join(" • ");
+  }
+
+  function renderCheckoutCopy() {
+    document.querySelector(".checkout-hero .section-title").textContent = t("secure_checkout", {}, "Secure Checkout");
+    document.querySelector(".checkout-hero p").textContent = t("review_order_payment", {}, "Review your order and complete payment.");
+    const trustSpans = document.querySelectorAll(".checkout-trust span");
+    if (trustSpans[0]) trustSpans[0].textContent = t("secure_order", {}, "Secure Order");
+    if (trustSpans[1]) trustSpans[1].textContent = t("fast_review", {}, "Fast Review");
+    if (trustSpans[2]) trustSpans[2].textContent = t("instant_confirmation", {}, "Instant Confirmation");
+    document.querySelector(".checkout-summary h2").textContent = t("order_summary", {}, "Order Summary");
+
+    const totalRows = document.querySelectorAll(".checkout-total-row span");
+    if (totalRows[0]) totalRows[0].textContent = t("subtotal", {}, "Subtotal");
+    if (totalRows[1]) totalRows[1].textContent = t("discount", {}, "Discount");
+    if (totalRows[2]) totalRows[2].textContent = t("total", {}, "Total");
+
+    document.querySelector(".checkout-link").textContent = t("continue_shopping", {}, "Continue Shopping");
+    document.querySelector(".checkout-payment h2").textContent = t("checkout_details", {}, "Checkout Details");
+    document.querySelector("label[for='customer_name']").textContent = t("full_name", {}, "Full Name");
+    document.querySelector("label[for='phone']").textContent = t("phone", {}, "Phone Number");
+    document.querySelector("label[for='address']").textContent = t("address", {}, "Address");
+    document.querySelector("label[for='total_amount']").textContent = t("total", {}, "Total Amount");
+    document.getElementById("customer_name")?.setAttribute("placeholder", t("full_name", {}, "Full Name"));
+    document.getElementById("phone")?.setAttribute("placeholder", t("phone", {}, "Phone Number"));
+    document.getElementById("address")?.setAttribute("placeholder", t("address", {}, "Address"));
+
+    const submitButton = checkoutForm?.querySelector("button[type='submit']");
+    if (submitButton) submitButton.textContent = t("place_order", {}, "Place Order");
+  }
+
+  function isBundleCartItem(item) {
+    const packageId = String(item?.packageId || "").trim().toLowerCase();
+    const packageLabel = String(item?.packageLabel || "").trim().toLowerCase();
+    return packageId === "bundle" || packageLabel.includes("bundle");
+  }
+
+  function hasIncompleteBundleCartItems(items = []) {
+    return (Array.isArray(items) ? items : []).some((item) => {
+      if (!isBundleCartItem(item)) return false;
+      const selections = Array.isArray(item?.bundleSelections) ? item.bundleSelections : [];
+      const breakdown = Array.isArray(item?.bundleBreakdown) ? item.bundleBreakdown : [];
+      return selections.length === 0 || breakdown.length === 0 || selections.length !== breakdown.length;
+    });
+  }
+
+  function renderCheckoutItems() {
+    let subtotal = 0;
+    checkoutList.innerHTML = "";
+
+    if (cartItems.length === 0) {
+      checkoutList.innerHTML = `<li class="empty">${escapeHtml(t("empty_cart", {}, "Your cart is empty."))}</li>`;
+    } else {
+      checkoutList.innerHTML = cartItems.map((item) => {
+        const quantity = Number(item.quantity || 1);
+        const price = Number(item.price || 0);
+        const lineTotal = quantity * price;
+        subtotal += lineTotal;
+
+        const bundleSummary = item.packageId === "bundle"
+          ? formatCheckoutBundleSelectionSummary(item.bundleSelections, item.bundleBreakdown)
+          : "";
+
+        const metaParts = [];
+        if (item.sizeLabel) metaParts.push(item.sizeLabel);
+        if (item.packageLabel && item.packageLabel !== "bundle") metaParts.push(item.packageLabel);
+        if (bundleSummary) metaParts.push(bundleSummary);
+
+        return `
+          <li class="checkout-item">
+            <div class="checkout-item-main">
+              <strong>${escapeHtml(item.name || "")}</strong>
+              ${metaParts.length ? `<div class="checkout-item-meta">${escapeHtml(metaParts.join(" • "))}</div>` : ""}
+            </div>
+            <div class="checkout-item-side">
+              ${quantity} × ${formatMoney(price)}
+            </div>
+          </li>
+        `;
+      }).join("");
+    }
+
+    const discountValue = subtotal * (Number(cartPromo.percent || 0) / 100);
+    const grandTotal = Math.max(0, subtotal - discountValue);
+
+    checkoutTotal.textContent = formatMoney(subtotal);
+    checkoutDiscount.textContent = `-${formatMoney(discountValue)}`;
+    checkoutGrandTotal.textContent = formatMoney(grandTotal);
+    totalAmountInput.value = grandTotal.toFixed(2);
+  }
+
+  const promoConfig = await loadPromoConfig();
+  if (!promoConfig.active || cartPromo.code !== promoConfig.code) {
+    cartPromo = { code: "", percent: 0 };
+    localStorage.removeItem("cart_promo");
+  } else {
+    cartPromo.percent = promoConfig.percent;
+    localStorage.setItem("cart_promo", JSON.stringify(cartPromo));
   }
 
   let subtotal = 0;
@@ -174,22 +337,33 @@ document.addEventListener("DOMContentLoaded", () => {
   if (cartItems.length === 0) {
     checkoutList.innerHTML = `<li class="empty">Your cart is empty.</li>`;
   } else {
-    cartItems.forEach(item => {
+    checkoutList.innerHTML = cartItems.map((item) => {
       const quantity = Number(item.quantity || 1);
       const price = Number(item.price || 0);
       const lineTotal = quantity * price;
       subtotal += lineTotal;
 
-      const metaParts = [item.sizeLabel, item.packageLabel].filter(Boolean);
-      const packageSuffix = metaParts.length ? ` (${metaParts.join(", ")})` : "";
+      const bundleSummary = item.packageId === "bundle"
+        ? formatBundleSelectionSummary(item.bundleSelections, item.bundleBreakdown)
+        : "";
 
-      const li = document.createElement("li");
-      li.innerHTML = `
-        <span>${item.name}${packageSuffix} x ${quantity}</span>
-        <strong>${formatMoney(lineTotal)}</strong>
+      const metaParts = [];
+      if (item.sizeLabel) metaParts.push(item.sizeLabel);
+      if (item.packageLabel && item.packageLabel !== "bundle") metaParts.push(item.packageLabel);
+      if (bundleSummary) metaParts.push(bundleSummary);
+
+      return `
+        <li class="checkout-item">
+          <div class="checkout-item-main">
+            <strong>${escapeHtml(item.name || "")}</strong>
+            ${metaParts.length ? `<div class="checkout-item-meta">${escapeHtml(metaParts.join(" • "))}</div>` : ""}
+          </div>
+          <div class="checkout-item-side">
+            ${quantity} × ${formatMoney(price)}
+          </div>
+        </li>
       `;
-      checkoutList.appendChild(li);
-    });
+    }).join("");
   }
 
   const discountValue = subtotal * (Number(cartPromo.percent || 0) / 100);
@@ -199,12 +373,23 @@ document.addEventListener("DOMContentLoaded", () => {
   checkoutDiscount.textContent = `-${formatMoney(discountValue)}`;
   checkoutGrandTotal.textContent = formatMoney(grandTotal);
   totalAmountInput.value = grandTotal.toFixed(2);
+  renderCheckoutCopy();
+  renderCheckoutItems();
+  document.addEventListener("themegood:langchange", () => {
+    renderCheckoutCopy();
+    renderCheckoutItems();
+  });
 
   checkoutForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     if (cartItems.length === 0) {
-      alert("Your cart is empty.");
+      alert(t("empty_cart_before_checkout", {}, "Your cart is empty."));
+      return;
+    }
+
+    if (hasIncompleteBundleCartItems(cartItems)) {
+      alert(t("bundle_complete_all", {}, "Please complete all bundle selections."));
       return;
     }
 
@@ -213,7 +398,17 @@ document.addEventListener("DOMContentLoaded", () => {
       phone: document.getElementById("phone").value.trim(),
       address: document.getElementById("address").value.trim(),
       total_amount: Number(totalAmountInput.value),
-      items: cartItems
+      items: cartItems.map((item) => ({
+        productId: Number(item.id || 0) || null,
+        name: item.name,
+        quantity: Number(item.quantity || 1),
+        price: Number(item.price || 0),
+        sizeLabel: item.sizeLabel || null,
+        packageLabel: item.packageLabel || null,
+        bundleSelections: Array.isArray(item.bundleSelections) ? item.bundleSelections : [],
+        bundleBreakdown: Array.isArray(item.bundleBreakdown) ? item.bundleBreakdown : [],
+        bundlePromoCode: item.bundlePromoCode || ""
+      }))
     };
 
     try {
@@ -228,18 +423,18 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to place order");
+        throw new Error(data.error || t("failed_to_place_order", {}, "Failed to place order."));
       }
 
       localStorage.removeItem("cart");
       localStorage.removeItem("cart_promo");
 
       window.location.href =
-        `order-success.html?orderId=${data.orderId}&total=${payload.total_amount}`;
+        `order-success.html?orderId=${encodeURIComponent(data.orderId)}&total=${encodeURIComponent(payload.total_amount)}&phone=${encodeURIComponent(payload.phone)}`;
 
     } catch (error) {
       console.error(error);
-      result.textContent = error.message || "Failed to place order.";
+      result.textContent = error.message || t("failed_to_place_order", {}, "Failed to place order.");
     }
   });
 });

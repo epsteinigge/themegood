@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ThemeGood Admin - Orders</title>
+<link rel="icon" type="image/png" href="/tgi.png">
+<link rel="apple-touch-icon" href="/tgi.png">
 
 <script>
 if (!localStorage.getItem("adminToken")) {
@@ -14,6 +16,7 @@ if (!localStorage.getItem("adminToken")) {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="admin-mobile.css">
 
 <style>
 :root{
@@ -321,6 +324,38 @@ body{
   margin-bottom:18px;
 }
 
+.timeline-panel{
+  display:grid;
+  gap:12px;
+  margin-bottom:18px;
+  padding:16px;
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:linear-gradient(180deg, #fff, #fbfcfe);
+}
+
+.timeline-row{
+  display:grid;
+  grid-template-columns:1.1fr 1fr 1fr 1fr auto;
+  gap:12px;
+  align-items:end;
+}
+
+.filter-field{
+  display:grid;
+  gap:7px;
+}
+
+.filter-field label{
+  font-size:12px;
+  font-weight:800;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+
+.timeline-row input,
+.timeline-row select,
 .filter-row input,
 .filter-row select{
   width:100%;
@@ -333,10 +368,25 @@ body{
   outline:none;
 }
 
+.timeline-row input:focus,
+.timeline-row select:focus,
 .filter-row input:focus,
 .filter-row select:focus{
   border-color:#d5a0aa;
   box-shadow:0 0 0 4px rgba(179,32,56,0.08);
+}
+
+.timeline-summary{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.timeline-note{
+  color:var(--muted);
+  font-size:14px;
 }
 
 .table-wrap{
@@ -446,11 +496,11 @@ tr:hover td{
 }
 
 .badge-paid{background:var(--success);}
-.badge-unpaid{background:var(--warning);}
+.badge-pending{background:var(--warning);}
 .badge-failed{background:var(--danger);}
+.badge-refunded{background:#6b7280;}
 .badge-new{background:var(--info);}
-.badge-confirmed{background:#5b52d6;}
-.badge-packed{background:#7f56d9;}
+.badge-processing{background:#5b52d6;}
 .badge-shipped{background:#8f3ee8;}
 .badge-completed{background:var(--success);}
 .badge-cancelled{background:var(--danger);}
@@ -544,6 +594,54 @@ tr:hover td{
   border-bottom:none;
 }
 
+.detail-note-box{
+  margin-top:16px;
+  background:#fbfcfe;
+  border:1px solid #edf1f6;
+  border-radius:18px;
+  padding:16px;
+}
+
+.detail-note-box h3{
+  margin:0 0 10px;
+  color:var(--muted);
+  font-size:13px;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+
+.detail-note-box textarea{
+  width:100%;
+  min-height:110px;
+  padding:12px 13px;
+  border:1px solid var(--line-strong);
+  border-radius:12px;
+  background:#fff;
+  font-size:14px;
+  font-family:inherit;
+  resize:vertical;
+  outline:none;
+}
+
+.detail-note-box textarea:focus{
+  border-color:#d5a0aa;
+  box-shadow:0 0 0 4px rgba(179,32,56,0.08);
+}
+
+.detail-note-actions{
+  margin-top:12px;
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.detail-note-help{
+  color:var(--muted);
+  font-size:13px;
+}
+
 .detail-total{
   margin-top:16px;
   font-family:"Montserrat", sans-serif;
@@ -586,6 +684,10 @@ tr:hover td{
   .filter-row{
     grid-template-columns:1fr 1fr;
   }
+
+  .timeline-row{
+    grid-template-columns:1fr 1fr;
+  }
 }
 
 @media (max-width:900px){
@@ -616,6 +718,10 @@ tr:hover td{
     grid-template-columns:1fr;
   }
 
+  .timeline-row{
+    grid-template-columns:1fr;
+  }
+
   .top-shell,
   .card{
     padding:16px;
@@ -640,7 +746,10 @@ tr:hover td{
     <nav>
       <a href="admin-orders.html" class="active"><span class="nav-icon">🧾</span> Orders</a>
       <a href="admin-products.html"><span class="nav-icon">📦</span> Products</a>
-      <button onclick="logoutAdmin()"><span class="nav-icon">↩</span> Logout</button>
+      <a href="admin-gallery.html"><span class="nav-icon">🖼</span> Gallery</a>
+      <a href="admin-homepage.html"><span class="nav-icon">🏠</span> Homepage</a>
+      <a href="admin-content.html"><span class="nav-icon">📝</span> Site Content</a>
+      <button id="logoutBtn" type="button"><span class="nav-icon">↩</span> Logout</button>
     </nav>
 
     <div class="sidebar-footer">
@@ -657,9 +766,9 @@ tr:hover td{
         </div>
 
         <div class="top-actions">
-          <button class="secondary-btn" type="button" onclick="loadOrders()">Refresh</button>
-          <button class="secondary-btn" type="button" onclick="exportOrders()">Export CSV</button>
-          <button class="logout-btn" type="button" onclick="logoutAdmin()">Logout</button>
+          <button id="refreshOrdersBtn" class="secondary-btn" type="button">Refresh</button>
+          <button id="exportOrdersBtn" class="secondary-btn" type="button">Export CSV</button>
+          <button id="logoutBtnTop" class="logout-btn" type="button">Logout</button>
         </div>
       </div>
 
@@ -671,7 +780,7 @@ tr:hover td{
         </article>
 
         <article class="stat-card">
-          <h3>Unpaid</h3>
+          <h3>Pending</h3>
           <p id="stat-unpaid-orders">0</p>
           <div class="stat-note">Pending payment follow-up</div>
         </article>
@@ -697,25 +806,64 @@ tr:hover td{
           </div>
         </div>
 
+        <div class="timeline-panel">
+          <div class="timeline-row">
+            <div class="filter-field">
+              <label for="timelinePreset">Timeline</label>
+              <select id="timelinePreset">
+                <option value="all">All Time</option>
+                <option value="this_month">This Month</option>
+                <option value="last_month">Last Month</option>
+                <option value="last_7_days">Last 7 Days</option>
+                <option value="last_30_days">Last 30 Days</option>
+                <option value="this_year">This Year</option>
+                <option value="month">Choose Month</option>
+                <option value="custom">Custom Range</option>
+              </select>
+            </div>
+
+            <div class="filter-field">
+              <label for="monthFilter">Month</label>
+              <input id="monthFilter" type="month">
+            </div>
+
+            <div class="filter-field">
+              <label for="dateFromFilter">From</label>
+              <input id="dateFromFilter" type="date">
+            </div>
+
+            <div class="filter-field">
+              <label for="dateToFilter">To</label>
+              <input id="dateToFilter" type="date">
+            </div>
+
+            <button id="resetTimelineBtn" class="secondary-btn" type="button">Reset Timeline</button>
+          </div>
+
+          <div class="timeline-summary">
+            <p id="timelineSummary" class="timeline-note">Showing all-time order data.</p>
+          </div>
+        </div>
+
         <div class="filter-row">
           <input id="searchInput" type="text" placeholder="Search by order ID, customer, phone, or address">
           <select id="paymentFilter">
             <option value="">All Payment Statuses</option>
-            <option value="unpaid">Unpaid</option>
+            <option value="pending">Pending</option>
             <option value="paid">Paid</option>
             <option value="failed">Failed</option>
+            <option value="refunded">Refunded</option>
           </select>
           <select id="statusFilter">
             <option value="">All Order Statuses</option>
             <option value="new">New</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="packed">Packed</option>
+            <option value="processing">Processing</option>
             <option value="shipped">Shipped</option>
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
           </select>
-          <button class="secondary-btn" type="button" onclick="clearFilters()">Clear</button>
-          <button class="primary-btn" type="button" onclick="applyFilters()">Apply</button>
+          <button id="clearFiltersBtn" class="secondary-btn" type="button">Clear</button>
+          <button id="applyFiltersBtn" class="primary-btn" type="button">Apply</button>
         </div>
 
         <div class="table-wrap">
@@ -748,9 +896,9 @@ tr:hover td{
 </div>
 
 <div id="orderModal" class="modal">
-  <div class="modal-overlay" onclick="closeOrderModal()"></div>
+  <div id="orderModalOverlay" class="modal-overlay"></div>
   <div class="modal-content">
-    <button class="modal-close" type="button" onclick="closeOrderModal()">&times;</button>
+    <button id="orderModalCloseBtn" class="modal-close" type="button">&times;</button>
     <div id="orderModalBody"></div>
   </div>
 </div>

@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ThemeGood</title>
+<link rel="icon" type="image/png" href="/tgi.png">
+<link rel="apple-touch-icon" href="/tgi.png">
 
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="overrides.css">
@@ -28,7 +30,7 @@
 <li><a href="#home" data-i18n="home">Home</a></li>
 <li><a href="shopping.html" data-i18n="shopping">Shopping</a></li>
 <li><a href="gallery.html" data-i18n="gallery">Gallery</a></li>
-<li><a href="#about" data-i18n="about">About</a></li>
+<li><a href="track-order.html" data-i18n="track_order">Track Order</a></li>
 <li><a href="#testimonials" data-i18n="testimonials">Testimonials</a></li>
 <li><a href="#faq" data-i18n="faq">FAQ</a></li>
 <li><a href="#contact" data-i18n="contact_us">Contact Us</a></li>
@@ -47,7 +49,6 @@
 </div>
 
 <div class="header-actions">
-<button id="wishlist-toggle">&hearts; Wishlist <span id="wishlist-count">0</span></button>
 <button id="cart-toggle">&#128722; Cart <span id="cart-count">0</span></button>
 <label class="lang-switch" aria-label="Language">
 <span data-i18n="language">Language</span>
@@ -69,7 +70,7 @@
 <img src="photos/tg18.jpg" alt="ThemeGood wellness product slide 1">
 <div class="slide-cta">
 <a href="#products" class="btn btn-primary">Buy Now</a>
-<a href="#about" class="btn btn-secondary">Learn More</a>
+<a href="#testimonials" class="btn btn-secondary">Learn More</a>
 </div>
 </div>
 
@@ -77,7 +78,7 @@
 <img src="photos/tg12.jpg" alt="ThemeGood wellness product slide 2">
 <div class="slide-cta">
 <a href="#products" class="btn btn-primary">Buy Now</a>
-<a href="#about" class="btn btn-secondary">Learn More</a>
+<a href="#testimonials" class="btn btn-secondary">Learn More</a>
 </div>
 </div>
 
@@ -85,7 +86,7 @@
 <img src="photos/tg24.jpg" alt="ThemeGood wellness product slide 3">
 <div class="slide-cta">
 <a href="#products" class="btn btn-primary">Buy Now</a>
-<a href="#about" class="btn btn-secondary">Learn More</a>
+<a href="#testimonials" class="btn btn-secondary">Learn More</a>
 </div>
 </div>
 
@@ -93,7 +94,7 @@
 <img src="photos/tg23.jpg" alt="ThemeGood wellness product slide 4">
 <div class="slide-cta">
 <a href="#products" class="btn btn-primary">Buy Now</a>
-<a href="#about" class="btn btn-secondary">Learn More</a>
+<a href="#testimonials" class="btn btn-secondary">Learn More</a>
 </div>
 </div>
 
@@ -101,7 +102,7 @@
 <img src="photos/tg21.jpg" alt="ThemeGood wellness product slide 5">
 <div class="slide-cta">
 <a href="#products" class="btn btn-primary">Buy Now</a>
-<a href="#about" class="btn btn-secondary">Learn More</a>
+<a href="#testimonials" class="btn btn-secondary">Learn More</a>
 </div>
 </div>
 
@@ -121,130 +122,9 @@
 <section id="products" class="section">
 <h2 class="section-title">Featured Products</h2>
 
-<div class="products-grid">
-<div class="product-card"
-data-id="1"
-data-name="Pomegranate Multigrain"
-data-price="55"
-data-description="Provides female hormones to reduce menopausal discomfort and prevents prostate cancer."
-data-image="photos/Pomegranate 300g.png"
-data-hover-image="photos/Pomegranate 600g.png"
-data-gallery="photos/Pomegranate 300g.png, photos/Pomegranate 600g.png, photos/Pomegranate 800g (1).png">
-<img src="photos/Pomegranate 300g.png" alt="Pomegranate product">
-<h4>Pomegranate Multigrain</h4>
-<p>Provides female hormones to reduce menopausal discomfort and prevents prostate cancer.</p>
-<button class="add-to-cart">Add to Cart</button>
-<button class="add-to-wishlist">&hearts; Wishlist</button>
+<div id="products">
+  <div id="productList"></div>
 </div>
-
-<div class="product-card"
-data-id="2"
-data-name="Bilberry Multigrain"
-data-price="55"
-data-description="Helps with sleep and fatigue support & dry eye syndrome."
-data-image="photos/Bilberry 300g.png"
-data-hover-image="photos/Bilberry 600g.png"
-data-gallery="photos/Bilberry 300g.png, photos/Bilberry 600g.png, photos/Bilberry 800g.png">
-<img src="photos/Bilberry 300g.png" alt="Bilberry product">
-<h4>Bilberry Multigrain</h4>
-<p>Helps with sleep and fatigue support & dry eye syndrome.</p>
-<button class="add-to-cart">Add to Cart</button>
-<button class="add-to-wishlist">&hearts; Wishlist</button>
-</div>
-
-<div class="product-card"
-data-id="3"
-data-name="Melon Avocado Multigrain"
-data-price="55"
-data-description="Maintain optimal skin hydration and helps with arthritis."
-data-image="photos/Melon Avocado 300g.png"
-data-hover-image="photos/Melon Avocado 600g.png"
-data-gallery="photos/Melon Avocado 300g.png, photos/Melon Avocado 600g.png, photos/Melon Avocado 800g.png">
-<img src="photos/Melon Avocado 300g.png" alt="Melon Avocado product">
-<h4>Melon Avocado Multigrain</h4>
-<p>Maintain optimal skin hydration and helps with arthritis.</p>
-<button class="add-to-cart">Add to Cart</button>
-<button class="add-to-wishlist">&hearts; Wishlist</button>
-</div>
-
-<div class="product-card"
-data-id="4"
-data-name="Passion Fruit Multigrain"
-data-price="55"
-data-description="Soothes the nervous system and helps with detoxification to help with skin beautifying."
-data-image="photos/Passion Fruit 300g.png"
-data-hover-image="photos/Passion Fruit 600g.png"
-data-gallery="photos/Passion Fruit 300g.png, photos/Passion Fruit 600g.png, photos/Passion Fruit 800g.png">
-<img src="photos/Passion Fruit 300g.png" alt="Passion Fruit Multigrain product">
-<h4>Passion Fruit Multigrain</h4>
-<p>Soothes the nervous system and helps with detoxification to help with skin beautifying.</p>
-<button class="add-to-cart">Add to Cart</button>
-<button class="add-to-wishlist">&hearts; Wishlist</button>
-</div>
-
-<div class="product-card"
-data-id="5"
-data-name="Oat Beta Glucan Multigrain"
-data-price="55"
-data-description="Helps with reducing cholesterol and controls blood sugar levels."
-data-image="photos/Oat Beta 300g.png"
-data-hover-image="photos/Oat Beta 600g.png"
-data-gallery="photos/Oat Beta 300g.png, photos/Oat Beta 600g.png, photos/Oat Beta 800g (1).png">
-<img src="photos/Oat Beta 300g.png" alt="Oat Beta Glucan Multigrain product">
-<h4>Oat Beta Glucan Multigrain</h4>
-<p>Helps with reducing cholesterol and controls blood sugar levels.</p>
-<button class="add-to-cart">Add to Cart</button>
-<button class="add-to-wishlist">&hearts; Wishlist</button>
-</div>
-
-<div class="product-card"
-data-id="6"
-data-name="Cocoa Multigrain"
-data-price="72"
-data-description="Strengthens respiratory system and immune system."
-data-image="photos/Cocoa 300g.png"
-data-hover-image="photos/Cocoa800g.png"
-data-gallery="photos/Cocoa 300g.png, photos/Cocoa800g.png, photos/Cocoa800g.png">
-<img src="photos/Cocoa 300g.png" alt="Cocoa Multigrain product">
-<h4>Cocoa Multigrain</h4>
-<p>Strengthens respiratory system and immune system.</p>
-<button class="add-to-cart">Add to Cart</button>
-<button class="add-to-wishlist">&hearts; Wishlist</button>
-</div>
-</div>
-</section>
-
-<!-- ABOUT -->
-<section id="about" class="section">
-<h2>About ThemeGood</h2>
-<p class="about-lead">
-Quality and natural wellness nutrition for modern lifestyles.
-</p>
-
-<div class="about-pillars">
-<article class="about-pillar">
-<h3>Who We Are</h3>
-<p>ThemeGood develops nutrient-rich wellness drinks using carefully selected natural ingredients and balanced formulas.</p>
-</article>
-
-<article class="about-pillar">
-<h3>Perfect Recipe</h3>
-<p>Our blends are focused on fibre, vitamins, minerals, and everyday digestive support with practical nutrition science.</p>
-</article>
-
-<article class="about-pillar">
-<h3>Suitability</h3>
-<p>Designed for adults, seniors, and families looking for a convenient daily wellness option with a gentle nutrition profile.</p>
-</article>
-</div>
-
-<div class="about-stats">
-<div class="about-stat"><strong>12+</strong><span>Years Foundation</span></div>
-<div class="about-stat"><strong>250+</strong><span>Distributors & Retailers</span></div>
-<div class="about-stat"><strong>100+</strong><span>Reports & Certifications</span></div>
-<div class="about-stat"><strong>7000+</strong><span>Monthly Orders</span></div>
-</div>
-</section>
 
 <section id="testimonials" class="section testimonials-section">
 <h2 class="section-title">What Our Customers Say</h2>
@@ -313,7 +193,7 @@ Quality and natural wellness nutrition for modern lifestyles.
 
 <div class="contact-container">
 <div class="contact-info">
-<p><strong>Email:</strong> <a href="mailto:info@themegood.com.my">info@themegood.com.my</a></p>
+<p><strong>Email:</strong> <a href="mailto:themegood6000@email.com">themegood6000@email.com</a></p>
 <p><strong>Phone:</strong> <a href="tel:+6052431668">05-2431668</a></p>
 <p><strong>Location:</strong> <a href="https://www.google.com/maps/search/?api=1&query=14%2C+Jalan+Tokong%2C+Taman+Hoover%2C+Ipoh%2C+Perak%2C+Malaysia" target="_blank" rel="noopener noreferrer">14, Jalan Tokong, Taman Hoover, Ipoh, Perak, Malaysia.</a></p>
 </div>
@@ -378,7 +258,7 @@ required
 <a href="#home" data-i18n="home">Home</a>
 <a href="#products" data-i18n="products">Products</a>
 <a href="gallery.html" data-i18n="gallery">Gallery</a>
-<a href="#about" data-i18n="about">About</a>
+<a href="track-order.html" data-i18n="track_order">Track Order</a>
 <a href="#testimonials" data-i18n="testimonials">Testimonials</a>
 <a href="#faq" data-i18n="faq">FAQ</a>
 <a href="#contact" data-i18n="contact_us">Contact Us</a>
@@ -410,6 +290,9 @@ required
 <p class="footer-bottom">&copy; 2026 ThemeGood. All Rights Reserved.</p>
 </footer>
 
-<script src="script.js"></script>
+<script src="shop-products.js"></script>
+<script src="homepage-content.js"></script>
+<script src="site-content.js"></script>
+<script src="script.js?v=4"></script>
 </body>
 </html>

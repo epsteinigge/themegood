@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ThemeGood Order Success</title>
+  <link rel="icon" type="image/png" href="/tgi.png">
+  <link rel="apple-touch-icon" href="/tgi.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap">
@@ -185,6 +187,37 @@
       border: 1px solid var(--line);
       background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 247, 249, 0.95));
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .status-chip {
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: #fff;
+      border: 1px solid var(--line);
+    }
+
+    .status-chip span {
+      display: block;
+      font-size: 0.74rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .status-chip strong {
+      display: block;
+      font-family: "Montserrat", sans-serif;
+      color: var(--brand-deep);
+      font-size: 0.96rem;
+      text-transform: capitalize;
     }
 
     .order-card h3,
@@ -396,6 +429,10 @@
       .payment-grid {
         grid-template-columns: 1fr;
       }
+
+      .status-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -449,6 +486,10 @@
             <strong id="orderIdValue">-</strong>
           </div>
           <div class="order-row">
+            <span>Order time</span>
+            <strong id="orderTimeValue">Loading...</strong>
+          </div>
+          <div class="order-row">
             <span>Total amount</span>
             <strong id="orderTotalValue">RM 0.00</strong>
           </div>
@@ -467,15 +508,15 @@
             <div class="bank-detail-list">
               <div class="bank-detail-row">
                 <span>Bank name</span>
-                <strong id="bankNameValue">Your Bank Name</strong>
+                <strong id="bankNameValue">Public Bank</strong>
               </div>
               <div class="bank-detail-row">
                 <span>Account name</span>
-                <strong id="accountNameValue">ThemeGood Wellness Nutrition</strong>
+                <strong id="accountNameValue">Theme Good Marketing</strong>
               </div>
               <div class="bank-detail-row">
                 <span>Account number</span>
-                <strong id="accountNumberValue">0000 0000 0000</strong>
+                <strong id="accountNumberValue">3212847711</strong>
               </div>
             </div>
           </div>
@@ -496,10 +537,21 @@
           <li>Send your receipt through WhatsApp.</li>
           <li>Wait for payment confirmation and order status updates.</li>
         </ol>
+        <div class="status-grid">
+          <div class="status-chip">
+            <span>Payment Status</span>
+            <strong id="livePaymentStatus">Awaiting update</strong>
+          </div>
+          <div class="status-chip">
+            <span>Delivery Status</span>
+            <strong id="liveOrderStatus">Awaiting update</strong>
+          </div>
+        </div>
       </article>
 
       <div class="actions">
         <a class="btn btn-primary" href="https://wa.me/60187786000" target="_blank" rel="noopener noreferrer">Send Receipt on WhatsApp</a>
+        <a class="btn btn-secondary" id="trackOrderBtn" href="track-order.html">Track This Order</a>
         <a class="btn btn-secondary" href="index.html">Back to Home</a>
       </div>
     </section>
@@ -509,9 +561,62 @@
     const params = new URLSearchParams(window.location.search);
     const orderId = params.get("orderId") || "-";
     const total = Number(params.get("total") || 0);
+    const phone = params.get("phone") || "";
+    const orderTimeValue = document.getElementById("orderTimeValue");
+
+    function formatOrderDateTime(value) {
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.getTime())) {
+        return "Unavailable";
+      }
+
+      return parsed.toLocaleString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true
+      });
+    }
 
     document.getElementById("orderIdValue").textContent = orderId;
     document.getElementById("orderTotalValue").textContent = `RM ${total.toFixed(2)}`;
+    if (orderTimeValue) {
+      orderTimeValue.textContent = formatOrderDateTime(new Date());
+    }
+
+    const trackOrderBtn = document.getElementById("trackOrderBtn");
+    if (trackOrderBtn && orderId !== "-") {
+      const trackParams = new URLSearchParams({ orderId });
+      if (phone) {
+        trackParams.set("phone", phone);
+      }
+      trackOrderBtn.href = `track-order.html?${trackParams.toString()}`;
+    }
+
+    async function loadLiveOrderStatus() {
+      if (orderId === "-" || !phone) return;
+
+      try {
+        const response = await fetch(`/api/track-order?orderId=${encodeURIComponent(orderId)}&phone=${encodeURIComponent(phone)}`);
+        const payload = await response.json();
+
+        if (!response.ok || !payload.order) {
+          return;
+        }
+
+        document.getElementById("livePaymentStatus").textContent = payload.order.payment_status || "Awaiting update";
+        document.getElementById("liveOrderStatus").textContent = payload.order.order_status || "Awaiting update";
+        if (orderTimeValue) {
+          orderTimeValue.textContent = formatOrderDateTime(payload.order.created_at || payload.order.createdAt);
+        }
+      } catch (error) {
+        console.error("Failed to load live order status:", error);
+      }
+    }
+
+    loadLiveOrderStatus();
   </script>
 </body>
 </html>

@@ -2765,3 +2765,29 @@ header {
 footer {
   display: block !important;
 }
+
+body > footer .footer-brand,
+body > footer .footer-qr {
+  max-width: 180px !important;
+}
+
+body > footer .footer-brand,
+body > footer .footer-qr {
+  margin: 0 auto !important;
+  text-align: center !important;
+}
+
+body > footer .footer-logo {
+  width: 120px !important;
+  height: auto !important;
+}
+
+body > footer .footer-qr img {
+  width: 120px !important;
+  height: auto !important;
+}
+
+body > footer .footer-brand p {
+  max-width: 160px !important;
+  line-height: 1.5 !important;
+}
