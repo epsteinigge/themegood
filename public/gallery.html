@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gallery | ThemeGood</title>
+<link rel="icon" type="image/png" href="/tgi.png">
+<link rel="apple-touch-icon" href="/tgi.png">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="overrides.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Nunito+Sans:wght@400;500;600;700;800&display=swap">
+</head>
+<body class="gallery-page">
+
+<header>
+<a href="index.html" class="logo-container">
+<img src="photos/New_Theme Good Logo-02.png" class="logo" alt="ThemeGood logo">
+</a>
+
+<button id="hamburgerBtn" aria-expanded="false" aria-label="Open navigation">
+<i class="fa fa-bars"></i>
+</button>
+
+<nav id="navMenu">
+<ul class="nav-links">
+<li><a href="index.html#home" data-i18n="home">Home</a></li>
+<li><a href="index.html#products" data-i18n="products">Products</a></li>
+<li><a href="gallery.html" data-i18n="gallery">Gallery</a></li>
+<li><a href="track-order.html" data-i18n="track_order">Track Order</a></li>
+<li><a href="index.html#testimonials" data-i18n="testimonials">Testimonials</a></li>
+<li><a href="index.html#faq" data-i18n="faq">FAQ</a></li>
+<li><a href="index.html#contact" data-i18n="contact_us">Contact Us</a></li>
+</ul>
+</nav>
+
+<div class="header-store-links" aria-label="Marketplace links">
+<a class="store-badge store-badge-lazada" href="https://www.lazada.com.my/theme-good-121123223/" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Lazada" title="Lazada"><img src="photos/Lazada_29_icon.webp" alt="Lazada"></a>
+<a class="store-badge store-badge-shopee" href="https://shopee.com.my/themegood" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Shopee" title="Shopee"><img src="photos/shopee.png" alt="Shopee"></a>
+</div>
+
+<div class="header-actions">
+<button id="cart-toggle">&#128722; Cart <span id="cart-count">0</span></button>
+<label class="lang-switch" aria-label="Language">
+<span data-i18n="language">Language</span>
+<select class="js-lang-switch">
+<option value="en">EN</option>
+<option value="ms">BM</option>
+<option value="zh">中文</option>
+</select>
+</label>
+</div>
+
+<div id="menuOverlay"></div>
+</header>
+
+<main>
+<section class="section gallery-hero">
+<h1 class="section-title">ThemeGood Gallery</h1>
+<p>Explore our product moments and wellness highlights.</p>
+</section>
+
+<section class="section">
+<div id="galleryGrid" class="gallery-grid"></div>
+</section>
+</main>
+
+<div class="gallery-lightbox" id="galleryLightbox" aria-hidden="true">
+  <button class="lightbox-close" id="lightboxClose" aria-label="Close image">&times;</button>
+  <button class="lightbox-arrow left" id="lightboxPrev" aria-label="Previous image">&#10094;</button>
+  <div class="lightbox-stage" id="lightboxStage">
+    <img id="lightboxImage" alt="Expanded gallery image">
+  </div>
+  <button class="lightbox-arrow right" id="lightboxNext" aria-label="Next image">&#10095;</button>
+  <div class="lightbox-controls">
+    <button id="zoomOut" aria-label="Zoom out">-</button>
+    <span id="zoomLevel">100%</span>
+    <button id="zoomIn" aria-label="Zoom in">+</button>
+  </div>
+</div>
+
+<footer>
+<div class="footer-container">
+<div class="footer-brand">
+<a href="index.html" aria-label="Back to main page">
+<img src="photos/New_Theme Good Logo-02.png" class="footer-logo" alt="ThemeGood logo">
+</a>
+<p>ThemeGood Wellness Nutrition</p>
+</div>
+
+<div class="footer-links">
+<h4 data-i18n="quick_links">Quick Links</h4>
+<a href="index.html#home" data-i18n="home">Home</a>
+<a href="index.html#products" data-i18n="products">Products</a>
+<a href="gallery.html" data-i18n="gallery">Gallery</a>
+<a href="track-order.html" data-i18n="track_order">Track Order</a>
+<a href="index.html#testimonials" data-i18n="testimonials">Testimonials</a>
+<a href="index.html#faq" data-i18n="faq">FAQ</a>
+<a href="index.html#contact" data-i18n="contact_us">Contact Us</a>
+<label class="lang-switch footer-lang" aria-label="Language">
+<span data-i18n="language">Language</span>
+<select class="js-lang-switch">
+<option value="en">EN</option>
+<option value="ms">BM</option>
+<option value="zh">中文</option>
+</select>
+</label>
+</div>
+
+<div class="footer-social">
+<h4 data-i18n="follow_us">Follow Us</h4>
+<a href="https://www.facebook.com/www.themegood.com.my" target="_blank" rel="noopener noreferrer"><i class="fab fa-facebook"></i></a>
+<a href="https://www.instagram.com/themegood_malaysia" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
+<a href="https://api.whatsapp.com/send/?phone=60187786000" target="_blank" rel="noopener noreferrer"><i class="fab fa-whatsapp"></i></a>
+<a class="store-badge store-badge-lazada" href="https://www.lazada.com.my/theme-good-121123223/" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Lazada" title="Lazada"><img src="photos/Lazada_29_icon.webp" alt="Lazada"></a>
+<a class="store-badge store-badge-shopee" href="https://shopee.com.my/themegood" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Shopee" title="Shopee"><img src="photos/shopee.png" alt="Shopee"></a>
+</div>
+
+<div class="footer-qr">
+<h4>Scan QR</h4>
+<img src="photos/tgqr.png" alt="ThemeGood QR code">
+</div>
+</div>
+
+<p class="footer-bottom">&copy; 2026 ThemeGood. All Rights Reserved.</p>
+</footer>
+
+<script src="gallery.js"></script>
+<script src="script.js?v=4"></script>
+</body>
+</html>
+
+
+

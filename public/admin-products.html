@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ThemeGood Admin - Products</title>
+<link rel="icon" type="image/png" href="/tgi.png">
+<link rel="apple-touch-icon" href="/tgi.png">
+
+<script>
+if (!localStorage.getItem("adminToken")) {
+  window.location.href = "admin-login.html";
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="admin-mobile.css">
+
+<style>
+:root{
+  --bg:#f4f7fb;
+  --bg-soft:#eef3f9;
+  --surface:rgba(255,255,255,0.96);
+  --surface-strong:#ffffff;
+  --text:#172033;
+  --muted:#6b7280;
+  --line:#e5e7eb;
+  --line-strong:#d4dae4;
+  --brand:#b32038;
+  --brand-deep:#7f1425;
+  --brand-soft:#fff1f4;
+  --success:#169b53;
+  --warning:#ea7a12;
+  --danger:#d52d2d;
+  --shadow-lg:0 24px 60px rgba(15, 23, 42, 0.10);
+  --shadow-md:0 12px 30px rgba(15, 23, 42, 0.08);
+  --radius-xl:24px;
+  --radius-lg:18px;
+  --radius-md:14px;
+}
+
+*{ box-sizing:border-box; }
+
+html, body{
+  margin:0;
+  padding:0;
+}
+
+body{
+  font-family:"Nunito Sans", Arial, sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(255, 214, 223, 0.55), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(223, 235, 255, 0.6), transparent 24%),
+    linear-gradient(180deg, #f8fafd 0%, var(--bg) 100%);
+}
+
+.admin-layout{
+  min-height:100vh;
+  display:grid;
+  grid-template-columns:280px 1fr;
+}
+
+.sidebar{
+  background:
+    linear-gradient(180deg, rgba(17,24,39,0.98), rgba(24,33,52,0.98)),
+    linear-gradient(135deg, rgba(179,32,56,0.12), rgba(127,20,37,0.2));
+  color:#fff;
+  padding:24px 18px;
+  position:sticky;
+  top:0;
+  height:100vh;
+  border-right:1px solid rgba(255,255,255,0.06);
+}
+
+.brand-box{
+  padding:18px 16px;
+  border-radius:20px;
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.08);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);
+  margin-bottom:18px;
+}
+
+.brand-kicker{
+  display:inline-flex;
+  padding:7px 10px;
+  border-radius:999px;
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.08);
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.sidebar h2{
+  margin:14px 0 6px;
+  font-family:"Montserrat", sans-serif;
+  font-size:24px;
+  line-height:1.1;
+}
+
+.sidebar .sidebar-sub{
+  margin:0;
+  color:#cfd6e3;
+  font-size:13px;
+  line-height:1.55;
+}
+
+.sidebar nav{
+  display:grid;
+  gap:10px;
+  margin-top:18px;
+}
+
+.sidebar a,
+.sidebar button{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  width:100%;
+  text-align:left;
+  background:none;
+  border:none;
+  color:#d7deea;
+  padding:13px 14px;
+  border-radius:14px;
+  text-decoration:none;
+  cursor:pointer;
+  font-size:15px;
+  font-weight:700;
+  transition:.2s ease;
+}
+
+.sidebar a:hover,
+.sidebar button:hover,
+.sidebar .active{
+  background:linear-gradient(135deg, rgba(255,255,255,0.10), rgba(255,255,255,0.06));
+  color:#fff;
+}
+
+.nav-icon{
+  width:26px;
+  height:26px;
+  display:grid;
+  place-items:center;
+  border-radius:9px;
+  background:rgba(255,255,255,0.08);
+  font-size:13px;
+}
+
+.sidebar-footer{
+  margin-top:22px;
+  padding:16px;
+  border-radius:18px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.08);
+  color:#d8deea;
+  font-size:13px;
+  line-height:1.55;
+}
+
+.main{
+  padding:24px;
+}
+
+.top-shell{
+  background:rgba(255,255,255,0.62);
+  border:1px solid rgba(255,255,255,0.75);
+  backdrop-filter:blur(12px);
+  box-shadow:var(--shadow-md);
+  border-radius:var(--radius-xl);
+  padding:22px;
+}
+
+.top-bar{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:18px;
+  margin-bottom:20px;
+  flex-wrap:wrap;
+}
+
+.page-heading h1{
+  margin:0;
+  font-family:"Montserrat", sans-serif;
+  font-size:32px;
+  line-height:1.08;
+}
+
+.page-heading p{
+  margin:10px 0 0;
+  color:var(--muted);
+  font-size:15px;
+}
+
+.top-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.primary-btn,
+.secondary-btn,
+.logout-btn,
+.danger-btn{
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+  padding:12px 16px;
+  font-size:14px;
+  font-weight:800;
+  transition:.2s ease;
+}
+
+.primary-btn{
+  color:#fff;
+  background:linear-gradient(135deg, var(--brand), var(--brand-deep));
+  box-shadow:0 12px 24px rgba(127,20,37,0.22);
+}
+
+.secondary-btn{
+  color:var(--text);
+  background:#fff;
+  border:1px solid var(--line-strong);
+}
+
+.logout-btn{
+  color:#fff;
+  background:#111827;
+}
+
+.danger-btn{
+  color:#fff;
+  background:linear-gradient(135deg, #dc2626, #b91c1c);
+}
+
+.primary-btn:hover,
+.secondary-btn:hover,
+.logout-btn:hover,
+.danger-btn:hover{
+  transform:translateY(-1px);
+}
+
+.stats-grid{
+  display:grid;
+  grid-template-columns:repeat(4, minmax(0, 1fr));
+  gap:14px;
+  margin-bottom:20px;
+}
+
+.stat-card{
+  position:relative;
+  overflow:hidden;
+  background:var(--surface);
+  border:1px solid rgba(255,255,255,0.85);
+  box-shadow:var(--shadow-md);
+  border-radius:20px;
+  padding:18px;
+}
+
+.stat-card::after{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:4px;
+  background:linear-gradient(90deg, var(--brand), #db5e75);
+}
+
+.stat-card h3{
+  margin:0 0 8px;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+}
+
+.stat-card p{
+  margin:0;
+  font-family:"Montserrat", sans-serif;
+  font-size:30px;
+}
+
+.stat-card .stat-note{
+  margin-top:8px;
+  color:var(--muted);
+  font-size:13px;
+}
+
+.content-grid{
+  display:grid;
+  grid-template-columns:minmax(340px, 430px) 1fr;
+  gap:20px;
+  align-items:start;
+}
+
+.card{
+  background:var(--surface-strong);
+  border:1px solid rgba(255,255,255,0.8);
+  box-shadow:var(--shadow-lg);
+  border-radius:var(--radius-xl);
+  padding:22px;
+}
+
+.card h2{
+  margin:0 0 8px;
+  font-family:"Montserrat", sans-serif;
+  font-size:22px;
+}
+
+.card-sub{
+  margin:0 0 18px;
+  color:var(--muted);
+  font-size:14px;
+}
+
+.field{
+  display:grid;
+  gap:6px;
+  margin-bottom:14px;
+}
+
+.field label{
+  font-weight:800;
+  font-size:14px;
+}
+
+.field input,
+.field textarea,
+.field select{
+  width:100%;
+  padding:12px 13px;
+  border:1px solid var(--line-strong);
+  border-radius:12px;
+  font-size:14px;
+  background:#fff;
+  color:var(--text);
+  outline:none;
+}
+
+.field input:focus,
+.field textarea:focus,
+.field select:focus{
+  border-color:#d5a0aa;
+  box-shadow:0 0 0 4px rgba(179,32,56,0.08);
+}
+
+.field textarea{
+  min-height:110px;
+  resize:vertical;
+}
+
+.size-option-group{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+.size-option-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid var(--line-strong);
+  background:#fff;
+  font-size:13px;
+  font-weight:800;
+  color:var(--text);
+}
+
+.size-option-chip input{
+  width:16px;
+  height:16px;
+}
+
+.inline-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
+.bundle-builder-card{
+  border:1px solid rgba(179,32,56,0.14);
+  background:linear-gradient(180deg, #fff8f9 0%, #ffffff 100%);
+  border-radius:20px;
+  padding:18px;
+  box-shadow:0 14px 30px rgba(179,32,56,0.08);
+}
+
+.bundle-builder-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  margin-bottom:14px;
+}
+
+.bundle-builder-head h3{
+  margin:0;
+  font-family:"Montserrat", sans-serif;
+  font-size:20px;
+}
+
+.bundle-builder-head p{
+  margin:6px 0 0;
+  color:var(--muted);
+  font-size:14px;
+}
+
+.bundle-badge{
+  display:inline-flex;
+  align-items:center;
+  padding:8px 12px;
+  border-radius:999px;
+  background:linear-gradient(135deg, var(--brand), var(--brand-deep));
+  color:#fff;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+
+.bundle-slot-row{
+  border:1px solid #efdae0;
+  background:linear-gradient(180deg, #fff, #fff7f9);
+}
+
+.bundle-pricing-card{
+  margin-top:18px;
+  padding:18px;
+  border:1px solid #efdae0;
+  border-radius:20px;
+  background:linear-gradient(180deg, #ffffff 0%, #fff8fa 100%);
+}
+
+.promotion-grid{
+  display:grid;
+  gap:16px;
+  margin-top:18px;
+}
+
+.promo-admin-card,
+.bundle-extra-admin-card{
+  padding:18px;
+  border:1px solid #eadfe5;
+  border-radius:20px;
+  background:linear-gradient(180deg, #ffffff 0%, #fff9fb 100%);
+  box-shadow:0 12px 28px rgba(127,20,37,0.05);
+}
+
+.promo-admin-card h3,
+.bundle-extra-admin-card h3{
+  margin:0 0 6px;
+  font-family:"Montserrat", sans-serif;
+  font-size:18px;
+}
+
+.promo-admin-card > p,
+.bundle-extra-admin-card > p{
+  margin:0 0 14px;
+  color:var(--muted);
+  font-size:13px;
+}
+
+.bundle-extra-list,
+.promo-code-list{
+  display:grid;
+  gap:12px;
+}
+
+.bundle-extra-row,
+.promo-code-row{
+  padding:14px;
+  border:1px solid #e6ebf3;
+  border-radius:18px;
+  background:#fbfcfe;
+}
+
+.bundle-extra-row{
+  display:grid;
+  grid-template-columns:minmax(0, 1.2fr) minmax(180px, 0.8fr);
+  gap:12px;
+  align-items:end;
+}
+
+.bundle-extra-tag{
+  display:inline-flex;
+  align-items:center;
+  padding:6px 10px;
+  border-radius:999px;
+  background:#fff1f4;
+  color:var(--brand);
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+
+.promo-code-grid{
+  display:grid;
+  grid-template-columns:repeat(4, minmax(0, 1fr));
+  gap:12px;
+}
+
+.promo-code-grid .field,
+.bundle-extra-row .field{
+  min-width:0;
+}
+
+.bundle-pricing-card h3{
+  margin:0 0 14px;
+  font-family:"Montserrat", sans-serif;
+  font-size:18px;
+}
+
+.preview-shell{
+  border:1px dashed #d9dfea;
+  background:#fbfcfe;
+  border-radius:18px;
+  padding:14px;
+}
+
+.preview-shell h3{
+  margin:0 0 10px;
+  font-size:15px;
+  font-weight:800;
+}
+
+.image-preview-box{
+  min-height:230px;
+  border-radius:16px;
+  background:#fff;
+  border:1px solid #edf1f6;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+}
+
+.image-preview-box img{
+  width:100%;
+  height:230px;
+  object-fit:contain;
+  display:block;
+  background:#fff;
+}
+
+.image-preview-placeholder{
+  color:var(--muted);
+  font-size:14px;
+  text-align:center;
+  padding:18px;
+}
+
+.upload-field{
+  position:relative;
+}
+
+.premium-upload{
+  width:100%;
+  padding:14px 16px;
+  border:1px dashed #d8b0b9 !important;
+  border-radius:18px !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,243,246,0.96)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.8),
+    0 10px 24px rgba(179,32,56,0.08);
+  color:var(--text);
+  cursor:pointer;
+}
+
+.premium-upload:hover{
+  border-color:#c56a7c !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.9),
+    0 14px 28px rgba(179,32,56,0.12);
+  transform:translateY(-1px);
+}
+
+.premium-upload:focus{
+  border-color:#c56a7c !important;
+  box-shadow:
+    0 0 0 4px rgba(179,32,56,0.10),
+    0 14px 28px rgba(179,32,56,0.12) !important;
+}
+
+.premium-upload::file-selector-button{
+  border:none;
+  margin-right:14px;
+  padding:11px 16px;
+  border-radius:999px;
+  background:linear-gradient(135deg, var(--brand), var(--brand-deep));
+  color:#fff;
+  font-weight:800;
+  letter-spacing:.01em;
+  cursor:pointer;
+  box-shadow:0 10px 20px rgba(127,20,37,0.22);
+  transition:.2s ease;
+}
+
+.premium-upload:hover::file-selector-button{
+  transform:translateY(-1px);
+  box-shadow:0 12px 24px rgba(127,20,37,0.28);
+}
+
+.upload-caption{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:10px;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:700;
+}
+
+.upload-caption::before{
+  content:"";
+  width:8px;
+  height:8px;
+  border-radius:999px;
+  background:linear-gradient(135deg, var(--brand), #e57f92);
+  box-shadow:0 0 0 5px rgba(179,32,56,0.08);
+}
+
+.helper{
+  font-size:12px;
+  color:var(--muted);
+  margin-top:-6px;
+}
+
+.section-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  margin-bottom:14px;
+  flex-wrap:wrap;
+}
+
+.section-head h2{
+  margin:0;
+}
+
+.section-head p{
+  margin:8px 0 0;
+  color:var(--muted);
+  font-size:14px;
+}
+
+.toolbar{
+  display:grid;
+  grid-template-columns:1.4fr .8fr .8fr;
+  gap:12px;
+  margin-bottom:16px;
+}
+
+.toolbar input,
+.toolbar select{
+  width:100%;
+  padding:12px 13px;
+  border:1px solid var(--line-strong);
+  border-radius:12px;
+  font-size:14px;
+  background:#fff;
+  color:var(--text);
+  outline:none;
+}
+
+.toolbar input:focus,
+.toolbar select:focus{
+  border-color:#d5a0aa;
+  box-shadow:0 0 0 4px rgba(179,32,56,0.08);
+}
+
+.list-stack{
+  display:grid;
+  gap:16px;
+}
+
+.product-item{
+  border:1px solid #edf1f6;
+  border-radius:20px;
+  background:#fff;
+  overflow:hidden;
+  box-shadow:0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+.product-item-grid{
+  display:grid;
+  grid-template-columns:240px 1fr;
+  gap:18px;
+  padding:18px;
+}
+
+.product-thumb-wrap{
+  display:grid;
+  gap:10px;
+  align-content:start;
+}
+
+.product-thumb{
+  width:100%;
+  height:240px;
+  object-fit:contain;
+  background:#fbfcfe;
+  border:1px solid #edf1f6;
+  border-radius:16px;
+  padding:12px;
+}
+
+.product-meta{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.meta-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  border-radius:999px;
+  padding:7px 10px;
+  font-size:12px;
+  font-weight:800;
+  background:#f8fafc;
+  border:1px solid #e8edf4;
+  color:#334155;
+}
+
+.stock-ok{ color:var(--success); }
+.stock-low{ color:var(--warning); }
+.stock-out{ color:var(--danger); }
+
+.product-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:4px;
+}
+
+.image-list{
+  display:grid;
+  gap:12px;
+}
+
+.image-card,
+.image-upload-card{
+  display:grid;
+  grid-template-columns:170px 1fr;
+  gap:14px;
+  padding:14px;
+  border:1px solid #e6ebf3;
+  border-radius:18px;
+  background:#fbfcfe;
+}
+
+.image-card-fallback{
+  background:#fffdf8;
+}
+
+.image-thumb{
+  width:100%;
+  height:170px;
+  object-fit:contain;
+  border-radius:14px;
+  border:1px solid #e8edf4;
+  background:#fff;
+  padding:10px;
+}
+
+.image-card-body{
+  display:grid;
+  gap:10px;
+}
+
+.image-pill-row{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.image-primary-pill{
+  color:#0f6f39;
+  border-color:#bfe6cf;
+  background:#edf9f1;
+}
+
+.image-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.image-card-note{
+  margin:0;
+  color:var(--muted);
+  font-size:13px;
+}
+
+.variant-section{
+  margin-top:18px;
+  padding-top:18px;
+  border-top:1px solid #edf1f6;
+}
+
+.variant-section-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  margin-bottom:14px;
+}
+
+.variant-section h3{
+  margin:0;
+  font-size:18px;
+  font-family:"Montserrat", sans-serif;
+}
+
+.variant-section p{
+  margin:8px 0 0;
+  color:var(--muted);
+  font-size:13px;
+}
+
+.variant-list{
+  display:grid;
+  gap:12px;
+}
+
+.variant-quick-add{
+  display:flex;
+  gap:8px;
+  margin-bottom:12px;
+  flex-wrap:wrap;
+}
+
+.variant-preset-btn{
+  padding:8px 12px;
+  border-radius:999px;
+  border:1px solid #ddd;
+  background:#fff;
+  font-weight:700;
+  cursor:pointer;
+  transition:.2s ease;
+}
+
+.variant-preset-btn:hover{
+  border-color:#b32038;
+  color:#b32038;
+}
+
+.variant-row,
+.variant-add-card{
+  padding:14px;
+  border:1px solid #e6ebf3;
+  border-radius:18px;
+  background:#fbfcfe;
+  overflow:hidden;
+}
+
+.variant-duplicate{
+  border-color:#ff4d4f !important;
+}
+
+.variant-grid,
+.variant-add-grid{
+  display:grid;
+  gap:12px;
+}
+
+.variant-grid{
+  grid-template-columns:minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr);
+  align-items:end;
+}
+
+#variant-list .variant-grid{
+  grid-template-columns:repeat(4, minmax(0, 1fr));
+}
+
+.variant-add-grid{
+  grid-template-columns:repeat(8, minmax(0, 1fr));
+}
+
+.variant-grid > .field,
+.variant-add-grid > .field{
+  min-width:0;
+}
+
+.variant-grid input,
+.variant-grid select,
+.variant-add-grid input,
+.variant-add-grid select{
+  width:100%;
+  max-width:100%;
+}
+
+.bundle-slot-row .variant-grid{
+  grid-template-columns:minmax(0, 1fr) minmax(120px, 180px);
+  align-items:end;
+}
+
+#bundle-slot-list,
+#bundle-slot-list .bundle-slot-row,
+#bundle-slot-list .variant-grid{
+  min-width:0;
+}
+
+#bundle-slot-list .bundle-slot-row select,
+#bundle-slot-list .bundle-slot-row input{
+  width:100%;
+  max-width:100%;
+}
+
+.bundle-slot-row label{
+  font-size:15px;
+  font-weight:800;
+}
+
+.bundle-slot-row input{
+  min-height:48px;
+  font-size:15px;
+  padding:12px 14px;
+}
+
+.variant-toggle{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding-top:34px;
+  font-size:14px;
+  font-weight:800;
+  color:var(--text);
+}
+
+.variant-toggle input{
+  width:18px;
+  height:18px;
+}
+
+.variant-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:12px;
+  align-items:center;
+}
+
+.variant-image-preview{
+  width:52px;
+  height:52px;
+  object-fit:cover;
+  border-radius:12px;
+  border:1px solid #d9dfea;
+  background:#fff;
+}
+
+.product-image-grid{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.product-thumb-small{
+  width:60px;
+  height:60px;
+  object-fit:cover;
+  border-radius:6px;
+  border:2px solid transparent;
+}
+
+.product-thumb-small.primary-image{
+  border-color:#00ffcc;
+}
+
+.variant-actions .primary-btn,
+.variant-actions .secondary-btn,
+.variant-actions .danger-btn{
+  padding:10px 14px;
+  font-size:13px;
+}
+
+.variant-empty{
+  margin:0;
+  padding:14px;
+  border:1px dashed #d9dfea;
+  border-radius:16px;
+  background:#fcfcfd;
+  color:var(--muted);
+  font-size:14px;
+}
+
+.gift-rule-card{
+  margin-top:16px;
+  padding:14px;
+  border:1px solid #e6ebf3;
+  border-radius:18px;
+  background:linear-gradient(180deg, #fff8fa, #fbfcfe);
+}
+
+.gift-rule-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  margin-bottom:12px;
+  flex-wrap:wrap;
+}
+
+.gift-rule-head h3{
+  margin:0;
+  font-size:18px;
+  font-family:"Montserrat", sans-serif;
+}
+
+.gift-rule-head p{
+  margin:6px 0 0;
+  color:var(--muted);
+  font-size:13px;
+}
+
+.empty-state{
+  margin:0;
+  padding:24px;
+  text-align:center;
+  border:1px dashed #d9dfea;
+  border-radius:16px;
+  color:var(--muted);
+  background:#fcfcfd;
+}
+
+#toast{
+  position:fixed;
+  right:20px;
+  bottom:20px;
+  z-index:9999;
+  min-width:260px;
+  max-width:360px;
+  padding:14px 16px;
+  border-radius:16px;
+  color:#fff;
+  box-shadow:0 18px 40px rgba(0,0,0,0.18);
+  opacity:0;
+  transform:translateY(8px);
+  pointer-events:none;
+  transition:0.22s ease;
+  font-weight:800;
+}
+
+#toast.show{
+  opacity:1;
+  transform:translateY(0);
+}
+
+#toast.success{ background:#15803d; }
+#toast.error{ background:#b91c1c; }
+#toast.info{ background:#1d4ed8; }
+
+@media (max-width:1200px){
+  .stats-grid{
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+  }
+
+  .content-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+@media (max-width:900px){
+  .admin-layout{
+    grid-template-columns:1fr;
+  }
+
+  .sidebar{
+    position:relative;
+    height:auto;
+  }
+
+  .main{
+    padding:16px;
+  }
+
+  .product-item-grid{
+    grid-template-columns:1fr;
+  }
+
+  .toolbar{
+    grid-template-columns:1fr;
+  }
+
+  .inline-grid{
+    grid-template-columns:1fr;
+  }
+
+  .variant-grid,
+  .variant-add-grid{
+    grid-template-columns:1fr;
+  }
+
+  .bundle-slot-row .variant-grid{
+    grid-template-columns:1fr;
+  }
+
+  .variant-toggle{
+    padding-top:0;
+  }
+
+  .image-card,
+  .image-upload-card{
+    grid-template-columns:1fr;
+  }
+}
+
+@media (max-width:1200px){
+  #bundle-slot-list .bundle-slot-row .variant-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+@media (max-width:700px){
+  .stats-grid{
+    grid-template-columns:1fr;
+  }
+
+  .top-shell,
+  .card{
+    padding:16px;
+  }
+
+  .page-heading h1{
+    font-size:26px;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="admin-layout">
+  <aside class="sidebar">
+    <div class="brand-box">
+      <div class="brand-kicker">ThemeGood Admin</div>
+      <h2>Products Control</h2>
+      <p class="sidebar-sub">Manage catalogue quality, stock levels, pricing, and product presentation with ease.</p>
+    </div>
+
+    <nav>
+      <a href="admin-orders.html"><span class="nav-icon">🧾</span> Orders</a>
+      <a href="admin-products.html" class="active"><span class="nav-icon">📦</span> Products</a>
+      <a href="admin-gallery.html"><span class="nav-icon">🖼</span> Gallery</a>
+      <a href="admin-homepage.html"><span class="nav-icon">🏠</span> Homepage</a>
+      <a href="admin-content.html"><span class="nav-icon">📝</span> Site Content</a>
+      <button id="logoutBtn" type="button"><span class="nav-icon">↩</span> Logout</button>
+    </nav>
+
+    <div class="sidebar-footer">
+      Keep your storefront polished by maintaining product names, descriptions, stock, prices, and images here.
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="top-shell">
+      <div class="top-bar">
+        <div class="page-heading">
+          <h1>Products Dashboard</h1>
+          <p>Create and manage products in a cleaner workspace with better visibility for stock and pricing.</p>
+        </div>
+
+        <div class="top-actions">
+          <button id="refreshProductsBtn" class="secondary-btn" type="button">Refresh</button>
+          <button id="logoutBtnTop" class="logout-btn" type="button">Logout</button>
+        </div>
+      </div>
+
+      <section class="stats-grid">
+        <article class="stat-card">
+          <h3>Total Products</h3>
+          <p id="stat-total-products">0</p>
+          <div class="stat-note">Current catalogue size</div>
+        </article>
+
+        <article class="stat-card">
+          <h3>In Stock</h3>
+          <p id="stat-in-stock">0</p>
+          <div class="stat-note">Healthy inventory level</div>
+        </article>
+
+        <article class="stat-card">
+          <h3>Low Stock</h3>
+          <p id="stat-low-stock">0</p>
+          <div class="stat-note">Needs attention soon</div>
+        </article>
+
+        <article class="stat-card">
+          <h3>Out of Stock</h3>
+          <p id="stat-out-stock">0</p>
+          <div class="stat-note">Unavailable right now</div>
+        </article>
+      </section>
+
+      <div class="content-grid">
+        <section class="card">
+          <h2>Add Product</h2>
+          <p class="card-sub">Upload a new item with image, pricing, description, and stock in one polished form.</p>
+
+          <div class="admin-product-form">
+            <input type="hidden" id="product-id">
+
+          <div class="field">
+            <label for="product-name">Product Name</label>
+            <input id="product-name" placeholder="e.g. Pomegranate Multigrain">
+          </div>
+
+          <div class="field">
+            <label class="size-option-chip">
+              <input id="product-is-featured" type="checkbox">
+              Featured product
+            </label>
+            <div class="helper">Featured products can be shown on the homepage product section.</div>
+          </div>
+
+          <div class="field">
+            <label for="featured-order">Featured Order</label>
+            <input id="product-featured-order" type="number" min="0" step="1" value="0">
+            <div class="helper">Lower numbers appear first in the homepage featured products row.</div>
+          </div>
+
+          <div class="field">
+            <label for="product-image-url">Image URL</label>
+            <input id="product-image-url" type="text" placeholder="/uploads/product.webp">
+            <div class="helper">Optional direct image URL. Uploaded gallery images will still work as normal.</div>
+          </div>
+
+          <div class="field">
+            <label for="product-type">Product Type</label>
+            <select id="product-type">
+              <option value="single">Single Product</option>
+              <option value="bundle">Bundle / Custom Package</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="size-option-chip">
+              <input id="product-is-active" type="checkbox" checked>
+              Active
+            </label>
+            <div class="helper">Scaffolded for future product-type and bundle support.</div>
+          </div>
+
+          <div class="field upload-field">
+            <label for="imageFile">Upload Image</label>
+            <input id="imageFile" class="premium-upload" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+            <div class="upload-caption">Curated uploads, optimized automatically for cleaner storefront images.</div>
+            <div class="helper">Upload JPG, PNG, or WEBP files up to 50MB each. Images are optimized on the server.</div>
+          </div>
+
+          <div class="preview-shell">
+            <h3>Image Preview</h3>
+            <div id="addImagePreview" class="image-preview-box">
+              <div class="image-preview-placeholder">Product preview will appear here.</div>
+            </div>
+          </div>
+
+          <div class="field" style="margin-top:14px;">
+            <label for="product-description">Description</label>
+            <textarea id="product-description" placeholder="Short product description"></textarea>
+          </div>
+
+          <div class="field">
+            <label for="sortOrder">Sort Order</label>
+            <input id="sortOrder" type="number" min="0" step="1" value="0" placeholder="0">
+            <div class="helper">Lower numbers appear first in the product list when sort order is used.</div>
+          </div>
+
+          <div id="single-size-prices-section" class="field">
+            <label>Size Prices</label>
+            <div class="inline-grid">
+              <div class="field">
+                <label for="size-price-small">300g Price (RM)</label>
+                <input id="size-price-small" type="number" step="0.01" min="0" placeholder="55.00">
+              </div>
+
+              <div class="field">
+                <label for="size-price-medium">600g Price (RM)</label>
+                <input id="size-price-medium" type="number" step="0.01" min="0" placeholder="105.00">
+              </div>
+
+              <div class="field">
+                <label for="size-price-large">800g Price (RM)</label>
+                <input id="size-price-large" type="number" step="0.01" min="0" placeholder="108.00">
+              </div>
+            </div>
+            <div class="helper">These prices stay editable for both single products and bundles.</div>
+          </div>
+
+          <hr>
+
+          <div class="field">
+            <label for="price">Base Price (RM)</label>
+            <input id="price" type="number" step="0.01" min="0" placeholder="55.00">
+            <div class="helper">Bundle products use this as the starting price before any premium surcharge like Cocoa is added.</div>
+          </div>
+
+          <div class="field">
+            <label for="stock">Stock</label>
+            <input id="stock" type="number" min="0" placeholder="20">
+            <div class="helper">This controls storefront availability for the product itself, including bundles.</div>
+          </div>
+
+          <div id="single-product-section">
+            <div class="field">
+              <label for="sold">Sold</label>
+              <input id="sold" type="number" min="0" placeholder="0">
+              <div class="helper">You can edit sold manually, and it also updates automatically when orders are placed or cancelled.</div>
+            </div>
+
+            <div class="field">
+              <label>Available Sizes</label>
+              <div class="size-option-group">
+                <label class="size-option-chip"><input id="size-small" type="checkbox" checked> 300g</label>
+                <label class="size-option-chip"><input id="size-medium" type="checkbox" checked> 600g</label>
+                <label class="size-option-chip"><input id="size-large" type="checkbox" checked> 800g</label>
+              </div>
+              <div class="helper">Choose which size options this product should show on the shopping page.</div>
+            </div>
+
+            <h3>Variants / Sizes</h3>
+
+            <div class="variant-quick-add">
+              <button type="button" class="variant-preset-btn" data-size="300g">+ 300g</button>
+              <button type="button" class="variant-preset-btn" data-size="600g">+ 600g</button>
+              <button type="button" class="variant-preset-btn" data-size="800g">+ 800g</button>
+            </div>
+
+            <div id="variant-list" class="variant-list"></div>
+            <button id="addVariantRowBtn" class="secondary-btn" type="button">
+              Add Custom Size
+            </button>
+          </div>
+
+          <div id="bundle-product-section" style="display:none;">
+            <div class="bundle-builder-card">
+              <div class="bundle-builder-head">
+                <div>
+                  <h3>Bundle Builder</h3>
+                  <p>Build custom packages with slot-based choices and premium add-on pricing.</p>
+                </div>
+                <span class="bundle-badge">Custom Package</span>
+              </div>
+
+              <div id="bundle-slot-list" class="variant-list"></div>
+              <button id="addBundleSlotRowBtn" class="secondary-btn" type="button">Add Bundle Slot</button>
+
+              <div class="bundle-pricing-card">
+                <h3>Pricing Rule</h3>
+                <div class="inline-grid">
+                  <div class="field">
+                    <label for="pricing-type">Pricing Type</label>
+                    <select id="pricing-type">
+                      <option value="sum">Sum of selected items</option>
+                      <option value="sum_plus">Sum + amount</option>
+                      <option value="sum_minus">Sum - amount</option>
+                    </select>
+                  </div>
+
+                  <div class="field">
+                    <label for="pricing-amount">Amount</label>
+                    <input type="number" id="pricing-amount" step="0.01" value="0">
+                  </div>
+                </div>
+
+                <div class="helper">Use this for package discount, packaging fee, or premium bundle adjustment.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="promotion-grid">
+            <section class="bundle-extra-admin-card">
+              <h3>Bundle Extra Pricing</h3>
+              <p>Use this for premium bundle picks like Cocoa. Defaults are applied automatically for Cocoa 300g and 800g, and only existing sizes appear here.</p>
+              <div id="bundle-extra-pricing-list" class="bundle-extra-list"></div>
+            </section>
+
+            <section class="promo-admin-card">
+              <h3>Product Discount Rule</h3>
+              <p>Apply one product-level discount rule for normal products or bundle products.</p>
+              <div class="promo-code-grid">
+                <div class="field">
+                  <label for="discount-rule-type">Discount Type</label>
+                  <select id="discount-rule-type">
+                    <option value="none">None</option>
+                    <option value="fixed">Fixed</option>
+                    <option value="percent">Percent</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label for="discount-rule-amount">Amount</label>
+                  <input id="discount-rule-amount" type="number" min="0" step="0.01" value="0">
+                </div>
+
+                <div class="field">
+                  <label for="discount-rule-applies-to">Applies To</label>
+                  <select id="discount-rule-applies-to">
+                    <option value="product">Product</option>
+                    <option value="bundle">Bundle</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label class="size-option-chip">
+                    <input id="discount-rule-active" type="checkbox">
+                    Active Rule
+                  </label>
+                </div>
+
+                <div class="field">
+                  <label for="discount-rule-starts-at">Start Datetime</label>
+                  <input id="discount-rule-starts-at" type="datetime-local">
+                </div>
+
+                <div class="field">
+                  <label for="discount-rule-ends-at">End Datetime</label>
+                  <input id="discount-rule-ends-at" type="datetime-local">
+                </div>
+              </div>
+            </section>
+
+            <section class="promo-admin-card">
+              <h3>Promo Codes</h3>
+              <p>Create product-specific promo codes for normal products or bundles. You can add, edit, or remove them in this form.</p>
+              <div id="promo-code-list" class="promo-code-list"></div>
+              <button id="addPromoCodeRowBtn" class="secondary-btn" type="button">Add Promo Code</button>
+            </section>
+          </div>
+
+          <section class="gift-rule-card">
+            <div class="gift-rule-head">
+              <div>
+                <h3>Quick Auto Gift Rule</h3>
+                <p>Simple legacy rule. After the product is created, you can add multiple custom Gift Offers below each product card.</p>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="size-option-chip"><input id="freeGiftEnabled" type="checkbox"> Enable Free Gift</label>
+            </div>
+
+            <div class="field">
+              <label for="freeGiftProductId">Gift Product</label>
+              <select id="freeGiftProductId">
+                <option value="">Select gift product</option>
+              </select>
+            </div>
+
+            <div class="inline-grid">
+              <div class="field">
+                <label for="freeGiftMinQuantity">Minimum Bought Units</label>
+                <input id="freeGiftMinQuantity" type="number" min="1" step="1" value="1">
+              </div>
+
+              <div class="field">
+                <label for="freeGiftQuantity">Gift Quantity</label>
+                <input id="freeGiftQuantity" type="number" min="1" step="1" value="1">
+              </div>
+            </div>
+          </section>
+
+          <hr>
+
+          <button id="addProductBtn" class="primary-btn" type="button">Save Product</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <h2>Manage Products</h2>
+              <p id="productCount">Showing 0 products</p>
+            </div>
+          </div>
+
+          <div class="toolbar">
+            <input id="productSearchInput" type="text" placeholder="Search by name, description, price, or stock">
+            <select id="productSortSelect">
+              <option value="sort-order">Sort: Product Order</option>
+              <option value="newest">Sort: Newest</option>
+              <option value="oldest">Sort: Oldest</option>
+              <option value="name-asc">Sort: Name A-Z</option>
+              <option value="name-desc">Sort: Name Z-A</option>
+              <option value="price-asc">Sort: Price Low-High</option>
+              <option value="price-desc">Sort: Price High-Low</option>
+              <option value="stock-asc">Sort: Stock Low-High</option>
+              <option value="stock-desc">Sort: Stock High-Low</option>
+            </select>
+            <select id="productStockFilter">
+              <option value="">All Stock Levels</option>
+              <option value="in">In Stock</option>
+              <option value="low">Low Stock</option>
+              <option value="out">Out of Stock</option>
+            </select>
+          </div>
+
+          <div id="admin-product-table">
+            <div id="productList" class="list-stack"></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script src="admin-products.js?v=4"></script>
+</body>
+</html>
