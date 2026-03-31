@@ -1,0 +1,5 @@
+ALTER TABLE product_variants
+ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(10, 2) NOT NULL DEFAULT 0;
+
+ALTER TABLE product_variants
+ADD COLUMN IF NOT EXISTS image_url TEXT NOT NULL DEFAULT '';

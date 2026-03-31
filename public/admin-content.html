@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ThemeGood Admin - Site Content</title>
+  <link rel="icon" type="image/png" href="/photos/New_Theme Good Logo-02.png">
+  <link rel="apple-touch-icon" href="/photos/New_Theme Good Logo-02.png">
+
+  <script>
+    if (!localStorage.getItem("adminToken")) {
+      window.location.href = "admin-login.html";
+    }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="admin-mobile.css">
+
+  <style>
+    :root{
+      --bg:#f4f7fb;
+      --surface:rgba(255,255,255,0.96);
+      --surface-strong:#ffffff;
+      --text:#172033;
+      --muted:#6b7280;
+      --line:#e5e7eb;
+      --line-strong:#d4dae4;
+      --brand:#b32038;
+      --brand-deep:#7f1425;
+      --shadow-lg:0 24px 60px rgba(15, 23, 42, 0.10);
+      --shadow-md:0 12px 30px rgba(15, 23, 42, 0.08);
+      --radius-xl:24px;
+    }
+
+    *{ box-sizing:border-box; }
+    html, body{ margin:0; padding:0; }
+
+    body{
+      font-family:"Nunito Sans", Arial, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255, 214, 223, 0.55), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(223, 235, 255, 0.6), transparent 24%),
+        linear-gradient(180deg, #f8fafd 0%, var(--bg) 100%);
+    }
+
+    .admin-layout{
+      min-height:100vh;
+      display:grid;
+      grid-template-columns:280px 1fr;
+    }
+
+    .sidebar{
+      background:
+        linear-gradient(180deg, rgba(17,24,39,0.98), rgba(24,33,52,0.98)),
+        linear-gradient(135deg, rgba(179,32,56,0.12), rgba(127,20,37,0.2));
+      color:#fff;
+      padding:24px 18px;
+      position:sticky;
+      top:0;
+      height:100vh;
+      border-right:1px solid rgba(255,255,255,0.06);
+    }
+
+    .brand-box{
+      padding:18px 16px;
+      border-radius:20px;
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.08);
+      margin-bottom:18px;
+    }
+
+    .brand-kicker{
+      display:inline-flex;
+      padding:7px 10px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.08);
+      border:1px solid rgba(255,255,255,0.08);
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+
+    .sidebar h2{
+      margin:14px 0 6px;
+      font-family:"Montserrat", sans-serif;
+      font-size:24px;
+      line-height:1.1;
+    }
+
+    .sidebar .sidebar-sub{
+      margin:0;
+      color:#cfd6e3;
+      font-size:13px;
+      line-height:1.55;
+    }
+
+    .sidebar nav{
+      display:grid;
+      gap:10px;
+      margin-top:18px;
+    }
+
+    .sidebar a,
+    .sidebar button{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      width:100%;
+      text-align:left;
+      background:none;
+      border:none;
+      color:#d7deea;
+      padding:13px 14px;
+      border-radius:14px;
+      text-decoration:none;
+      cursor:pointer;
+      font-size:15px;
+      font-weight:700;
+      transition:.2s ease;
+    }
+
+    .sidebar a:hover,
+    .sidebar button:hover,
+    .sidebar .active{
+      background:linear-gradient(135deg, rgba(255,255,255,0.10), rgba(255,255,255,0.06));
+      color:#fff;
+    }
+
+    .nav-icon{
+      width:26px;
+      height:26px;
+      display:grid;
+      place-items:center;
+      border-radius:9px;
+      background:rgba(255,255,255,0.08);
+      font-size:13px;
+    }
+
+    .sidebar-footer{
+      margin-top:22px;
+      padding:16px;
+      border-radius:18px;
+      background:rgba(255,255,255,0.05);
+      border:1px solid rgba(255,255,255,0.08);
+      color:#d8deea;
+      font-size:13px;
+      line-height:1.55;
+    }
+
+    .main{
+      padding:24px;
+    }
+
+    .top-shell{
+      background:rgba(255,255,255,0.62);
+      border:1px solid rgba(255,255,255,0.75);
+      backdrop-filter:blur(12px);
+      box-shadow:var(--shadow-md);
+      border-radius:var(--radius-xl);
+      padding:22px;
+    }
+
+    .top-bar{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:18px;
+      flex-wrap:wrap;
+      margin-bottom:20px;
+    }
+
+    .page-heading h1{
+      margin:0;
+      font-family:"Montserrat", sans-serif;
+      font-size:32px;
+      line-height:1.08;
+    }
+
+    .page-heading p{
+      margin:10px 0 0;
+      color:var(--muted);
+      font-size:15px;
+    }
+
+    .top-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .primary-btn,
+    .secondary-btn,
+    .logout-btn{
+      border:none;
+      border-radius:12px;
+      cursor:pointer;
+      padding:12px 16px;
+      font-size:14px;
+      font-weight:800;
+      transition:.2s ease;
+    }
+
+    .primary-btn{
+      color:#fff;
+      background:linear-gradient(135deg, var(--brand), var(--brand-deep));
+    }
+
+    .secondary-btn{
+      color:var(--text);
+      background:#fff;
+      border:1px solid var(--line-strong);
+    }
+
+    .logout-btn{
+      color:#fff;
+      background:#111827;
+    }
+
+    .card{
+      background:var(--surface-strong);
+      border:1px solid rgba(255,255,255,0.8);
+      box-shadow:var(--shadow-lg);
+      border-radius:24px;
+      padding:22px;
+      margin-bottom:20px;
+    }
+
+    .card h2{
+      margin:0 0 12px;
+      font-family:"Montserrat", sans-serif;
+      font-size:22px;
+    }
+
+    .admin-form{
+      display:grid;
+      gap:14px;
+    }
+
+    .form-row{
+      display:grid;
+      gap:8px;
+    }
+
+    .form-row label{
+      font-size:14px;
+      font-weight:800;
+    }
+
+    .form-row input,
+    .form-row textarea,
+    .form-row select{
+      width:100%;
+      padding:12px 13px;
+      border:1px solid var(--line-strong);
+      border-radius:12px;
+      background:#fff;
+      font-size:14px;
+      outline:none;
+      font-family:inherit;
+    }
+
+    .checkbox-row label{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-weight:700;
+    }
+
+    .promo-toggle-row{
+      border:1px solid #ead6dc;
+      border-radius:16px;
+      padding:14px 16px;
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.9), rgba(255,255,255,0) 42%),
+        linear-gradient(180deg, #fff9fb 0%, #fff4f7 100%);
+      box-shadow:0 10px 22px rgba(127, 20, 37, 0.08);
+    }
+
+    .promo-toggle-card{
+      display:grid;
+      grid-template-columns:auto minmax(0, 1fr) auto;
+      align-items:center;
+      gap:14px;
+      width:100%;
+      cursor:pointer;
+    }
+
+    .promo-toggle-copy{
+      display:grid;
+      gap:4px;
+      min-width:0;
+    }
+
+    .promo-toggle-title{
+      margin:0;
+      font-family:"Montserrat", sans-serif;
+      font-size:14px;
+      font-weight:800;
+      color:#2b1f26;
+      letter-spacing:.02em;
+    }
+
+    .promo-toggle-sub{
+      margin:0;
+      font-size:12px;
+      color:#6e4b58;
+      line-height:1.4;
+    }
+
+    .promo-toggle-input{
+      position:absolute;
+      opacity:0;
+      pointer-events:none;
+    }
+
+    .promo-toggle-switch{
+      position:relative;
+      width:62px;
+      height:36px;
+      border-radius:999px;
+      border:1px solid #d8b8c3;
+      background:linear-gradient(180deg, #ececf2 0%, #e1e4eb 100%);
+      box-shadow:inset 0 1px 2px rgba(0,0,0,0.08);
+      cursor:pointer;
+      transition:.24s ease;
+      flex-shrink:0;
+    }
+
+    .promo-toggle-switch::after{
+      content:"";
+      position:absolute;
+      top:3px;
+      left:3px;
+      width:28px;
+      height:28px;
+      border-radius:50%;
+      background:linear-gradient(180deg, #ffffff 0%, #f7f8fb 100%);
+      box-shadow:0 3px 8px rgba(0,0,0,0.18);
+      transition:.24s ease;
+    }
+
+    .promo-toggle-input:checked + .promo-toggle-switch{
+      border-color:#a82845;
+      background:linear-gradient(135deg, #c72a49 0%, #8d1a30 100%);
+      box-shadow:0 8px 18px rgba(143, 28, 54, 0.24);
+    }
+
+    .promo-toggle-input:checked + .promo-toggle-switch::after{
+      transform:translateX(26px);
+    }
+
+    .promo-toggle-state{
+      min-width:70px;
+      padding:7px 10px;
+      border-radius:999px;
+      border:1px solid #d8b8c3;
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      text-align:center;
+      color:#7a5564;
+      background:#fff;
+      box-shadow:0 4px 12px rgba(127, 20, 37, 0.08);
+      transition:.24s ease;
+    }
+
+    .promo-toggle-state::before{
+      content:"Inactive";
+    }
+
+    .promo-toggle-input:checked ~ .promo-toggle-state{
+      color:#8a1833;
+      border-color:#cf6b84;
+      background:linear-gradient(180deg, #fff4f7 0%, #ffe8ee 100%);
+      box-shadow:0 8px 16px rgba(143, 28, 54, 0.16);
+    }
+
+    .promo-toggle-input:checked ~ .promo-toggle-state::before{
+      content:"Active";
+    }
+
+    @media (max-width:700px){
+      .promo-toggle-card{
+        grid-template-columns:auto 1fr;
+        grid-template-areas:
+          "switch state"
+          "copy copy";
+        row-gap:10px;
+      }
+
+      .promo-toggle-switch{
+        grid-area:switch;
+      }
+
+      .promo-toggle-state{
+        grid-area:state;
+        justify-self:end;
+      }
+
+      .promo-toggle-copy{
+        grid-area:copy;
+      }
+    }
+
+    .promo-toggle-input:focus-visible + .promo-toggle-switch{
+      outline:3px solid rgba(179, 32, 56, 0.22);
+      outline-offset:2px;
+    }
+
+    .form-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .list{
+      display:grid;
+      gap:14px;
+    }
+
+    .item-card{
+      padding:16px;
+      border:1px solid #edf1f6;
+      border-radius:18px;
+      background:#fbfcfe;
+    }
+
+    .item-card h3{
+      margin:0 0 8px;
+      font-size:18px;
+      font-family:"Montserrat", sans-serif;
+    }
+
+    .item-card p{
+      margin:0 0 10px;
+      color:var(--muted);
+      line-height:1.55;
+    }
+
+    .meta-row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+
+    .meta-pill{
+      display:inline-flex;
+      align-items:center;
+      padding:7px 11px;
+      border-radius:999px;
+      background:#eef2f7;
+      color:#344054;
+      font-size:12px;
+      font-weight:800;
+    }
+
+    .meta-pill.active{
+      background:#e9f8ef;
+      color:#15803d;
+    }
+
+    .meta-pill.hidden{
+      background:#fff1f2;
+      color:#b42318;
+    }
+
+    .inline-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .shopping-highlight-grid{
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0, 1fr));
+      gap:14px;
+    }
+
+    .shopping-highlight-slot{
+      padding:18px;
+      border-radius:18px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.98), rgba(249,250,251,0.95)),
+        linear-gradient(135deg, rgba(179,32,56,0.05), rgba(127,20,37,0.08));
+      border:1px solid #edf1f6;
+      box-shadow:0 14px 34px rgba(15, 23, 42, 0.07);
+      display:grid;
+      gap:12px;
+    }
+
+    .shopping-highlight-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:max-content;
+      padding:7px 12px;
+      border-radius:999px;
+      background:linear-gradient(135deg, #b32038, #7f1425);
+      color:#fff;
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      box-shadow:0 10px 22px rgba(127, 20, 37, 0.2);
+    }
+
+    @media (max-width:900px){
+      .admin-layout{ grid-template-columns:1fr; }
+      .sidebar{ position:relative; height:auto; }
+      .main{ padding:16px; }
+      .shopping-highlight-grid{ grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="sidebar">
+      <div class="brand-box">
+        <div class="brand-kicker">ThemeGood Admin</div>
+        <h2>Site Content</h2>
+        <p class="sidebar-sub">Manage testimonials, FAQ, contact details, newsletter text, and footer copy.</p>
+      </div>
+
+      <nav>
+        <a href="admin-orders.html"><span class="nav-icon">🧾</span> Orders</a>
+        <a href="admin-products.html"><span class="nav-icon">📦</span> Products</a>
+        <a href="admin-gallery.html"><span class="nav-icon">🖼</span> Gallery</a>
+        <a href="admin-homepage.html"><span class="nav-icon">🏠</span> Homepage</a>
+        <a href="admin-content.html" class="active"><span class="nav-icon">📝</span> Site Content</a>
+        <button id="logoutBtn" type="button"><span class="nav-icon">↩</span> Logout</button>
+      </nav>
+
+      <div class="sidebar-footer">
+        Update customer-facing text and keep the storefront content consistent.
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="top-shell">
+        <div class="top-bar">
+          <div class="page-heading">
+            <h1>Site Content Management</h1>
+            <p>Manage testimonials, FAQ, contact info, newsletter text, and footer copy.</p>
+          </div>
+          <div class="top-actions">
+            <button id="logoutBtnTop" class="logout-btn" type="button">Logout</button>
+          </div>
+        </div>
+
+        <section class="card">
+          <h2>Add / Edit Testimonial</h2>
+          <form id="testimonialForm" class="admin-form">
+            <input type="hidden" id="testimonialId">
+
+            <div class="form-row">
+              <label for="testimonialQuote">Quote</label>
+              <textarea id="testimonialQuote" rows="4"></textarea>
+            </div>
+
+            <div class="form-row">
+              <label for="testimonialAuthor">Author Name</label>
+              <input type="text" id="testimonialAuthor">
+            </div>
+
+            <div class="form-row">
+              <label for="testimonialRole">Author Role</label>
+              <input type="text" id="testimonialRole">
+            </div>
+
+            <div class="form-row">
+              <label for="testimonialSortOrder">Sort Order</label>
+              <input type="number" id="testimonialSortOrder" value="0" min="0">
+            </div>
+
+            <div class="form-row checkbox-row">
+              <label><input type="checkbox" id="testimonialIsActive" checked> Active</label>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="primary-btn">Save Testimonial</button>
+              <button type="button" id="resetTestimonialBtn" class="secondary-btn">Reset</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card">
+          <h2>Existing Testimonials</h2>
+          <div id="testimonialsList" class="list"></div>
+        </section>
+
+        <section class="card">
+          <h2>Add / Edit FAQ</h2>
+          <form id="faqForm" class="admin-form">
+            <input type="hidden" id="faqId">
+
+            <div class="form-row">
+              <label for="faqQuestion">Question</label>
+              <input type="text" id="faqQuestion">
+            </div>
+
+            <div class="form-row">
+              <label for="faqAnswer">Answer</label>
+              <textarea id="faqAnswer" rows="4"></textarea>
+            </div>
+
+            <div class="form-row">
+              <label for="faqSortOrder">Sort Order</label>
+              <input type="number" id="faqSortOrder" value="0" min="0">
+            </div>
+
+            <div class="form-row checkbox-row">
+              <label><input type="checkbox" id="faqIsActive" checked> Active</label>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="primary-btn">Save FAQ</button>
+              <button type="button" id="resetFaqBtn" class="secondary-btn">Reset</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card">
+          <h2>Existing FAQ</h2>
+          <div id="faqList" class="list"></div>
+        </section>
+
+        <section class="card">
+          <h2>Shopping Highlights</h2>
+          <form id="shoppingHighlightsForm" class="admin-form">
+            <div class="form-row">
+              <label for="shoppingFeaturedTitle">Section Title</label>
+              <input type="text" id="shoppingFeaturedTitle" placeholder="Customer Favourites">
+            </div>
+
+            <div class="form-row">
+              <label for="shoppingFeaturedSubtitle">Section Subtitle</label>
+              <textarea id="shoppingFeaturedSubtitle" rows="3" placeholder="Showcase limited-time picks, signature favourites, or best-value bundles."></textarea>
+            </div>
+
+            <div class="shopping-highlight-grid">
+              <div class="shopping-highlight-slot">
+                <div class="shopping-highlight-badge">Slot 1</div>
+                <div class="form-row">
+                  <label for="shoppingFeaturedSlot1Product">Featured Product</label>
+                  <select id="shoppingFeaturedSlot1Product"></select>
+                </div>
+                <div class="form-row">
+                  <label for="shoppingFeaturedSlot1Label">Premium Label</label>
+                  <input type="text" id="shoppingFeaturedSlot1Label" placeholder="Limited Time">
+                </div>
+              </div>
+
+              <div class="shopping-highlight-slot">
+                <div class="shopping-highlight-badge">Slot 2</div>
+                <div class="form-row">
+                  <label for="shoppingFeaturedSlot2Product">Featured Product</label>
+                  <select id="shoppingFeaturedSlot2Product"></select>
+                </div>
+                <div class="form-row">
+                  <label for="shoppingFeaturedSlot2Label">Premium Label</label>
+                  <input type="text" id="shoppingFeaturedSlot2Label" placeholder="Customer Favourite">
+                </div>
+              </div>
+
+              <div class="shopping-highlight-slot">
+                <div class="shopping-highlight-badge">Slot 3</div>
+                <div class="form-row">
+                  <label for="shoppingFeaturedSlot3Product">Featured Product</label>
+                  <select id="shoppingFeaturedSlot3Product"></select>
+                </div>
+                <div class="form-row">
+                  <label for="shoppingFeaturedSlot3Label">Premium Label</label>
+                  <input type="text" id="shoppingFeaturedSlot3Label" placeholder="Best Value">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="primary-btn">Save Shopping Highlights</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card">
+          <h2>Best Sellers</h2>
+          <form id="bestSellersForm" class="admin-form">
+            <div class="form-row">
+              <label for="bestSellerTitle">Section Title</label>
+              <input type="text" id="bestSellerTitle" placeholder="Best Sellers">
+            </div>
+
+            <div class="form-row">
+              <label for="bestSellerSubtitle">Section Subtitle</label>
+              <textarea id="bestSellerSubtitle" rows="3" placeholder="Show the products you want shoppers to notice first."></textarea>
+            </div>
+
+            <div class="shopping-highlight-grid">
+              <div class="shopping-highlight-slot">
+                <div class="shopping-highlight-badge">Slot 1</div>
+                <div class="form-row">
+                  <label for="bestSellerSlot1Product">Best Seller Product</label>
+                  <select id="bestSellerSlot1Product"></select>
+                </div>
+                <div class="form-row">
+                  <label for="bestSellerSlot1Label">Label</label>
+                  <input type="text" id="bestSellerSlot1Label" placeholder="Best Seller">
+                </div>
+              </div>
+
+              <div class="shopping-highlight-slot">
+                <div class="shopping-highlight-badge">Slot 2</div>
+                <div class="form-row">
+                  <label for="bestSellerSlot2Product">Best Seller Product</label>
+                  <select id="bestSellerSlot2Product"></select>
+                </div>
+                <div class="form-row">
+                  <label for="bestSellerSlot2Label">Label</label>
+                  <input type="text" id="bestSellerSlot2Label" placeholder="Most Loved">
+                </div>
+              </div>
+
+              <div class="shopping-highlight-slot">
+                <div class="shopping-highlight-badge">Slot 3</div>
+                <div class="form-row">
+                  <label for="bestSellerSlot3Product">Best Seller Product</label>
+                  <select id="bestSellerSlot3Product"></select>
+                </div>
+                <div class="form-row">
+                  <label for="bestSellerSlot3Label">Label</label>
+                  <input type="text" id="bestSellerSlot3Label" placeholder="Top Pick">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="primary-btn">Save Best Sellers</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card">
+          <h2>Shopping Page Hero / CTA</h2>
+          <form id="shoppingPageContentForm" class="admin-form">
+            <div class="form-row">
+              <label for="shoppingHeroTitleInput">Hero Title</label>
+              <input type="text" id="shoppingHeroTitleInput" placeholder="Premium soy milk powder shopping with cleaner visuals and stronger product focus.">
+            </div>
+
+            <div class="form-row">
+              <label for="shoppingHeroSubtitleInput">Hero Subtitle</label>
+              <textarea id="shoppingHeroSubtitleInput" rows="3" placeholder="Explore featured wellness blends, bundle-ready offers, and a quick-view flow that opens like a full product showcase instead of a small modal."></textarea>
+            </div>
+
+            <div class="form-row">
+              <label for="shoppingCtaTitleInput">Checkout CTA Title</label>
+              <input type="text" id="shoppingCtaTitleInput" placeholder="Ready to Checkout?">
+            </div>
+
+            <div class="form-row">
+              <label for="shoppingCtaSubtitleInput">Checkout CTA Subtitle</label>
+              <textarea id="shoppingCtaSubtitleInput" rows="3" placeholder="Review your cart and complete your order securely."></textarea>
+            </div>
+
+            <div class="form-row">
+              <label for="shoppingCtaButtonTextInput">Checkout CTA Button Text</label>
+              <input type="text" id="shoppingCtaButtonTextInput" placeholder="Go to Checkout">
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="primary-btn">Save Shopping Hero / CTA</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card">
+          <h2>Contact / Footer Settings</h2>
+          <form id="settingsForm" class="admin-form">
+            <div class="form-row">
+              <label for="contactEmail">Contact Email</label>
+              <input type="text" id="contactEmail">
+            </div>
+
+            <div class="form-row">
+              <label for="contactPhone">Contact Phone</label>
+              <input type="text" id="contactPhone">
+            </div>
+
+            <div class="form-row">
+              <label for="contactLocation">Contact Location</label>
+              <textarea id="contactLocation" rows="3"></textarea>
+            </div>
+
+            <div class="form-row">
+              <label for="newsletterTitle">Newsletter Title</label>
+              <input type="text" id="newsletterTitle">
+            </div>
+
+            <div class="form-row">
+              <label for="newsletterDesc">Newsletter Description</label>
+              <textarea id="newsletterDesc" rows="3"></textarea>
+            </div>
+
+            <div class="form-row">
+              <label for="footerCopy">Footer Copy</label>
+              <input type="text" id="footerCopy">
+            </div>
+
+            <hr>
+
+            <div class="form-row promo-toggle-row">
+              <label class="promo-toggle-card" for="promoCodeActive">
+                <input type="checkbox" id="promoCodeActive" class="promo-toggle-input">
+                <span class="promo-toggle-switch" aria-hidden="true"></span>
+                <span class="promo-toggle-copy">
+                  <span class="promo-toggle-title">Promo Code Active</span>
+                  <span class="promo-toggle-sub">Turn this on to allow customers to apply the code at checkout.</span>
+                </span>
+                <span class="promo-toggle-state" aria-hidden="true"></span>
+              </label>
+            </div>
+
+            <div class="form-row">
+              <label for="promoCodeValue">Promo Code</label>
+              <input type="text" id="promoCodeValue" placeholder="e.g. RAMADAN10">
+            </div>
+
+            <div class="form-row">
+              <label for="promoDiscountPercent">Promo Discount (%)</label>
+              <input type="number" id="promoDiscountPercent" min="0" max="100" step="0.01" placeholder="10">
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="primary-btn">Save Settings</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="admin-content.js?v=2"></script>
+  <script>
+    function logoutAdmin() {
+      localStorage.removeItem("adminToken");
+      window.location.href = "admin-login.html";
+    }
+    document.getElementById("logoutBtn")?.addEventListener("click", logoutAdmin);
+    document.getElementById("logoutBtnTop")?.addEventListener("click", logoutAdmin);
+  </script>
+</body>
+</html>

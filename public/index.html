@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ThemeGood</title>
+<link rel="icon" type="image/png" href="/photos/New_Theme Good Logo-02.png">
+<link rel="apple-touch-icon" href="/photos/New_Theme Good Logo-02.png">
+
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="overrides.css">
+<link rel="stylesheet" href="premium.css?v=28">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Libre+Baskerville:wght@700&family=Montserrat:wght@500;600;700;800&family=Nunito+Sans:wght@400;500;600;700;800&display=swap">
+</head>
+
+<body class="home-page">
+
+<header class="site-header">
+<a href="index.html" class="logo-container" aria-label="ThemeGood home">
+<img src="photos/New_Theme Good Logo-01 (1).png" class="logo" alt="ThemeGood logo">
+</a>
+
+<button id="hamburgerBtn" aria-expanded="false" aria-label="Open navigation">
+<i class="fa fa-bars"></i>
+</button>
+
+<nav id="navMenu" aria-label="Primary navigation">
+<ul class="nav-links">
+<li><a href="#home" data-i18n="home">Home</a></li>
+<li><a href="#about" data-i18n="about">About</a></li>
+<li><a href="#flavours" data-i18n="flavours">Flavours</a></li>
+<li><a href="gallery.html" data-i18n="gallery">Gallery</a></li>
+<li><a href="shopping.html" data-i18n="shopping">Shop</a></li>
+<li><a href="#bundles" data-i18n="bundles">Bundles</a></li>
+<li><a href="#testimonials" data-i18n="testimonials">Testimonials</a></li>
+<li><a href="#faq" data-i18n="faq">FAQ</a></li>
+<li class="nav-item contact-nav">
+<a href="#contact" class="contact-link" data-i18n="contact_us">Contact</a>
+<div class="contact-hover-card" aria-hidden="true">
+<div class="contact-card-inner">
+<div class="contact-card-image">
+<img src="/photos/contact-support-agent.jpg" alt="Contact support">
+</div>
+<div class="contact-card-content">
+<span class="contact-card-label">We're here to help</span>
+<h4 data-i18n="contact_us">Contact Us</h4>
+<p>Chat with our team for product enquiries, orders, and support.</p>
+<div class="contact-card-actions">
+<a href="https://api.whatsapp.com/send/?phone=60187786000" class="contact-action" target="_blank" rel="noopener noreferrer">
+<span class="contact-action-icon"><i class="fab fa-whatsapp" aria-hidden="true"></i></span>
+<span>WhatsApp Us</span>
+</a>
+<a href="mailto:themegood6000@email.com" class="contact-action secondary">
+<span class="contact-action-icon"><i class="fa-regular fa-envelope" aria-hidden="true"></i></span>
+<span>Email Us</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+</li>
+</ul>
+</nav>
+
+<div class="header-store-links" aria-label="Marketplace links">
+<a class="store-badge store-badge-lazada" href="https://www.lazada.com.my/theme-good-121123223/" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Lazada" title="Lazada"><img src="photos/Lazada_29_icon.webp" alt="Lazada"></a>
+<a class="store-badge store-badge-shopee" href="https://shopee.com.my/themegood" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Shopee" title="Shopee"><img src="photos/shopee.png" alt="Shopee"></a>
+</div>
+
+<div class="header-social-links" aria-label="Social media links">
+<a href="https://www.facebook.com/www.themegood.com.my" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Facebook"><i class="fab fa-facebook-f"></i></a>
+<a href="https://www.instagram.com/themegood_malaysia" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Instagram"><i class="fab fa-instagram"></i></a>
+<a href="https://api.whatsapp.com/send/?phone=60187786000" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on WhatsApp"><i class="fab fa-whatsapp"></i></a>
+</div>
+
+<div class="header-actions">
+<a href="shopping.html" class="btn header-shop-cta" data-i18n="shop_now">Shop Now</a>
+<button id="cart-toggle">&#128722; Cart <span id="cart-count">0</span></button>
+<label class="lang-switch" aria-label="Language">
+<span data-i18n="language">Language</span>
+<select class="js-lang-switch">
+<option value="en">EN</option>
+<option value="ms">BM</option>
+<option value="zh">&#20013;&#25991;</option>
+</select>
+</label>
+</div>
+
+<div id="menuOverlay"></div>
+</header>
+
+<main>
+<section id="home" class="hero">
+<div class="slide active" data-slide-link="shopping.html#products">
+<div class="hero-media">
+<img src="photos/family-premium-newsletter-dark.jpg" alt="Parent holding a child by the window">
+</div>
+<div class="hero-overlay"></div>
+<div class="hero-copy">
+<p class="hero-eyebrow">ThemeGood</p>
+<h1>Nourishing soy milk powder crafted for modern daily rituals.</h1>
+<p class="hero-support">A warmer, more refined wellness experience with elegant flavours, versatile bundle choices, and seamless ecommerce built for repeat purchase.</p>
+<div class="slide-cta">
+<a href="shopping.html" class="btn btn-primary">Buy Now</a>
+<a href="#about" class="btn btn-secondary">Learn More</a>
+</div>
+</div>
+</div>
+
+<div class="slide" data-slide-link="#flavours">
+<div class="hero-media">
+<img src="photos/family-premium-newsletter.jpg" alt="Grandfather holding a baby in soft window light">
+</div>
+<div class="hero-overlay"></div>
+<div class="hero-copy">
+<p class="hero-eyebrow">ThemeGood</p>
+<h2>Wide, cinematic storytelling that puts flavour, lifestyle, and trust first.</h2>
+<p class="hero-support">From pomegranate to bilberry, each blend is presented with generous space, product-led visuals, and clear paths to shop.</p>
+<div class="slide-cta">
+<a href="#flavours" class="btn btn-primary">Explore Flavours</a>
+<a href="#products" class="btn btn-secondary">Featured Range</a>
+</div>
+</div>
+</div>
+
+<div class="slide" data-slide-link="#bundles">
+<div class="hero-media">
+<img src="photos/family-premium-lifestyle.jpg" alt="Friends relaxing together outdoors">
+</div>
+<div class="hero-overlay"></div>
+<div class="hero-copy">
+<p class="hero-eyebrow">ThemeGood</p>
+<h2>Quick-view products, premium bundles, and cart-ready shopping without leaving the page flow.</h2>
+<p class="hero-support">Browse hero collections, open an immersive product overlay, and keep flavour selections and pricing logic exactly where customers expect them.</p>
+<div class="slide-cta">
+<a href="#bundles" class="btn btn-primary">View Bundles</a>
+<a href="shopping.html" class="btn btn-secondary">Shop All</a>
+</div>
+</div>
+</div>
+
+<div class="slide" data-slide-link="shopping.html#products">
+<div class="hero-media">
+<img src="photos/family-premium-newsletter-dark.jpg" alt="Family enjoying wellness moments together">
+</div>
+<div class="hero-overlay"></div>
+<div class="hero-copy">
+<p class="hero-eyebrow">ThemeGood</p>
+<h2>Nourishing daily wellness for stronger family routines.</h2>
+<p class="hero-support">Discover thoughtful blends designed for comfort, consistency, and modern living.</p>
+<div class="slide-cta">
+<a href="shopping.html" class="btn btn-primary">Buy Now</a>
+<a href="#about" class="btn btn-secondary">Learn More</a>
+</div>
+</div>
+</div>
+
+<button class="arrow left" id="prevBtn" aria-label="Previous slide">&#10094;</button>
+<button class="arrow right" id="nextBtn" aria-label="Next slide">&#10095;</button>
+
+<div class="dots" aria-label="Slide navigation">
+<span class="dot active"></span>
+<span class="dot"></span>
+<span class="dot"></span>
+<span class="dot"></span>
+</div>
+
+<div class="hero-bottom-bar">
+<div>
+<strong>Healthy Soy Nutrition</strong>
+<span>Balanced flavour-forward wellness for families and professionals.</span>
+</div>
+<div>
+<strong>Bundle-Ready Shopping</strong>
+<span>Premium quick view, preserved pricing logic, and smooth cart flow.</span>
+</div>
+<div>
+<strong>Official Stores</strong>
+<span>Website discovery with Lazada and Shopee access for convenient checkout.</span>
+</div>
+</div>
+</section>
+
+<section id="about" class="section brand-story-section">
+<div class="section-shell brand-story-grid">
+<div class="brand-story-copy">
+<p class="section-kicker">About ThemeGood</p>
+<h2 class="section-title">A healthier soy milk powder brand presented with confidence, calm, and credibility.</h2>
+<p class="about-lead">ThemeGood develops nutrient-rich soy and multigrain wellness drinks using thoughtfully selected ingredients, flavour variety, and everyday convenience for modern households.</p>
+<div class="brand-story-points">
+<article>
+<strong>Daily Wellness</strong>
+<p>Warm, satisfying blends designed for easy routine adoption across workdays, family breakfasts, and evening nourishment.</p>
+</article>
+<article>
+<strong>Refined Product Range</strong>
+<p>Flavours, sizes, bundles, and gift options are presented as a premium brand system instead of a crowded catalog.</p>
+</article>
+<article>
+<strong>Trusted Shopping Flow</strong>
+<p>Customers can browse, compare, quick-view, and add to cart without losing the premium brand feel.</p>
+</article>
+</div>
+</div>
+<div class="brand-story-media">
+<img src="photos/family-park-portrait.jpg" alt="Family relaxing together in a green park">
+</div>
+</div>
+</section>
+
+<section class="section wide-banner-section">
+<div class="section-shell">
+<div class="wide-banner-panel">
+<div class="wide-banner-copy">
+<p class="section-kicker">Signature Experience</p>
+<h2>Calmer premium story.</h2>
+<p>Elegant typography and warm tones make the collection feel refined.</p>
+<div class="wide-banner-actions">
+<a href="shopping.html" class="btn btn-secondary">Browse Collection</a>
+</div>
+</div>
+<div class="wide-banner-visual">
+<div class="wide-banner-orb wide-banner-orb-one" aria-hidden="true"></div>
+<div class="wide-banner-orb wide-banner-orb-two" aria-hidden="true"></div>
+<img src="photos/family-living-room.jpg" alt="Family relaxing in a living room with ThemeGood lifestyle context">
+<div class="wide-banner-badge">Premium wellness, presented with clarity.</div>
+</div>
+</div>
+</div>
+</section>
+
+<section id="flavours" class="section editorial-flavours-section">
+<div class="section-shell section-heading-shell">
+<p class="section-kicker">Flavour Collection</p>
+<h2 class="section-title">Large editorial sections that let each flavour family breathe.</h2>
+<p class="section-intro">Inspired by premium corporate storytelling, these flavour showcases use wide split layouts, generous image space, and clear calls to action instead of small crowded cards.</p>
+</div>
+
+<div class="editorial-flavour-stack">
+<article class="editorial-flavour">
+<div class="editorial-flavour-media">
+<img src="photos/Pomegranate 800g (1).png" alt="ThemeGood Pomegranate product">
+</div>
+<div class="editorial-flavour-copy">
+<p class="section-kicker">Pomegranate</p>
+<h3>Rich, polished, and easy to position as the hero flavour for everyday vitality.</h3>
+<p>A flagship presentation with elegant colour, generous product scale, and supporting wellness cues that make the product feel substantial and giftable.</p>
+<a href="shopping-details.html#product-pomegranate" class="text-link">View Product</a>
+</div>
+</article>
+
+<article class="editorial-flavour editorial-flavour-reverse">
+<div class="editorial-flavour-media">
+<img src="photos/Bilberry 800g.png" alt="ThemeGood Bilberry product">
+</div>
+<div class="editorial-flavour-copy">
+<p class="section-kicker">Bilberry</p>
+<h3>Calm, refined visuals for a flavour story that feels thoughtful and premium.</h3>
+<p>Wide imagery and high-contrast typography help customers understand the product at a glance while preserving a clean, corporate-brand feel.</p>
+<a href="shopping.html#products" class="text-link">Shop Bilberry</a>
+</div>
+</article>
+
+<article class="editorial-flavour">
+<div class="editorial-flavour-media">
+<img src="photos/Passion Fruit 800g.png" alt="ThemeGood Passion Fruit product">
+</div>
+<div class="editorial-flavour-copy">
+<p class="section-kicker">Passion Fruit</p>
+<h3>Brighter, more energetic flavour positioning without losing visual restraint.</h3>
+<p>The layout balances product warmth and modern commerce so customers can move from discovery to quick view naturally.</p>
+<a href="shopping.html" class="text-link">Explore All Flavours</a>
+</div>
+</article>
+</div>
+</section>
+
+<section id="products" class="section featured-products-section">
+<div class="section-shell section-heading-shell">
+<p class="section-kicker">Featured Products</p>
+<h2 class="section-title">Best-selling wellness choices, presented with more space and stronger imagery.</h2>
+<p class="section-intro">The same product, bundle, and cart logic remains in place, now framed with a cleaner premium product listing and a more immersive quick-view experience.</p>
+</div>
+<div class="featured-products-shell">
+<div id="productList"></div>
+</div>
+</section>
+
+<section id="bundles" class="section bundles-story-section">
+<div class="section-shell bundles-story-grid">
+<div class="bundles-story-copy">
+<p class="section-kicker">Bundles</p>
+<h2 class="section-title">Make multi-product shopping feel curated instead of transactional.</h2>
+<p>Bundle offers, flavour restrictions, pricing rules, and quick-view behaviour stay intact while the presentation shifts toward a fuller brand showcase with stronger imagery and cleaner guidance.</p>
+<div class="bundles-story-actions">
+<a href="shopping.html#shoppingFeaturedSection" class="btn btn-primary">Shop Bundles</a>
+<a href="shopping.html#products" class="btn btn-secondary">Build Your Cart</a>
+</div>
+</div>
+<div class="bundles-story-media">
+<img src="photos/family-park-running.jpg" alt="Parents and daughter running together in a park">
+</div>
+</div>
+</section>
+
+<section id="testimonials" class="section testimonials-section">
+<div class="section-shell section-heading-shell">
+<p class="section-kicker">Testimonials</p>
+<h2 class="section-title">What Our Customers Say</h2>
+<p class="testimonials-intro">Real feedback from customers who add ThemeGood to their daily wellness routine.</p>
+</div>
+
+<div class="testimonials-grid">
+<article class="testimonial-card">
+<div class="testimonial-stars" aria-label="5 star rating">?????</div>
+<p class="testimonial-copy">The Pomegranate blend is smooth, easy to prepare, and has become part of my morning routine.</p>
+<div class="testimonial-author">
+<strong>Ms. Lim</strong>
+<span>Working Professional</span>
+</div>
+</article>
+
+<article class="testimonial-card">
+<div class="testimonial-stars" aria-label="5 star rating">?????</div>
+<p class="testimonial-copy">My parents enjoy the Bilberry and Oat Beta options. The size choices are practical and convenient.</p>
+<div class="testimonial-author">
+<strong>Mr. Gan</strong>
+<span>Family Buyer</span>
+</div>
+</article>
+
+<article class="testimonial-card">
+<div class="testimonial-stars" aria-label="5 star rating">?????</div>
+<p class="testimonial-copy">The Passion Fruit flavour stands out. Ordering online is easy and the product presentation feels premium.</p>
+<div class="testimonial-author">
+<strong>Ms. Aina</strong>
+<span>Repeat Customer</span>
+</div>
+</article>
+</div>
+</section>
+
+<section id="faq" class="section faq-section">
+<div class="section-shell section-heading-shell">
+<p class="section-kicker">FAQ</p>
+<h2 class="section-title">Frequently Asked Questions</h2>
+<p class="faq-intro">Quick answers about product sizes, ordering, delivery, and daily use.</p>
+</div>
+
+<div class="faq-list">
+<details class="faq-item" open>
+<summary>How do I choose between 300g, 600g, and 800g?</summary>
+<p>The 300g size is suitable for trying a product, 600g offers a practical refill size, and 800g is ideal for regular household use.</p>
+</details>
+
+<details class="faq-item">
+<summary>Can I order directly from the website?</summary>
+<p>You can review products here and also connect with our official marketplace stores through Lazada and Shopee for convenient checkout.</p>
+</details>
+
+<details class="faq-item">
+<summary>How should I enjoy ThemeGood multigrain products?</summary>
+<p>Prepare according to the recommended serving method and enjoy as part of your daily routine, whether in the morning or as a nourishing drink during the day.</p>
+</details>
+
+<details class="faq-item">
+<summary>How can I contact ThemeGood for product questions?</summary>
+<p>You can reach us through the contact section, social channels, or WhatsApp for more information about products and ordering support.</p>
+</details>
+</div>
+</section>
+
+<section id="contact" class="section contact">
+<div class="section-shell section-heading-shell">
+<p class="section-kicker">Contact</p>
+<h2 data-i18n="contact_us">Contact Us</h2>
+</div>
+
+<div class="shop-map">
+<div class="shop-map-showcase">
+<div class="shop-map-frame">
+<iframe
+title="ThemeGood Shop Location"
+src="https://www.google.com/maps?q=14%2C%20Jalan%20Tokong%2C%20Taman%20Hoover%2C%20Ipoh%2C%20Perak%2C%20Malaysia&output=embed"
+loading="lazy"
+allowfullscreen
+referrerpolicy="no-referrer-when-downgrade">
+</iframe>
+</div>
+
+<aside class="shop-map-card" aria-label="Store location details">
+<p class="shop-map-label">ThemeGood Wellness Nutrition</p>
+<h3>Visit Our Shop</h3>
+<p class="shop-map-address">14, Jalan Tokong, Taman Hoover, Ipoh, Perak, Malaysia.</p>
+<div class="shop-map-meta">
+<p><strong>Phone:</strong> <a href="tel:+6052431668">05-2431668</a></p>
+<p><strong>Email:</strong> <a href="mailto:themegood6000@email.com">themegood6000@email.com</a></p>
+<p><strong>WhatsApp:</strong> <a href="https://api.whatsapp.com/send/?phone=60187786000" target="_blank" rel="noopener noreferrer">+60 18-778 6000</a></p>
+<p><strong>Hours:</strong> Monday - Saturday, 8am to 5pm</p>
+</div>
+<a class="shop-map-link" href="https://www.google.com/maps/search/?api=1&query=14%2C+Jalan+Tokong%2C+Taman+Hoover%2C+Ipoh%2C+Perak%2C+Malaysia" target="_blank" rel="noopener noreferrer">Open in Google Maps</a>
+</aside>
+</div>
+</div>
+</section>
+
+<section class="section newsletter" aria-label="Newsletter">
+<div class="section-shell newsletter-shell">
+<p class="section-kicker">Newsletter</p>
+<h2>Subscribe to Our Newsletter</h2>
+<p>Get updates about new wellness products and special offers.</p>
+
+<form id="newsletter-form">
+<input
+type="email"
+id="newsletter-email"
+placeholder="Enter your email"
+required
+>
+<button type="submit">Subscribe</button>
+</form>
+</div>
+</section>
+</main>
+
+<div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+<button id="backToTop" aria-label="Back to top">&#8593;</button>
+
+<footer>
+<div class="footer-container">
+<div class="footer-brand">
+<a href="index.html" aria-label="Back to main page">
+<img src="photos/New_Theme Good Logo-01 (1).png" class="footer-logo" alt="ThemeGood logo">
+</a>
+<p data-i18n="footer_tagline">ThemeGood Marketing</p>
+<div class="footer-certifications" aria-label="Product certifications">
+<span class="product-cert-badge is-halal"><img src="/photos/halal-icon.png" alt="Halal certified" style="display:block !important;width:auto !important;height:50px !important;min-height:0 !important;max-height:50px !important;max-width:none !important;object-fit:contain !important;padding:0 !important;margin:0 !important;background:transparent !important;border-radius:0 !important;"></span>
+<span class="product-cert-badge is-vegetarian"><img src="/photos/vegetarian-icon.png" alt="Suitable for Vegetarian" style="display:block !important;width:auto !important;height:50px !important;min-height:0 !important;max-height:50px !important;max-width:none !important;object-fit:contain !important;padding:0 !important;margin:0 !important;background:transparent !important;border-radius:0 !important;"></span>
+</div>
+</div>
+
+<div class="footer-links">
+<h4 data-i18n="quick_links">Quick Links</h4>
+<a href="#home" data-i18n="home">Home</a>
+<a href="#about" data-i18n="about">About</a>
+<a href="#flavours" data-i18n="flavours">Flavours</a>
+<a href="gallery.html" data-i18n="gallery">Gallery</a>
+<a href="shopping.html" data-i18n="shopping">Shop</a>
+<a href="#bundles" data-i18n="bundles">Bundles</a>
+<a href="#testimonials" data-i18n="testimonials">Testimonials</a>
+<a href="#faq" data-i18n="faq">FAQ</a>
+<a href="#contact" data-i18n="contact_us">Contact Us</a>
+<label class="lang-switch footer-lang" aria-label="Language">
+<span data-i18n="language">Language</span>
+<select class="js-lang-switch">
+<option value="en">EN</option>
+<option value="ms">BM</option>
+<option value="zh">&#20013;&#25991;</option>
+</select>
+</label>
+</div>
+
+<div class="footer-social">
+<h4 data-i18n="follow_us">Follow Us</h4>
+<a href="https://www.facebook.com/www.themegood.com.my" target="_blank" rel="noopener noreferrer"><i class="fab fa-facebook"></i></a>
+<a href="https://www.instagram.com/themegood_malaysia" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
+<a href="https://api.whatsapp.com/send/?phone=60187786000" target="_blank" rel="noopener noreferrer"><i class="fab fa-whatsapp"></i></a>
+<a class="store-badge store-badge-lazada" href="https://www.lazada.com.my/theme-good-121123223/" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Lazada" title="Lazada"><img src="photos/Lazada_29_icon.webp" alt="Lazada"></a>
+<a class="store-badge store-badge-shopee" href="https://shopee.com.my/themegood" target="_blank" rel="noopener noreferrer" aria-label="ThemeGood on Shopee" title="Shopee"><img src="photos/shopee.png" alt="Shopee"></a>
+</div>
+
+<div class="footer-qr">
+<h4 data-i18n="scan_qr">Scan QR</h4>
+<img src="photos/tgqr.png" alt="ThemeGood QR code">
+</div>
+
+</div>
+
+<p class="footer-bottom" data-i18n="footer_copy">&copy; 2026 Theme Good Marketing. All Rights Reserved.</p>
+</footer>
+
+<script src="shop-products.js"></script>
+<script src="homepage-content.js"></script>
+<script src="site-content.js?v=5"></script>
+<script src="script.js?v=8"></script>
+</body>
+</html>

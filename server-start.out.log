@@ -1,0 +1,8 @@
+[dotenv@17.3.1] injecting env (2) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+ENV CHECK {
+  hasDatabaseUrl: false,
+  hasAdminPassword: true,
+  hasJwtSecret: true,
+  nodeEnv: undefined
+}
+SERVER STARTED
