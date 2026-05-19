@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Points | ThemeGood</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { margin: 0; font-family: "Nunito Sans", Arial, sans-serif; background: #f6f7fb; color: #172033; }
+    .shell { width: min(1080px, 96%); margin: 24px auto; display: grid; gap: 16px; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 18px; }
+    h1, h2 { margin: 0 0 10px; font-family: "Montserrat", sans-serif; }
+    .row { display: grid; gap: 10px; grid-template-columns: 1fr auto; align-items: end; }
+    input { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #cfd6e3; border-radius: 10px; }
+    button { min-height: 44px; border: none; border-radius: 10px; background: #b32038; color: #fff; padding: 0 16px; font-weight: 700; cursor: pointer; }
+    .stats { display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .stat { border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px; background: #fcfcff; }
+    .stat .label { color: #6b7280; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+    .stat .value { margin-top: 6px; font-size: 28px; font-weight: 800; }
+    .list { display: grid; gap: 10px; }
+    .item { border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; }
+    .muted { color: #6b7280; }
+    .reward { display: grid; gap: 4px; }
+    .error { color: #b42318; font-weight: 700; }
+    .ok { color: #15803d; font-weight: 700; }
+    @media (max-width: 760px) {
+      .stats { grid-template-columns: 1fr; }
+      .row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="card">
+      <h1>My Points / Loyalty</h1>
+      <p class="muted">Enter your customer ID to view your current balance, rewards, and recent points history.</p>
+      <div class="row">
+        <div>
+          <label for="customerIdInput">Customer ID</label>
+          <input id="customerIdInput" type="number" min="1" placeholder="Example: 123" />
+        </div>
+        <button id="loadLoyaltyBtn" type="button">Load Loyalty</button>
+      </div>
+      <p id="statusMessage" class="muted" style="margin:10px 0 0;"></p>
+    </section>
+
+    <section class="card">
+      <h2>Points Balance</h2>
+      <div class="stats">
+        <article class="stat">
+          <div class="label">Current Points</div>
+          <div id="currentPoints" class="value">0</div>
+        </article>
+        <article class="stat">
+          <div class="label">Lifetime Earned</div>
+          <div id="lifetimeEarned" class="value">0</div>
+        </article>
+        <article class="stat">
+          <div class="label">Lifetime Redeemed</div>
+          <div id="lifetimeRedeemed" class="value">0</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Referral Program</h2>
+      <div class="stats" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+        <article class="stat">
+          <div class="label">Your Referral Code</div>
+          <div id="referralCode" class="value" style="font-size:26px;">-</div>
+        </article>
+        <article class="stat">
+          <div class="label">Referral Bonus</div>
+          <div id="referralBonusPoints" class="value" style="font-size:26px;">50</div>
+        </article>
+      </div>
+      <div class="stats" style="grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top:12px;">
+        <article class="stat">
+          <div class="label">Successful Referrals</div>
+          <div id="successfulReferralsCount" class="value" style="font-size:26px;">0</div>
+        </article>
+        <article class="stat">
+          <div class="label">Pending Referrals</div>
+          <div id="pendingReferralsCount" class="value" style="font-size:26px;">0</div>
+        </article>
+      </div>
+      <p class="muted" style="margin-top:10px;">Share your referral code with new customers. Both of you receive points after their first eligible order is paid and completed.</p>
+      <div class="row">
+        <div>
+          <label for="applyReferralCodeInput">Apply Referral Code</label>
+          <input id="applyReferralCodeInput" type="text" maxlength="32" placeholder="Enter referral code before first eligible order" />
+        </div>
+        <button id="applyReferralCodeBtn" type="button">Apply Code</button>
+      </div>
+      <p id="referralApplyMessage" class="muted" style="margin:10px 0 0;"></p>
+    </section>
+
+    <section class="card">
+      <h2>Recent Points History</h2>
+      <div id="transactionsList" class="list">
+        <div class="muted">No transactions loaded yet.</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Active Rewards</h2>
+      <div id="rewardsList" class="list">
+        <div class="muted">Loading rewards.</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Loyalty Rules & Terms</h2>
+      <div class="list">
+        <div class="item">1 point for every RM1 spent on eligible orders.</div>
+        <div class="item">Points are awarded after successful payment and order completion.</div>
+        <div class="item">Points redemption applies to eligible rewards only.</div>
+        <div class="item">Only one loyalty reward can be used per order.</div>
+        <div class="item">Shipping fees do not earn loyalty points.</div>
+        <div class="item">Refunded/cancelled orders may reverse earned or redeemed points.</div>
+        <div class="item">Loyalty points cannot be exchanged for cash.</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const CUSTOMER_ID_STORAGE_KEY = "themegood_customer_id";
+    const CUSTOMER_TOKEN_STORAGE_KEY = "themegood_customer_token";
+
+    function parseCustomerId(value) {
+      const id = Number(value);
+      return Number.isInteger(id) && id > 0 ? id : null;
+    }
+
+    function getPreferredCustomerId() {
+      const queryId = parseCustomerId(new URLSearchParams(window.location.search).get("customer_id"));
+      if (queryId) return queryId;
+      return parseCustomerId(localStorage.getItem(CUSTOMER_ID_STORAGE_KEY));
+    }
+
+    function getCustomerToken() {
+      return String(localStorage.getItem(CUSTOMER_TOKEN_STORAGE_KEY) || "").trim();
+    }
+
+    function persistCustomerId(customerId) {
+      const normalized = parseCustomerId(customerId);
+      if (!normalized) return;
+      localStorage.setItem(CUSTOMER_ID_STORAGE_KEY, String(normalized));
+    }
+
+    function formatDate(value) {
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.getTime())) return "-";
+      return parsed.toLocaleString("en-MY", {
+        timeZone: "Asia/Kuala_Lumpur",
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true
+      });
+    }
+
+    function setStatus(message, kind = "muted") {
+      const el = document.getElementById("statusMessage");
+      if (!el) return;
+      el.className = kind;
+      el.textContent = message;
+    }
+
+    async function loadRewards() {
+      const container = document.getElementById("rewardsList");
+      try {
+        const response = await fetch("/api/loyalty-rewards");
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || "Failed to load rewards");
+
+        const rewards = Array.isArray(payload.rewards) ? payload.rewards : [];
+        if (rewards.length === 0) {
+          container.innerHTML = '<div class="muted">No active rewards available.</div>';
+          return;
+        }
+
+        container.innerHTML = rewards.map((reward) => {
+          const fixedDiscount = reward.reward_type === "fixed_discount"
+            ? `Discount: RM ${Number(reward.discount_value || 0).toFixed(2)}`
+            : "";
+          const gift = reward.reward_type === "free_gift"
+            ? `Gift: ${String(reward.gift_product_name || "Free Gift")}`
+            : "";
+
+          return `
+            <article class="item reward">
+              <strong>${String(reward.name || "Reward")}</strong>
+              <div>Type: ${String(reward.reward_type || "-")}</div>
+              <div>Points Required: ${Number(reward.points_required || 0)}</div>
+              ${fixedDiscount ? `<div>${fixedDiscount}</div>` : ""}
+              ${gift ? `<div>${gift}</div>` : ""}
+            </article>
+          `;
+        }).join("");
+      } catch (error) {
+        container.innerHTML = `<div class="error">${error.message || "Failed to load rewards."}</div>`;
+      }
+    }
+
+    async function loadCustomerLoyalty(customerId) {
+      const headers = { "x-customer-id": String(customerId) };
+      const token = getCustomerToken();
+      if (token) headers["x-customer-token"] = token;
+      const [accountRes, txRes, referralRes] = await Promise.all([
+        fetch("/api/customer/account", { headers }),
+        fetch("/api/customer/loyalty-transactions?limit=30", { headers }),
+        fetch("/api/customer/referral", { headers })
+      ]);
+
+      const accountPayload = await accountRes.json();
+      const txPayload = await txRes.json();
+      const referralPayload = await referralRes.json();
+
+      if (!accountRes.ok) throw new Error(accountPayload.error || "Failed to load account loyalty data");
+      if (!txRes.ok) throw new Error(txPayload.error || "Failed to load loyalty transactions");
+      if (!referralRes.ok) throw new Error(referralPayload.error || "Failed to load referral info");
+
+      const account = accountPayload.account || {};
+      persistCustomerId(customerId);
+      document.getElementById("currentPoints").textContent = String(Number(account.loyalty_points || 0));
+      document.getElementById("lifetimeEarned").textContent = String(Number(account.lifetime_points_earned || 0));
+      document.getElementById("lifetimeRedeemed").textContent = String(Number(account.lifetime_points_redeemed || 0));
+
+      const referral = referralPayload.referral || {};
+      document.getElementById("referralCode").textContent = String(referral.referral_code || "-");
+      document.getElementById("referralBonusPoints").textContent = String(Number(referral.referral_bonus_points || 50));
+      document.getElementById("successfulReferralsCount").textContent = String(Number(referral.successful_referrals_count || 0));
+      document.getElementById("pendingReferralsCount").textContent = String(Number(referral.pending_referrals_count || 0));
+
+      const txList = document.getElementById("transactionsList");
+      const transactions = Array.isArray(txPayload.transactions) ? txPayload.transactions : [];
+      if (transactions.length === 0) {
+        txList.innerHTML = '<div class="muted">No loyalty transactions yet.</div>';
+        return;
+      }
+
+      txList.innerHTML = transactions.map((tx) => `
+        <article class="item">
+          <strong>${String(tx.type_label || tx.type || "")}</strong>
+          <div>Points: ${Number(tx.points || 0)}</div>
+          <div>Order: ${tx.order_id ? `#${Number(tx.order_id)}` : "-"}</div>
+          <div class="muted">${String(tx.description || "-")}</div>
+          <div class="muted">${formatDate(tx.created_at)}</div>
+        </article>
+      `).join("");
+    }
+
+    async function applyReferralCode() {
+      const customerId = Number(document.getElementById("customerIdInput").value || 0);
+      const rawCode = String(document.getElementById("applyReferralCodeInput")?.value || "").trim();
+      const messageEl = document.getElementById("referralApplyMessage");
+      if (!messageEl) return;
+
+      if (!Number.isInteger(customerId) || customerId <= 0) {
+        messageEl.className = "error";
+        messageEl.textContent = "Load your loyalty profile with a valid customer ID first.";
+        return;
+      }
+      if (!rawCode) {
+        messageEl.className = "error";
+        messageEl.textContent = "Please enter a referral code.";
+        return;
+      }
+
+      messageEl.className = "muted";
+      messageEl.textContent = "Applying referral code...";
+
+      try {
+        const response = await fetch("/api/customer/referral/apply", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-customer-id": String(customerId),
+            ...(getCustomerToken() ? { "x-customer-token": getCustomerToken() } : {})
+          },
+          body: JSON.stringify({ referral_code: rawCode })
+        });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || "Failed to apply referral code.");
+
+        messageEl.className = "ok";
+        messageEl.textContent = payload.message || "Referral code applied successfully.";
+        await loadCustomerLoyalty(customerId);
+      } catch (error) {
+        messageEl.className = "error";
+        messageEl.textContent = error.message || "Failed to apply referral code.";
+      }
+    }
+
+    document.getElementById("loadLoyaltyBtn").addEventListener("click", async () => {
+      const raw = Number(document.getElementById("customerIdInput").value || 0);
+      if (!Number.isInteger(raw) || raw <= 0) {
+        setStatus("Please enter a valid customer ID.", "error");
+        return;
+      }
+
+      try {
+        setStatus("Loading loyalty data...", "muted");
+        await loadCustomerLoyalty(raw);
+        setStatus("Loyalty data loaded.", "ok");
+      } catch (error) {
+        setStatus(error.message || "Failed to load loyalty data.", "error");
+      }
+    });
+    document.getElementById("applyReferralCodeBtn").addEventListener("click", applyReferralCode);
+
+    loadRewards();
+
+    const preferredCustomerId = getPreferredCustomerId();
+    if (preferredCustomerId) {
+      document.getElementById("customerIdInput").value = String(preferredCustomerId);
+      document.getElementById("loadLoyaltyBtn").click();
+    }
+  </script>
+</body>
+</html>

@@ -1,4 +1,18 @@
-require("dotenv").config();
+const path = require("path");
+const dotenv = require("dotenv");
+
+dotenv.config();
+
+const requiredEnv = ["DATABASE_URL", "ADMIN_PASSWORD", "JWT_SECRET"];
+const missingEnvAfterDefault = requiredEnv.filter((key) => !process.env[key]);
+
+if (missingEnvAfterDefault.length > 0) {
+  const fallbackEnvFile = process.env.NODE_ENV === "production" ? ".env.production" : ".env.development";
+  dotenv.config({
+    path: path.resolve(__dirname, fallbackEnvFile),
+    override: false
+  });
+}
 
 console.log("ENV CHECK", {
   hasDatabaseUrl: !!process.env.DATABASE_URL,
@@ -10,7 +24,6 @@ console.log("ENV CHECK", {
 console.log("SERVER STARTED");
 
 const express = require("express");
-const path = require("path");
 const crypto = require("crypto");
 const fs = require("fs");
 const jwt = require("jsonwebtoken");
@@ -35,7 +48,6 @@ const {
 const app = express();
 const port = process.env.PORT || 3000;
 
-const requiredEnv = ["DATABASE_URL", "ADMIN_PASSWORD", "JWT_SECRET"];
 for (const key of requiredEnv) {
   if (!process.env[key]) {
     console.error(`${key} is missing in environment`);
@@ -76,6 +88,17 @@ const ORDER_ITEM_PRICE_MIN = 0;
 const ORDER_ITEM_PRICE_MAX = 10000;
 const TOTAL_AMOUNT_MIN = 0;
 const TOTAL_AMOUNT_MAX = 100000;
+const LOYALTY_POINTS_MIN = 0;
+const LOYALTY_POINTS_MAX = 100000000;
+const REFERRAL_BONUS_POINTS = 50;
+const CUSTOMER_OTP_TTL_MINUTES = 5;
+const CUSTOMER_OTP_MAX_ATTEMPTS = 5;
+const CUSTOMER_OTP_MAX_REQUESTS_PER_10_MIN = 5;
+const REFERRAL_CODE_MIN_LENGTH = 4;
+const REFERRAL_CODE_MAX_LENGTH = 32;
+const LOYALTY_REWARD_NAME_MAX_LENGTH = 255;
+const LOYALTY_ADJUSTMENT_REASON_MAX_LENGTH = 500;
+const LOYALTY_REWARD_TYPES = new Set(["fixed_discount", "free_gift"]);
 const ALLOWED_ORDER_STATUSES = new Set(["new", "processing", "shipped", "completed", "cancelled"]);
 const ALLOWED_PAYMENT_STATUSES = new Set(["pending", "paid", "failed", "refunded"]);
 const ALLOWED_PRODUCT_SIZES = ["small", "medium", "large"];
@@ -480,12 +503,293 @@ async function ensureOrderItemBundleColumns() {
 
 ensureOrderItemBundleColumns();
 
+async function ensureLoyaltySchema() {
+  try {
+    const usersTableResult = await pool.query(
+      `
+      SELECT 1
+      FROM information_schema.tables
+      WHERE table_schema = 'public' AND table_name = 'users'
+      LIMIT 1
+      `
+    );
+
+    const ordersTableResult = await pool.query(
+      `
+      SELECT 1
+      FROM information_schema.tables
+      WHERE table_schema = 'public' AND table_name = 'orders'
+      LIMIT 1
+      `
+    );
+
+    const productsTableResult = await pool.query(
+      `
+      SELECT 1
+      FROM information_schema.tables
+      WHERE table_schema = 'public' AND table_name = 'products'
+      LIMIT 1
+      `
+    );
+
+    if (usersTableResult.rowCount === 0 || ordersTableResult.rowCount === 0) return;
+
+    await pool.query(`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS loyalty_points INTEGER NOT NULL DEFAULT 0
+    `);
+    await pool.query(`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS lifetime_points_earned INTEGER NOT NULL DEFAULT 0
+    `);
+    await pool.query(`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS lifetime_points_redeemed INTEGER NOT NULL DEFAULT 0
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS loyalty_points_transactions (
+        id SERIAL PRIMARY KEY,
+        customer_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        order_id INTEGER REFERENCES orders(id) ON DELETE SET NULL,
+        type VARCHAR(50) NOT NULL,
+        points INTEGER NOT NULL,
+        description TEXT,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT ck_loyalty_points_transactions_nonnegative_points CHECK (points >= 0)
+      )
+    `);
+
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_loyalty_txn_customer
+      ON loyalty_points_transactions(customer_id, created_at DESC)
+    `);
+
+    await pool.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS ux_loyalty_txn_order_type
+      ON loyalty_points_transactions(order_id, type)
+      WHERE order_id IS NOT NULL AND type = 'earn'
+    `);
+    await pool.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS ux_loyalty_txn_order_redeem_type
+      ON loyalty_points_transactions(order_id, type)
+      WHERE order_id IS NOT NULL AND type = 'redeem'
+    `);
+    await pool.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS ux_loyalty_txn_order_earn_reversal_type
+      ON loyalty_points_transactions(order_id, type)
+      WHERE order_id IS NOT NULL AND type = 'earn_reversal'
+    `);
+    await pool.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS ux_loyalty_txn_order_redeem_restore_type
+      ON loyalty_points_transactions(order_id, type)
+      WHERE order_id IS NOT NULL AND type = 'redeem_restore'
+    `);
+    await pool.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS ux_loyalty_txn_order_referral_bonus_referrer_type
+      ON loyalty_points_transactions(order_id, type)
+      WHERE order_id IS NOT NULL AND type = 'referral_bonus_referrer'
+    `);
+    await pool.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS ux_loyalty_txn_order_referral_bonus_referred_type
+      ON loyalty_points_transactions(order_id, type)
+      WHERE order_id IS NOT NULL AND type = 'referral_bonus_referred'
+    `);
+    await pool.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS ux_loyalty_txn_order_referral_bonus_referrer_reversal_type
+      ON loyalty_points_transactions(order_id, type)
+      WHERE order_id IS NOT NULL AND type = 'referral_bonus_referrer_reversal'
+    `);
+    await pool.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS ux_loyalty_txn_order_referral_bonus_referred_reversal_type
+      ON loyalty_points_transactions(order_id, type)
+      WHERE order_id IS NOT NULL AND type = 'referral_bonus_referred_reversal'
+    `);
+
+    await pool.query(`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS referral_code VARCHAR(32)
+    `);
+    await pool.query(`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS referred_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL
+    `);
+    await pool.query(`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS referral_applied_at TIMESTAMP NULL
+    `);
+    await pool.query(`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS referral_reward_granted_at TIMESTAMP NULL
+    `);
+    await pool.query(`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS referral_reward_reversed_at TIMESTAMP NULL
+    `);
+    await pool.query(`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS referral_reward_order_id INTEGER REFERENCES orders(id) ON DELETE SET NULL
+    `);
+    await pool.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS ux_users_referral_code_upper
+      ON users(UPPER(referral_code))
+      WHERE referral_code IS NOT NULL AND referral_code <> ''
+    `);
+    await pool.query(`
+      UPDATE users
+      SET referral_code = CONCAT(
+        'TG',
+        UPPER(to_hex(id)),
+        UPPER(SUBSTRING(md5(id::text), 1, 4))
+      )
+      WHERE referral_code IS NULL OR referral_code = ''
+    `);
+
+    if (productsTableResult.rowCount > 0) {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS loyalty_rewards (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          reward_type VARCHAR(50) NOT NULL,
+          points_required INTEGER NOT NULL,
+          discount_value NUMERIC(10,2) NULL,
+          gift_product_id INTEGER NULL REFERENCES products(id) ON DELETE RESTRICT,
+          is_active BOOLEAN NOT NULL DEFAULT TRUE,
+          sort_order INTEGER NOT NULL DEFAULT 0,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT ck_loyalty_rewards_type CHECK (reward_type IN ('fixed_discount', 'free_gift')),
+          CONSTRAINT ck_loyalty_rewards_points_required CHECK (points_required > 0),
+          CONSTRAINT ck_loyalty_rewards_value_combo CHECK (
+            (reward_type = 'fixed_discount' AND discount_value IS NOT NULL AND discount_value > 0 AND gift_product_id IS NULL)
+            OR
+            (reward_type = 'free_gift' AND gift_product_id IS NOT NULL AND discount_value IS NULL)
+          )
+        )
+      `);
+
+      await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_loyalty_rewards_active_sort
+        ON loyalty_rewards(is_active, sort_order, points_required, id)
+      `);
+
+      // Keep FK semantics aligned with free_gift validation rules:
+      // a gift-linked product cannot be deleted while referenced by a reward.
+      await pool.query(`
+        ALTER TABLE loyalty_rewards
+        DROP CONSTRAINT IF EXISTS loyalty_rewards_gift_product_id_fkey
+      `);
+      await pool.query(`
+        ALTER TABLE loyalty_rewards
+        ADD CONSTRAINT loyalty_rewards_gift_product_id_fkey
+        FOREIGN KEY (gift_product_id) REFERENCES products(id) ON DELETE RESTRICT
+      `);
+
+      await pool.query(`
+        ALTER TABLE orders
+        ADD COLUMN IF NOT EXISTS loyalty_reward_id INTEGER REFERENCES loyalty_rewards(id) ON DELETE SET NULL
+      `);
+      await pool.query(`
+        ALTER TABLE orders
+        ADD COLUMN IF NOT EXISTS loyalty_reward_type VARCHAR(50)
+      `);
+      await pool.query(`
+        ALTER TABLE orders
+        ADD COLUMN IF NOT EXISTS loyalty_points_redeemed INTEGER NOT NULL DEFAULT 0
+      `);
+      await pool.query(`
+        ALTER TABLE orders
+        ADD COLUMN IF NOT EXISTS loyalty_discount_amount NUMERIC(10,2) NOT NULL DEFAULT 0
+      `);
+      await pool.query(`
+        ALTER TABLE orders
+        ADD COLUMN IF NOT EXISTS loyalty_free_gift_product_id INTEGER REFERENCES products(id) ON DELETE SET NULL
+      `);
+      await pool.query(`
+        ALTER TABLE orders
+        ADD COLUMN IF NOT EXISTS loyalty_redeemed_at TIMESTAMP NULL
+      `);
+      await pool.query(`
+        ALTER TABLE orders
+        ADD COLUMN IF NOT EXISTS loyalty_earn_reversed_at TIMESTAMP NULL
+      `);
+      await pool.query(`
+        ALTER TABLE orders
+        ADD COLUMN IF NOT EXISTS loyalty_redeem_restored_at TIMESTAMP NULL
+      `);
+      await pool.query(`
+        ALTER TABLE orders
+        ADD COLUMN IF NOT EXISTS referral_bonus_granted_at TIMESTAMP NULL
+      `);
+      await pool.query(`
+        ALTER TABLE orders
+        ADD COLUMN IF NOT EXISTS referral_bonus_reversed_at TIMESTAMP NULL
+      `);
+      await pool.query(`
+        ALTER TABLE orders
+        DROP CONSTRAINT IF EXISTS ck_orders_loyalty_points_nonnegative
+      `);
+      await pool.query(`
+        ALTER TABLE orders
+        ADD CONSTRAINT ck_orders_loyalty_points_nonnegative
+        CHECK (COALESCE(loyalty_points_redeemed, 0) >= 0)
+      `);
+    }
+
+    cachedSchemaCapabilities = null;
+  } catch (error) {
+    console.error("Failed to ensure loyalty schema:", error);
+  }
+}
+
+ensureLoyaltySchema();
+
+async function ensureCustomerAuthSchema() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS customer_auth_otp_codes (
+        id SERIAL PRIMARY KEY,
+        phone VARCHAR(32) NOT NULL,
+        otp_hash VARCHAR(128) NOT NULL,
+        delivery_channel VARCHAR(20) NOT NULL DEFAULT 'whatsapp',
+        attempt_count INTEGER NOT NULL DEFAULT 0,
+        expires_at TIMESTAMP NOT NULL,
+        used_at TIMESTAMP NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_customer_auth_otp_phone_created_at
+      ON customer_auth_otp_codes(phone, created_at DESC)
+    `);
+    cachedSchemaCapabilities = null;
+  } catch (error) {
+    console.error("Failed to ensure customer auth schema:", error);
+  }
+}
+
+ensureCustomerAuthSchema();
+
 function normalizeString(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
 function normalizePhoneDigits(value) {
   return normalizeString(value).replace(/\D/g, "");
+}
+
+function normalizeCustomerAuthPhone(value) {
+  const digits = normalizePhoneDigits(value);
+  if (!digits) return "";
+  if (digits.startsWith("60")) return `+${digits}`;
+  if (digits.startsWith("0")) return `+6${digits}`;
+  return `+${digits}`;
+}
+
+function isValidCustomerAuthPhone(value) {
+  const normalized = normalizeCustomerAuthPhone(value);
+  const digits = normalizePhoneDigits(normalized);
+  return Boolean(normalized) && digits.length >= 9 && digits.length <= PHONE_MAX_LENGTH;
 }
 
 function parseMoney(value) {
@@ -614,6 +918,1091 @@ function isValidPhone(phone) {
 
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function resolveCustomerIdFromRequest(req = {}, options = {}) {
+  const allowHeader = options.allowHeader !== false;
+  const allowQuery = options.allowQuery !== false;
+
+  const customerToken = normalizeString(req?.headers?.["x-customer-token"]) ||
+    normalizeString(req?.headers?.authorization).replace(/^Bearer\s+/i, "");
+  if (customerToken) {
+    try {
+      const decoded = jwt.verify(customerToken, process.env.JWT_SECRET);
+      const fromToken = parseInteger(decoded?.customer_id ?? decoded?.id);
+      if (Number.isInteger(fromToken) && fromToken > 0) return fromToken;
+    } catch {
+      // Ignore invalid token and continue with other resolvers.
+    }
+  }
+
+  const fromUser = parseInteger(req?.user?.id);
+  if (Number.isInteger(fromUser) && fromUser > 0) return fromUser;
+
+  const fromCustomer = parseInteger(req?.customer?.id);
+  if (Number.isInteger(fromCustomer) && fromCustomer > 0) return fromCustomer;
+
+  if (allowHeader) {
+    const fromHeader = parseInteger(req?.headers?.["x-customer-id"]);
+    if (Number.isInteger(fromHeader) && fromHeader > 0) return fromHeader;
+  }
+
+  if (allowQuery) {
+    const fromQuery = parseInteger(req?.query?.customer_id);
+    if (Number.isInteger(fromQuery) && fromQuery > 0) return fromQuery;
+  }
+
+  return null;
+}
+
+function clampLoyaltyPoints(points) {
+  const safe = Number.isFinite(Number(points)) ? Math.floor(Number(points)) : 0;
+  if (safe < LOYALTY_POINTS_MIN) return LOYALTY_POINTS_MIN;
+  return Math.min(safe, LOYALTY_POINTS_MAX);
+}
+
+function normalizeStatus(value) {
+  return normalizeString(value).toLowerCase();
+}
+
+function getLoyaltyTransactionTypeLabel(type) {
+  const normalized = normalizeString(type).toLowerCase();
+  if (normalized === "earn") return "Earned from order";
+  if (normalized === "redeem") return "Redeemed reward";
+  if (normalized === "earn_reversal") return "Points reversed after refund/cancellation";
+  if (normalized === "redeem_restore") return "Points restored after refund/cancellation";
+  if (normalized === "admin_adjust_add") return "Bonus points added by admin";
+  if (normalized === "admin_adjust_deduct") return "Points deducted by admin";
+  if (normalized === "referral_bonus_referrer") return "Referral bonus earned (referrer)";
+  if (normalized === "referral_bonus_referred") return "Referral bonus earned (referred customer)";
+  if (normalized === "referral_bonus_referrer_reversal") return "Referral bonus reversed (referrer)";
+  if (normalized === "referral_bonus_referred_reversal") return "Referral bonus reversed (referred customer)";
+  return "Loyalty adjustment";
+}
+
+function normalizeReferralCode(value) {
+  return normalizeString(value).toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+function generateReferralCodeCandidate() {
+  return `TG${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
+}
+
+function generateCustomerOtpCode() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+function hashCustomerOtp(phone, otp) {
+  return crypto
+    .createHash("sha256")
+    .update(`${normalizeCustomerAuthPhone(phone)}:${String(otp || "").trim()}:${process.env.JWT_SECRET}`)
+    .digest("hex");
+}
+
+function signCustomerAuthToken(customerId) {
+  return jwt.sign(
+    { role: "customer", customer_id: Number(customerId) },
+    process.env.JWT_SECRET,
+    { expiresIn: "30d" }
+  );
+}
+
+async function sendCustomerWhatsappOtp(phone, otp) {
+  const webhookUrl = normalizeString(process.env.WHATSAPP_OTP_WEBHOOK_URL);
+  const message = `ThemeGood verification code: ${otp}. Expires in ${CUSTOMER_OTP_TTL_MINUTES} minutes.`;
+
+  if (!webhookUrl) {
+    console.info(`[OTP DEV] WhatsApp OTP for ${phone}: ${otp}`);
+    return { sent: true, provider: "dev_log" };
+  }
+
+  const response = await fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      phone,
+      message,
+      channel: "whatsapp"
+    })
+  });
+
+  if (!response.ok) {
+    const payload = await response.text().catch(() => "");
+    throw new Error(`WhatsApp OTP delivery failed (${response.status}): ${payload}`);
+  }
+
+  return { sent: true, provider: "webhook" };
+}
+
+function buildReferralCodeFromCustomerId(customerId) {
+  const id = parseInteger(customerId);
+  if (!Number.isInteger(id) || id <= 0) return generateReferralCodeCandidate();
+  const encodedId = id.toString(36).toUpperCase();
+  const checksum = crypto
+    .createHash("sha1")
+    .update(String(id))
+    .digest("hex")
+    .slice(0, 4)
+    .toUpperCase();
+  return `TG${encodedId}${checksum}`;
+}
+
+async function ensureCustomerReferralCode(client, customerId) {
+  const normalizedCustomerId = parseInteger(customerId);
+  if (!Number.isInteger(normalizedCustomerId) || normalizedCustomerId <= 0) return null;
+
+  const userResult = await client.query(
+    `
+    SELECT id, referral_code
+    FROM users
+    WHERE id = $1
+    FOR UPDATE
+    `,
+    [normalizedCustomerId]
+  );
+
+  if (userResult.rowCount === 0) return null;
+
+  const existingCode = normalizeReferralCode(userResult.rows[0].referral_code);
+  if (existingCode) return existingCode;
+
+  const deterministicCode = buildReferralCodeFromCustomerId(normalizedCustomerId);
+  try {
+    const updateResult = await client.query(
+      `
+      UPDATE users
+      SET referral_code = $1
+      WHERE id = $2
+      RETURNING referral_code
+      `,
+      [deterministicCode, normalizedCustomerId]
+    );
+
+    if (updateResult.rowCount > 0) {
+      const savedCode = normalizeReferralCode(updateResult.rows[0].referral_code);
+      if (savedCode) return savedCode;
+    }
+  } catch (error) {
+    if (error?.code !== "23505") throw error;
+  }
+
+  // Fallback for rare collisions from legacy/manual values in older databases.
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const candidate = generateReferralCodeCandidate();
+    try {
+      const updateResult = await client.query(
+        `
+        UPDATE users
+        SET referral_code = $1
+        WHERE id = $2
+        RETURNING referral_code
+        `,
+        [candidate, normalizedCustomerId]
+      );
+      if (updateResult.rowCount > 0) {
+        return normalizeReferralCode(updateResult.rows[0].referral_code) || candidate;
+      }
+    } catch (error) {
+      if (error?.code !== "23505") throw error;
+    }
+  }
+
+  throw new Error("Unable to generate a unique referral code.");
+}
+
+async function awardReferralBonusesForOrderIfEligible(client, orderId, schemaCapabilities = {}) {
+  const normalizedOrderId = parseInteger(orderId);
+  if (!Number.isInteger(normalizedOrderId) || normalizedOrderId <= 0) return { awarded: false, reason: "invalid_order_id" };
+  if (!schemaCapabilities.hasUsersTable) return { awarded: false, reason: "users_table_missing" };
+  if (!schemaCapabilities.hasOrderCustomerIdColumn) return { awarded: false, reason: "order_customer_id_missing" };
+  if (!schemaCapabilities.hasUsersLoyaltyPointsColumns) return { awarded: false, reason: "users_loyalty_columns_missing" };
+  if (!schemaCapabilities.hasLoyaltyPointsTransactionsTable) return { awarded: false, reason: "loyalty_txn_table_missing" };
+  if (!schemaCapabilities.hasUsersReferralColumns) return { awarded: false, reason: "users_referral_columns_missing" };
+  if (!schemaCapabilities.hasOrderReferralBonusColumns) return { awarded: false, reason: "order_referral_columns_missing" };
+
+  const deliveryStatusColumn = schemaCapabilities.hasOrderDeliveryStatusColumn ? "delivery_status" : "order_status";
+  const orderResult = await client.query(
+    `
+    SELECT
+      id,
+      customer_id,
+      payment_status,
+      ${deliveryStatusColumn} AS delivery_status,
+      referral_bonus_granted_at,
+      referral_bonus_reversed_at
+    FROM orders
+    WHERE id = $1
+    FOR UPDATE
+    `,
+    [normalizedOrderId]
+  );
+
+  if (orderResult.rowCount === 0) return { awarded: false, reason: "order_not_found" };
+  const order = orderResult.rows[0];
+  if (!isLoyaltyAwardEligible(order)) return { awarded: false, reason: "order_not_eligible_yet" };
+  if (order.referral_bonus_granted_at) return { awarded: false, reason: "already_awarded" };
+
+  const referredCustomerId = parseInteger(order.customer_id);
+  if (!Number.isInteger(referredCustomerId) || referredCustomerId <= 0) {
+    return { awarded: false, reason: "guest_or_missing_customer_id" };
+  }
+
+  const referredUserResult = await client.query(
+    `
+    SELECT
+      id,
+      referred_by_user_id,
+      referral_reward_granted_at,
+      referral_reward_order_id
+    FROM users
+    WHERE id = $1
+    FOR UPDATE
+    `,
+    [referredCustomerId]
+  );
+
+  if (referredUserResult.rowCount === 0) return { awarded: false, reason: "referred_user_not_found" };
+  const referredUser = referredUserResult.rows[0];
+  const referrerUserId = parseInteger(referredUser.referred_by_user_id);
+  if (!Number.isInteger(referrerUserId) || referrerUserId <= 0) {
+    return { awarded: false, reason: "no_referrer_assigned" };
+  }
+  if (referrerUserId === referredCustomerId) {
+    return { awarded: false, reason: "invalid_self_referral" };
+  }
+
+  if (referredUser.referral_reward_granted_at) {
+    await client.query(
+      `
+      UPDATE orders
+      SET referral_bonus_granted_at = COALESCE(referral_bonus_granted_at, CURRENT_TIMESTAMP)
+      WHERE id = $1
+      `,
+      [normalizedOrderId]
+    );
+    return { awarded: false, reason: "already_awarded" };
+  }
+
+  const firstEligibleOrderResult = await client.query(
+    `
+    SELECT id
+    FROM orders
+    WHERE customer_id = $1
+      AND LOWER(COALESCE(payment_status, '')) = 'paid'
+      AND LOWER(COALESCE(${deliveryStatusColumn}, '')) = 'completed'
+    ORDER BY created_at ASC, id ASC
+    LIMIT 1
+    `,
+    [referredCustomerId]
+  );
+
+  if (firstEligibleOrderResult.rowCount === 0) {
+    return { awarded: false, reason: "no_eligible_order_found" };
+  }
+  if (parseInteger(firstEligibleOrderResult.rows[0].id) !== normalizedOrderId) {
+    return { awarded: false, reason: "not_first_eligible_order" };
+  }
+
+  const referrerBonusInsert = await client.query(
+    `
+    INSERT INTO loyalty_points_transactions (customer_id, order_id, type, points, description)
+    VALUES ($1, $2, 'referral_bonus_referrer', $3, $4)
+    ON CONFLICT DO NOTHING
+    RETURNING id
+    `,
+    [
+      referrerUserId,
+      normalizedOrderId,
+      REFERRAL_BONUS_POINTS,
+      `Referral bonus from referred customer's first eligible order #${normalizedOrderId}`
+    ]
+  );
+
+  const referredBonusInsert = await client.query(
+    `
+    INSERT INTO loyalty_points_transactions (customer_id, order_id, type, points, description)
+    VALUES ($1, $2, 'referral_bonus_referred', $3, $4)
+    ON CONFLICT DO NOTHING
+    RETURNING id
+    `,
+    [
+      referredCustomerId,
+      normalizedOrderId,
+      REFERRAL_BONUS_POINTS,
+      `Referral bonus for your first eligible order #${normalizedOrderId}`
+    ]
+  );
+
+  if (referrerBonusInsert.rowCount === 0 && referredBonusInsert.rowCount === 0) {
+    await client.query(
+      `
+      UPDATE users
+      SET
+        referral_reward_granted_at = COALESCE(referral_reward_granted_at, CURRENT_TIMESTAMP),
+        referral_reward_order_id = COALESCE(referral_reward_order_id, $2)
+      WHERE id = $1
+      `,
+      [referredCustomerId, normalizedOrderId]
+    );
+    await client.query(
+      `
+      UPDATE orders
+      SET referral_bonus_granted_at = COALESCE(referral_bonus_granted_at, CURRENT_TIMESTAMP)
+      WHERE id = $1
+      `,
+      [normalizedOrderId]
+    );
+    return { awarded: false, reason: "already_awarded" };
+  }
+
+  if (referrerBonusInsert.rowCount !== referredBonusInsert.rowCount) {
+    throw new Error("Referral bonus write conflict: partial insert detected.");
+  }
+
+  await client.query(
+    `
+    UPDATE users
+    SET
+      loyalty_points = COALESCE(loyalty_points, 0) + $1,
+      lifetime_points_earned = COALESCE(lifetime_points_earned, 0) + $1
+    WHERE id = ANY($2::int[])
+    `,
+    [REFERRAL_BONUS_POINTS, [referrerUserId, referredCustomerId]]
+  );
+
+  await client.query(
+    `
+    UPDATE users
+    SET
+      referral_reward_granted_at = COALESCE(referral_reward_granted_at, CURRENT_TIMESTAMP),
+      referral_reward_order_id = COALESCE(referral_reward_order_id, $2),
+      referral_reward_reversed_at = NULL
+    WHERE id = $1
+    `,
+    [referredCustomerId, normalizedOrderId]
+  );
+
+  await client.query(
+    `
+    UPDATE orders
+    SET
+      referral_bonus_granted_at = COALESCE(referral_bonus_granted_at, CURRENT_TIMESTAMP),
+      referral_bonus_reversed_at = NULL
+    WHERE id = $1
+    `,
+    [normalizedOrderId]
+  );
+
+  return {
+    awarded: true,
+    referrerUserId,
+    referredCustomerId,
+    pointsAwardedEach: REFERRAL_BONUS_POINTS
+  };
+}
+
+async function reverseReferralBonusesForOrderIfEligible(client, orderId, schemaCapabilities = {}) {
+  const normalizedOrderId = parseInteger(orderId);
+  if (!Number.isInteger(normalizedOrderId) || normalizedOrderId <= 0) return { changed: false, reason: "invalid_order_id" };
+  if (!schemaCapabilities.hasUsersTable) return { changed: false, reason: "users_table_missing" };
+  if (!schemaCapabilities.hasOrderCustomerIdColumn) return { changed: false, reason: "order_customer_id_missing" };
+  if (!schemaCapabilities.hasUsersLoyaltyPointsColumns) return { changed: false, reason: "users_loyalty_columns_missing" };
+  if (!schemaCapabilities.hasLoyaltyPointsTransactionsTable) return { changed: false, reason: "loyalty_txn_table_missing" };
+  if (!schemaCapabilities.hasUsersReferralColumns) return { changed: false, reason: "users_referral_columns_missing" };
+  if (!schemaCapabilities.hasOrderReferralBonusColumns) return { changed: false, reason: "order_referral_columns_missing" };
+
+  const deliveryStatusColumn = schemaCapabilities.hasOrderDeliveryStatusColumn ? "delivery_status" : "order_status";
+  const orderResult = await client.query(
+    `
+    SELECT
+      id,
+      customer_id,
+      payment_status,
+      ${deliveryStatusColumn} AS delivery_status,
+      referral_bonus_reversed_at
+    FROM orders
+    WHERE id = $1
+    FOR UPDATE
+    `,
+    [normalizedOrderId]
+  );
+
+  if (orderResult.rowCount === 0) return { changed: false, reason: "order_not_found" };
+  const order = orderResult.rows[0];
+  if (!isLoyaltyReversalEligible(order)) return { changed: false, reason: "order_not_reversal_eligible" };
+  if (order.referral_bonus_reversed_at) return { changed: false, reason: "already_reversed" };
+
+  const referredCustomerId = parseInteger(order.customer_id);
+  if (!Number.isInteger(referredCustomerId) || referredCustomerId <= 0) {
+    return { changed: false, reason: "guest_or_missing_customer_id" };
+  }
+
+  const userResult = await client.query(
+    `
+    SELECT id, referred_by_user_id
+    FROM users
+    WHERE id = $1
+    FOR UPDATE
+    `,
+    [referredCustomerId]
+  );
+
+  if (userResult.rowCount === 0) return { changed: false, reason: "referred_user_not_found" };
+  const referrerUserId = parseInteger(userResult.rows[0].referred_by_user_id);
+  if (!Number.isInteger(referrerUserId) || referrerUserId <= 0) {
+    return { changed: false, reason: "no_referrer_assigned" };
+  }
+
+  const referrerBonusResult = await client.query(
+    `
+    SELECT points
+    FROM loyalty_points_transactions
+    WHERE order_id = $1 AND type = 'referral_bonus_referrer'
+    LIMIT 1
+    `,
+    [normalizedOrderId]
+  );
+  const referredBonusResult = await client.query(
+    `
+    SELECT points
+    FROM loyalty_points_transactions
+    WHERE order_id = $1 AND type = 'referral_bonus_referred'
+    LIMIT 1
+    `,
+    [normalizedOrderId]
+  );
+
+  const referrerPoints = clampLoyaltyPoints(referrerBonusResult.rows[0]?.points);
+  const referredPoints = clampLoyaltyPoints(referredBonusResult.rows[0]?.points);
+  if (referrerPoints <= 0 && referredPoints <= 0) {
+    return { changed: false, reason: "no_referral_bonus_to_reverse" };
+  }
+
+  let referrerReversed = false;
+  let referredReversed = false;
+
+  if (referrerPoints > 0) {
+    const referrerReverseInsert = await client.query(
+      `
+      INSERT INTO loyalty_points_transactions (customer_id, order_id, type, points, description)
+      VALUES ($1, $2, 'referral_bonus_referrer_reversal', $3, $4)
+      ON CONFLICT DO NOTHING
+      RETURNING id
+      `,
+      [
+        referrerUserId,
+        normalizedOrderId,
+        referrerPoints,
+        `Referral bonus reversed for referrer on refunded/cancelled order #${normalizedOrderId}`
+      ]
+    );
+    if (referrerReverseInsert.rowCount > 0) {
+      await client.query(
+        `
+        UPDATE users
+        SET
+          loyalty_points = GREATEST(0, COALESCE(loyalty_points, 0) - $1),
+          lifetime_points_earned = GREATEST(0, COALESCE(lifetime_points_earned, 0) - $1)
+        WHERE id = $2
+        `,
+        [referrerPoints, referrerUserId]
+      );
+      referrerReversed = true;
+    }
+  }
+
+  if (referredPoints > 0) {
+    const referredReverseInsert = await client.query(
+      `
+      INSERT INTO loyalty_points_transactions (customer_id, order_id, type, points, description)
+      VALUES ($1, $2, 'referral_bonus_referred_reversal', $3, $4)
+      ON CONFLICT DO NOTHING
+      RETURNING id
+      `,
+      [
+        referredCustomerId,
+        normalizedOrderId,
+        referredPoints,
+        `Referral bonus reversed for referred customer on refunded/cancelled order #${normalizedOrderId}`
+      ]
+    );
+    if (referredReverseInsert.rowCount > 0) {
+      await client.query(
+        `
+        UPDATE users
+        SET
+          loyalty_points = GREATEST(0, COALESCE(loyalty_points, 0) - $1),
+          lifetime_points_earned = GREATEST(0, COALESCE(lifetime_points_earned, 0) - $1),
+          referral_reward_reversed_at = COALESCE(referral_reward_reversed_at, CURRENT_TIMESTAMP)
+        WHERE id = $2
+        `,
+        [referredPoints, referredCustomerId]
+      );
+      referredReversed = true;
+    }
+  }
+
+  await client.query(
+    `
+    UPDATE orders
+    SET referral_bonus_reversed_at = COALESCE(referral_bonus_reversed_at, CASE WHEN EXISTS (
+      SELECT 1 FROM loyalty_points_transactions
+      WHERE order_id = $1
+        AND type IN ('referral_bonus_referrer_reversal', 'referral_bonus_referred_reversal')
+    ) THEN CURRENT_TIMESTAMP ELSE NULL END)
+    WHERE id = $1
+    `,
+    [normalizedOrderId]
+  );
+
+  return {
+    changed: referrerReversed || referredReversed,
+    referrerReversed,
+    referredReversed
+  };
+}
+
+function toCsvCell(value) {
+  const raw = String(value ?? "");
+  return `"${raw.replace(/"/g, "\"\"")}"`;
+}
+
+function isLoyaltyAwardEligible(order = {}) {
+  const paymentStatus = normalizeStatus(order.payment_status);
+  const deliveryStatus = normalizeStatus(order.delivery_status);
+
+  if (paymentStatus === "refunded" || deliveryStatus === "cancelled") return false;
+  return paymentStatus === "paid" && deliveryStatus === "completed";
+}
+
+function isLoyaltyReversalEligible(order = {}) {
+  const paymentStatus = normalizeStatus(order.payment_status);
+  const deliveryStatus = normalizeStatus(order.delivery_status);
+  return paymentStatus === "refunded" || deliveryStatus === "cancelled";
+}
+
+async function awardLoyaltyPointsForOrderIfEligible(client, orderId, schemaCapabilities = {}) {
+  const normalizedOrderId = parseInteger(orderId);
+  if (!Number.isInteger(normalizedOrderId) || normalizedOrderId <= 0) return { awarded: false, reason: "invalid_order_id" };
+  if (!schemaCapabilities.hasUsersTable) return { awarded: false, reason: "users_table_missing" };
+  if (!schemaCapabilities.hasOrderCustomerIdColumn) return { awarded: false, reason: "order_customer_id_missing" };
+  if (!schemaCapabilities.hasUsersLoyaltyPointsColumns) return { awarded: false, reason: "users_loyalty_columns_missing" };
+  if (!schemaCapabilities.hasLoyaltyPointsTransactionsTable) return { awarded: false, reason: "loyalty_txn_table_missing" };
+
+  const deliveryStatusColumn = schemaCapabilities.hasOrderDeliveryStatusColumn ? "delivery_status" : "order_status";
+  const shippingFeeSelect = schemaCapabilities.hasOrderShippingFeeColumn
+    ? "COALESCE(shipping_fee, 0) AS shipping_fee"
+    : "0::numeric AS shipping_fee";
+  const deliveryFeeSelect = schemaCapabilities.hasOrderDeliveryFeeColumn
+    ? "COALESCE(delivery_fee, 0) AS delivery_fee"
+    : "0::numeric AS delivery_fee";
+
+  const orderResult = await client.query(
+    `
+    SELECT
+      id,
+      customer_id,
+      total_amount,
+      payment_status,
+      ${deliveryStatusColumn} AS delivery_status,
+      ${shippingFeeSelect},
+      ${deliveryFeeSelect}
+    FROM orders
+    WHERE id = $1
+    FOR UPDATE
+    `,
+    [normalizedOrderId]
+  );
+
+  if (orderResult.rowCount === 0) return { awarded: false, reason: "order_not_found" };
+  const order = orderResult.rows[0];
+
+  const customerId = parseInteger(order.customer_id);
+  if (!Number.isInteger(customerId) || customerId <= 0) return { awarded: false, reason: "guest_or_missing_customer_id" };
+  if (!isLoyaltyAwardEligible(order)) return { awarded: false, reason: "order_not_eligible_yet" };
+
+  const eligibleSubtotal = Math.max(
+    0,
+    Number(order.total_amount || 0) - Number(order.shipping_fee || 0) - Number(order.delivery_fee || 0)
+  );
+  const pointsEarned = clampLoyaltyPoints(Math.floor(eligibleSubtotal));
+  if (pointsEarned <= 0) return { awarded: false, reason: "zero_eligible_points" };
+
+  const insertTxnResult = await client.query(
+    `
+    INSERT INTO loyalty_points_transactions (customer_id, order_id, type, points, description)
+    VALUES ($1, $2, 'earn', $3, $4)
+    ON CONFLICT DO NOTHING
+    RETURNING id
+    `,
+    [customerId, normalizedOrderId, pointsEarned, `Earned from order #${normalizedOrderId}`]
+  );
+
+  if (insertTxnResult.rowCount === 0) {
+    return { awarded: false, reason: "already_awarded" };
+  }
+
+  await client.query(
+    `
+    UPDATE users
+    SET
+      loyalty_points = COALESCE(loyalty_points, 0) + $1,
+      lifetime_points_earned = COALESCE(lifetime_points_earned, 0) + $1
+    WHERE id = $2
+    `,
+    [pointsEarned, customerId]
+  );
+
+  return {
+    awarded: true,
+    pointsEarned,
+    customerId
+  };
+}
+
+async function validateGiftProductAvailability(client, productId) {
+  const normalizedProductId = parseInteger(productId);
+  if (!Number.isInteger(normalizedProductId) || normalizedProductId <= 0) return false;
+
+  const availabilityColumnsResult = await client.query(
+    `
+    SELECT
+      EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'products' AND column_name = 'is_active'
+      ) AS has_is_active,
+      EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'products' AND column_name = 'is_hidden'
+      ) AS has_is_hidden,
+      EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'products' AND column_name = 'deleted_at'
+      ) AS has_deleted_at
+    `
+  );
+
+  const flags = availabilityColumnsResult.rows[0] || {};
+  const whereParts = ["id = $1"];
+  if (flags.has_is_active) whereParts.push("is_active = TRUE");
+  if (flags.has_is_hidden) whereParts.push("(is_hidden = FALSE OR is_hidden IS NULL)");
+  if (flags.has_deleted_at) whereParts.push("deleted_at IS NULL");
+
+  const productResult = await client.query(
+    `
+    SELECT id
+    FROM products
+    WHERE ${whereParts.join(" AND ")}
+    LIMIT 1
+    `,
+    [normalizedProductId]
+  );
+
+  return productResult.rowCount > 0;
+}
+
+async function buildCheckoutLoyaltyApplication(client, schemaCapabilities = {}, options = {}) {
+  const rewardId = parseInteger(options.rewardId);
+  const customerId = parseInteger(options.customerId);
+  const productSubtotal = parseMoney(options.productSubtotal);
+
+  if (!Number.isInteger(rewardId) || rewardId <= 0) {
+    return { value: null };
+  }
+
+  if (!schemaCapabilities.hasLoyaltyRewardsTable) {
+    return { error: "Loyalty rewards storage is not ready.", status: 503 };
+  }
+
+  if (!schemaCapabilities.hasUsersTable || !schemaCapabilities.hasUsersLoyaltyPointsColumns) {
+    return { error: "User loyalty storage is not ready.", status: 503 };
+  }
+
+  if (!Number.isInteger(customerId) || customerId <= 0) {
+    return { error: "Login is required to use a loyalty reward.", status: 401 };
+  }
+
+  if (!Number.isFinite(productSubtotal) || productSubtotal < 0) {
+    return { error: "Product subtotal is invalid for loyalty reward application.", status: 400 };
+  }
+
+  const rewardResult = await client.query(
+    `
+    SELECT
+      lr.id,
+      lr.name,
+      lr.reward_type,
+      lr.points_required,
+      lr.discount_value,
+      lr.gift_product_id,
+      p.name AS gift_product_name,
+      p.image_url AS gift_product_image_url
+    FROM loyalty_rewards lr
+    LEFT JOIN products p ON p.id = lr.gift_product_id
+    WHERE lr.id = $1
+      AND lr.is_active = TRUE
+    LIMIT 1
+    `,
+    [rewardId]
+  );
+
+  if (rewardResult.rowCount === 0) {
+    return { error: "Selected loyalty reward was not found or is inactive.", status: 400 };
+  }
+
+  const reward = rewardResult.rows[0];
+  const pointsRequired = clampLoyaltyPoints(reward.points_required);
+
+  const customerResult = await client.query(
+    `
+    SELECT id, COALESCE(loyalty_points, 0) AS loyalty_points
+    FROM users
+    WHERE id = $1
+    LIMIT 1
+    `,
+    [customerId]
+  );
+
+  if (customerResult.rowCount === 0) {
+    return { error: "Customer account not found.", status: 404 };
+  }
+
+  const customerPoints = clampLoyaltyPoints(customerResult.rows[0].loyalty_points);
+  if (customerPoints < pointsRequired) {
+    return { error: "Not enough loyalty points for this reward.", status: 400 };
+  }
+
+  if (reward.reward_type === "fixed_discount") {
+    const discountValue = parseMoney(reward.discount_value);
+    if (!Number.isFinite(discountValue) || discountValue <= 0) {
+      return { error: "Selected fixed discount reward is misconfigured.", status: 409 };
+    }
+
+    const appliedDiscount = Number(Math.min(discountValue, productSubtotal).toFixed(2));
+    return {
+      value: {
+        reward_id: reward.id,
+        reward_type: reward.reward_type,
+        points_required: pointsRequired,
+        discount_amount: appliedDiscount,
+        free_gift_product_id: null,
+        free_gift_product_name: null,
+        free_gift_product_image_url: null
+      }
+    };
+  }
+
+  if (reward.reward_type === "free_gift") {
+    const giftProductId = parseInteger(reward.gift_product_id);
+    if (!Number.isInteger(giftProductId) || giftProductId <= 0 || !reward.gift_product_name) {
+      return { error: "Selected free gift reward is misconfigured.", status: 409 };
+    }
+
+    const giftIsAvailable = await validateGiftProductAvailability(client, giftProductId);
+    if (!giftIsAvailable) {
+      return { error: "Selected free gift product is unavailable.", status: 409 };
+    }
+
+    return {
+      value: {
+        reward_id: reward.id,
+        reward_type: reward.reward_type,
+        points_required: pointsRequired,
+        discount_amount: 0,
+        free_gift_product_id: giftProductId,
+        free_gift_product_name: reward.gift_product_name,
+        free_gift_product_image_url: normalizeImageUrl(reward.gift_product_image_url)
+      }
+    };
+  }
+
+  return { error: "Selected reward type is invalid.", status: 400 };
+}
+
+async function redeemLoyaltyPointsForOrderIfEligible(client, orderId, schemaCapabilities = {}) {
+  const normalizedOrderId = parseInteger(orderId);
+  if (!Number.isInteger(normalizedOrderId) || normalizedOrderId <= 0) return { redeemed: false, reason: "invalid_order_id" };
+  if (!schemaCapabilities.hasUsersTable) return { redeemed: false, reason: "users_table_missing" };
+  if (!schemaCapabilities.hasOrderCustomerIdColumn) return { redeemed: false, reason: "order_customer_id_missing" };
+  if (!schemaCapabilities.hasUsersLoyaltyPointsColumns) return { redeemed: false, reason: "users_loyalty_columns_missing" };
+  if (!schemaCapabilities.hasLoyaltyPointsTransactionsTable) return { redeemed: false, reason: "loyalty_txn_table_missing" };
+  if (!schemaCapabilities.hasOrderLoyaltyRewardIdColumn) return { redeemed: false, reason: "order_loyalty_reward_missing" };
+  if (!schemaCapabilities.hasOrderLoyaltyPointsRedeemedColumn) return { redeemed: false, reason: "order_loyalty_points_missing" };
+  if (!schemaCapabilities.hasOrderLoyaltyRedeemedAtColumn) return { redeemed: false, reason: "order_loyalty_redeemed_at_missing" };
+
+  const deliveryStatusColumn = schemaCapabilities.hasOrderDeliveryStatusColumn ? "delivery_status" : "order_status";
+  const orderResult = await client.query(
+    `
+    SELECT
+      id,
+      customer_id,
+      payment_status,
+      ${deliveryStatusColumn} AS delivery_status,
+      loyalty_reward_id,
+      loyalty_reward_type,
+      COALESCE(loyalty_points_redeemed, 0) AS loyalty_points_redeemed,
+      loyalty_redeemed_at
+    FROM orders
+    WHERE id = $1
+    FOR UPDATE
+    `,
+    [normalizedOrderId]
+  );
+
+  if (orderResult.rowCount === 0) return { redeemed: false, reason: "order_not_found" };
+  const order = orderResult.rows[0];
+
+  if (!isLoyaltyAwardEligible(order)) return { redeemed: false, reason: "order_not_eligible_yet" };
+  if (order.loyalty_redeemed_at) return { redeemed: false, reason: "already_redeemed" };
+
+  const rewardId = parseInteger(order.loyalty_reward_id);
+  const pointsToRedeem = clampLoyaltyPoints(order.loyalty_points_redeemed);
+  if (!Number.isInteger(rewardId) || rewardId <= 0 || pointsToRedeem <= 0) {
+    return { redeemed: false, reason: "no_loyalty_reward_selected" };
+  }
+
+  const customerId = parseInteger(order.customer_id);
+  if (!Number.isInteger(customerId) || customerId <= 0) {
+    return { redeemed: false, reason: "guest_or_missing_customer_id" };
+  }
+
+  const existingRedeemTxn = await client.query(
+    `
+    SELECT id
+    FROM loyalty_points_transactions
+    WHERE order_id = $1 AND type = 'redeem'
+    LIMIT 1
+    `,
+    [normalizedOrderId]
+  );
+
+  if (existingRedeemTxn.rowCount > 0) {
+    await client.query(
+      `
+      UPDATE orders
+      SET loyalty_redeemed_at = COALESCE(loyalty_redeemed_at, CURRENT_TIMESTAMP)
+      WHERE id = $1
+      `,
+      [normalizedOrderId]
+    );
+    return { redeemed: false, reason: "already_redeemed" };
+  }
+
+  const deductResult = await client.query(
+    `
+    UPDATE users
+    SET
+      loyalty_points = COALESCE(loyalty_points, 0) - $1,
+      lifetime_points_redeemed = COALESCE(lifetime_points_redeemed, 0) + $1
+    WHERE id = $2
+      AND COALESCE(loyalty_points, 0) >= $1
+    RETURNING id
+    `,
+    [pointsToRedeem, customerId]
+  );
+
+  if (deductResult.rowCount === 0) {
+    return { redeemed: false, reason: "insufficient_points_at_commit" };
+  }
+
+  const insertTxnResult = await client.query(
+    `
+    INSERT INTO loyalty_points_transactions (customer_id, order_id, type, points, description)
+    VALUES ($1, $2, 'redeem', $3, $4)
+    ON CONFLICT DO NOTHING
+    RETURNING id
+    `,
+    [
+      customerId,
+      normalizedOrderId,
+      pointsToRedeem,
+      `Redeemed ${pointsToRedeem} points on order #${normalizedOrderId} (reward #${rewardId})`
+    ]
+  );
+
+  if (insertTxnResult.rowCount === 0) {
+    await client.query(
+      `
+      UPDATE users
+      SET
+        loyalty_points = COALESCE(loyalty_points, 0) + $1,
+        lifetime_points_redeemed = GREATEST(0, COALESCE(lifetime_points_redeemed, 0) - $1)
+      WHERE id = $2
+      `,
+      [pointsToRedeem, customerId]
+    );
+    return { redeemed: false, reason: "already_redeemed" };
+  }
+
+  await client.query(
+    `
+    UPDATE orders
+    SET loyalty_redeemed_at = CURRENT_TIMESTAMP
+    WHERE id = $1
+    `,
+    [normalizedOrderId]
+  );
+
+  return {
+    redeemed: true,
+    customerId,
+    rewardId,
+    pointsRedeemed: pointsToRedeem
+  };
+}
+
+async function reverseLoyaltyPointsForOrderIfEligible(client, orderId, schemaCapabilities = {}) {
+  const normalizedOrderId = parseInteger(orderId);
+  if (!Number.isInteger(normalizedOrderId) || normalizedOrderId <= 0) return { changed: false, reason: "invalid_order_id" };
+  if (!schemaCapabilities.hasUsersTable) return { changed: false, reason: "users_table_missing" };
+  if (!schemaCapabilities.hasOrderCustomerIdColumn) return { changed: false, reason: "order_customer_id_missing" };
+  if (!schemaCapabilities.hasUsersLoyaltyPointsColumns) return { changed: false, reason: "users_loyalty_columns_missing" };
+  if (!schemaCapabilities.hasLoyaltyPointsTransactionsTable) return { changed: false, reason: "loyalty_txn_table_missing" };
+  if (!schemaCapabilities.hasOrderLoyaltyEarnReversedAtColumn) return { changed: false, reason: "order_loyalty_earn_reversed_at_missing" };
+  if (!schemaCapabilities.hasOrderLoyaltyRedeemRestoredAtColumn) return { changed: false, reason: "order_loyalty_redeem_restored_at_missing" };
+
+  const deliveryStatusColumn = schemaCapabilities.hasOrderDeliveryStatusColumn ? "delivery_status" : "order_status";
+  const orderResult = await client.query(
+    `
+    SELECT
+      id,
+      customer_id,
+      payment_status,
+      ${deliveryStatusColumn} AS delivery_status,
+      loyalty_earn_reversed_at,
+      loyalty_redeem_restored_at
+    FROM orders
+    WHERE id = $1
+    FOR UPDATE
+    `,
+    [normalizedOrderId]
+  );
+
+  if (orderResult.rowCount === 0) return { changed: false, reason: "order_not_found" };
+  const order = orderResult.rows[0];
+  const customerId = parseInteger(order.customer_id);
+  if (!Number.isInteger(customerId) || customerId <= 0) return { changed: false, reason: "guest_or_missing_customer_id" };
+  if (!isLoyaltyReversalEligible(order)) return { changed: false, reason: "order_not_reversal_eligible" };
+
+  let earnReversed = false;
+  let redeemRestored = false;
+
+  if (!order.loyalty_earn_reversed_at) {
+    const earnTxnResult = await client.query(
+      `
+      SELECT points
+      FROM loyalty_points_transactions
+      WHERE order_id = $1 AND type = 'earn'
+      LIMIT 1
+      `,
+      [normalizedOrderId]
+    );
+
+    if (earnTxnResult.rowCount > 0) {
+      const earnPoints = clampLoyaltyPoints(earnTxnResult.rows[0].points);
+      if (earnPoints > 0) {
+        const earnReversalTxnResult = await client.query(
+          `
+          INSERT INTO loyalty_points_transactions (customer_id, order_id, type, points, description)
+          VALUES ($1, $2, 'earn_reversal', $3, $4)
+          ON CONFLICT DO NOTHING
+          RETURNING id
+          `,
+          [customerId, normalizedOrderId, earnPoints, `Reversed earned points for order #${normalizedOrderId}`]
+        );
+
+        if (earnReversalTxnResult.rowCount > 0) {
+          await client.query(
+            `
+            UPDATE users
+            SET
+              loyalty_points = COALESCE(loyalty_points, 0) - $1,
+              lifetime_points_earned = GREATEST(0, COALESCE(lifetime_points_earned, 0) - $1)
+            WHERE id = $2
+            `,
+            [earnPoints, customerId]
+          );
+          earnReversed = true;
+        }
+      }
+    }
+
+    await client.query(
+      `
+      UPDATE orders
+      SET loyalty_earn_reversed_at = COALESCE(loyalty_earn_reversed_at, CASE WHEN EXISTS (
+        SELECT 1
+        FROM loyalty_points_transactions
+        WHERE order_id = $1 AND type = 'earn_reversal'
+      ) THEN CURRENT_TIMESTAMP ELSE NULL END)
+      WHERE id = $1
+      `,
+      [normalizedOrderId]
+    );
+  }
+
+  if (!order.loyalty_redeem_restored_at) {
+    const redeemTxnResult = await client.query(
+      `
+      SELECT points
+      FROM loyalty_points_transactions
+      WHERE order_id = $1 AND type = 'redeem'
+      LIMIT 1
+      `,
+      [normalizedOrderId]
+    );
+
+    if (redeemTxnResult.rowCount > 0) {
+      const redeemedPoints = clampLoyaltyPoints(redeemTxnResult.rows[0].points);
+      if (redeemedPoints > 0) {
+        const restoreTxnResult = await client.query(
+          `
+          INSERT INTO loyalty_points_transactions (customer_id, order_id, type, points, description)
+          VALUES ($1, $2, 'redeem_restore', $3, $4)
+          ON CONFLICT DO NOTHING
+          RETURNING id
+          `,
+          [customerId, normalizedOrderId, redeemedPoints, `Restored redeemed points for order #${normalizedOrderId}`]
+        );
+
+        if (restoreTxnResult.rowCount > 0) {
+          await client.query(
+            `
+            UPDATE users
+            SET
+              loyalty_points = COALESCE(loyalty_points, 0) + $1,
+              lifetime_points_redeemed = GREATEST(0, COALESCE(lifetime_points_redeemed, 0) - $1)
+            WHERE id = $2
+            `,
+            [redeemedPoints, customerId]
+          );
+          redeemRestored = true;
+        }
+      }
+    }
+
+    await client.query(
+      `
+      UPDATE orders
+      SET loyalty_redeem_restored_at = COALESCE(loyalty_redeem_restored_at, CASE WHEN EXISTS (
+        SELECT 1
+        FROM loyalty_points_transactions
+        WHERE order_id = $1 AND type = 'redeem_restore'
+      ) THEN CURRENT_TIMESTAMP ELSE NULL END)
+      WHERE id = $1
+      `,
+      [normalizedOrderId]
+    );
+  }
+
+  return {
+    changed: earnReversed || redeemRestored,
+    earnReversed,
+    redeemRestored
+  };
 }
 
 function normalizeSizeOptions(value) {
@@ -1533,7 +2922,32 @@ async function getSchemaCapabilities() {
       orderUpdatedAtColumnResult,
       orderItemBundleSelectionsColumnResult,
       orderItemBundleBreakdownColumnResult,
-      orderItemBundleDetailsColumnResult
+      orderItemBundleDetailsColumnResult,
+      usersTableResult,
+      usersLoyaltyPointsColumnResult,
+      usersLifetimePointsEarnedColumnResult,
+      usersLifetimePointsRedeemedColumnResult,
+      loyaltyPointsTransactionsTableResult,
+      loyaltyRewardsTableResult,
+      orderCustomerIdColumnResult,
+      orderShippingFeeColumnResult,
+      orderDeliveryFeeColumnResult,
+      orderLoyaltyRewardIdColumnResult,
+      orderLoyaltyRewardTypeColumnResult,
+      orderLoyaltyPointsRedeemedColumnResult,
+      orderLoyaltyDiscountAmountColumnResult,
+      orderLoyaltyFreeGiftProductIdColumnResult,
+      orderLoyaltyRedeemedAtColumnResult,
+      orderLoyaltyEarnReversedAtColumnResult,
+      orderLoyaltyRedeemRestoredAtColumnResult,
+      usersReferralCodeColumnResult,
+      usersReferredByUserIdColumnResult,
+      usersReferralAppliedAtColumnResult,
+      usersReferralRewardGrantedAtColumnResult,
+      usersReferralRewardReversedAtColumnResult,
+      usersReferralRewardOrderIdColumnResult,
+      orderReferralBonusGrantedAtColumnResult,
+      orderReferralBonusReversedAtColumnResult
     ] = await Promise.all([
       pool.query(
         `
@@ -1806,6 +3220,206 @@ async function getSchemaCapabilities() {
         WHERE table_schema = 'public' AND table_name = 'order_items' AND column_name = 'bundle_details'
         LIMIT 1
         `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'users'
+        LIMIT 1
+        `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'loyalty_points'
+        LIMIT 1
+        `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'lifetime_points_earned'
+        LIMIT 1
+        `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'lifetime_points_redeemed'
+        LIMIT 1
+        `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'loyalty_points_transactions'
+        LIMIT 1
+        `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'loyalty_rewards'
+        LIMIT 1
+        `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'customer_id'
+        LIMIT 1
+        `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'shipping_fee'
+        LIMIT 1
+        `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'delivery_fee'
+        LIMIT 1
+        `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'loyalty_reward_id'
+        LIMIT 1
+        `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'loyalty_reward_type'
+        LIMIT 1
+        `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'loyalty_points_redeemed'
+        LIMIT 1
+        `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'loyalty_discount_amount'
+        LIMIT 1
+        `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'loyalty_free_gift_product_id'
+        LIMIT 1
+        `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'loyalty_redeemed_at'
+        LIMIT 1
+        `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'loyalty_earn_reversed_at'
+        LIMIT 1
+        `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'loyalty_redeem_restored_at'
+        LIMIT 1
+        `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'referral_code'
+        LIMIT 1
+        `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'referred_by_user_id'
+        LIMIT 1
+        `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'referral_applied_at'
+        LIMIT 1
+        `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'referral_reward_granted_at'
+        LIMIT 1
+        `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'referral_reward_reversed_at'
+        LIMIT 1
+        `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'referral_reward_order_id'
+        LIMIT 1
+        `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'referral_bonus_granted_at'
+        LIMIT 1
+        `
+      ),
+      pool.query(
+        `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'referral_bonus_reversed_at'
+        LIMIT 1
+        `
       )
     ]);
 
@@ -1843,7 +3457,35 @@ async function getSchemaCapabilities() {
       hasOrderUpdatedAtColumn: orderUpdatedAtColumnResult.rowCount > 0,
       hasOrderItemBundleSelectionsColumn: orderItemBundleSelectionsColumnResult.rowCount > 0,
       hasOrderItemBundleBreakdownColumn: orderItemBundleBreakdownColumnResult.rowCount > 0,
-      hasOrderItemBundleDetailsColumn: orderItemBundleDetailsColumnResult.rowCount > 0
+      hasOrderItemBundleDetailsColumn: orderItemBundleDetailsColumnResult.rowCount > 0,
+      hasUsersTable: usersTableResult.rowCount > 0,
+      hasUsersLoyaltyPointsColumns:
+        usersLoyaltyPointsColumnResult.rowCount > 0 &&
+        usersLifetimePointsEarnedColumnResult.rowCount > 0 &&
+        usersLifetimePointsRedeemedColumnResult.rowCount > 0,
+      hasLoyaltyPointsTransactionsTable: loyaltyPointsTransactionsTableResult.rowCount > 0,
+      hasLoyaltyRewardsTable: loyaltyRewardsTableResult.rowCount > 0,
+      hasOrderCustomerIdColumn: orderCustomerIdColumnResult.rowCount > 0,
+      hasOrderShippingFeeColumn: orderShippingFeeColumnResult.rowCount > 0,
+      hasOrderDeliveryFeeColumn: orderDeliveryFeeColumnResult.rowCount > 0,
+      hasOrderLoyaltyRewardIdColumn: orderLoyaltyRewardIdColumnResult.rowCount > 0,
+      hasOrderLoyaltyRewardTypeColumn: orderLoyaltyRewardTypeColumnResult.rowCount > 0,
+      hasOrderLoyaltyPointsRedeemedColumn: orderLoyaltyPointsRedeemedColumnResult.rowCount > 0,
+      hasOrderLoyaltyDiscountAmountColumn: orderLoyaltyDiscountAmountColumnResult.rowCount > 0,
+      hasOrderLoyaltyFreeGiftProductIdColumn: orderLoyaltyFreeGiftProductIdColumnResult.rowCount > 0,
+      hasOrderLoyaltyRedeemedAtColumn: orderLoyaltyRedeemedAtColumnResult.rowCount > 0,
+      hasOrderLoyaltyEarnReversedAtColumn: orderLoyaltyEarnReversedAtColumnResult.rowCount > 0,
+      hasOrderLoyaltyRedeemRestoredAtColumn: orderLoyaltyRedeemRestoredAtColumnResult.rowCount > 0,
+      hasUsersReferralColumns:
+        usersReferralCodeColumnResult.rowCount > 0 &&
+        usersReferredByUserIdColumnResult.rowCount > 0 &&
+        usersReferralAppliedAtColumnResult.rowCount > 0 &&
+        usersReferralRewardGrantedAtColumnResult.rowCount > 0 &&
+        usersReferralRewardReversedAtColumnResult.rowCount > 0 &&
+        usersReferralRewardOrderIdColumnResult.rowCount > 0,
+      hasOrderReferralBonusColumns:
+        orderReferralBonusGrantedAtColumnResult.rowCount > 0 &&
+        orderReferralBonusReversedAtColumnResult.rowCount > 0
     };
   } catch (err) {
     console.error("Schema capability check failed:", err);
@@ -1881,7 +3523,24 @@ async function getSchemaCapabilities() {
       hasOrderUpdatedAtColumn: false,
       hasOrderItemBundleSelectionsColumn: false,
       hasOrderItemBundleBreakdownColumn: false,
-      hasOrderItemBundleDetailsColumn: false
+      hasOrderItemBundleDetailsColumn: false,
+      hasUsersTable: false,
+      hasUsersLoyaltyPointsColumns: false,
+      hasLoyaltyPointsTransactionsTable: false,
+      hasLoyaltyRewardsTable: false,
+      hasOrderCustomerIdColumn: false,
+      hasOrderShippingFeeColumn: false,
+      hasOrderDeliveryFeeColumn: false,
+      hasOrderLoyaltyRewardIdColumn: false,
+      hasOrderLoyaltyRewardTypeColumn: false,
+      hasOrderLoyaltyPointsRedeemedColumn: false,
+      hasOrderLoyaltyDiscountAmountColumn: false,
+      hasOrderLoyaltyFreeGiftProductIdColumn: false,
+      hasOrderLoyaltyRedeemedAtColumn: false,
+      hasOrderLoyaltyEarnReversedAtColumn: false,
+      hasOrderLoyaltyRedeemRestoredAtColumn: false,
+      hasUsersReferralColumns: false,
+      hasOrderReferralBonusColumns: false
     };
   }
 
@@ -2679,11 +4338,31 @@ async function validateBundleCheckoutItems(items, schemaCapabilities = {}, clien
 }
 
 function validateCheckoutPayload(payload) {
+  const customerIdRaw = payload.customer_id;
+  const customerId = customerIdRaw === null || customerIdRaw === undefined || customerIdRaw === ""
+    ? null
+    : parseInteger(customerIdRaw);
+  const loyaltyRewardIdRaw = payload.loyalty_reward_id ?? payload.selected_reward_id;
+  const loyaltyRewardIdsRaw = payload.loyalty_reward_ids ?? payload.selected_reward_ids;
+  const loyaltyRewardId = loyaltyRewardIdRaw === null || loyaltyRewardIdRaw === undefined || loyaltyRewardIdRaw === ""
+    ? null
+    : parseInteger(loyaltyRewardIdRaw);
+  const loyaltyRewardIds = Array.isArray(loyaltyRewardIdsRaw)
+    ? loyaltyRewardIdsRaw
+      .map((value) => parseInteger(value))
+      .filter((value) => Number.isInteger(value) && value > 0)
+    : [];
   const customerName = normalizeString(payload.customer_name);
   const phone = normalizeString(payload.phone);
   const address = normalizeString(payload.address);
   const totalAmount = parseMoney(payload.total_amount);
   const itemsResult = validateCheckoutItems(payload.items);
+
+  if (customerIdRaw !== null && customerIdRaw !== undefined && customerIdRaw !== "") {
+    if (!Number.isInteger(customerId) || customerId <= 0) {
+      return { error: "Customer ID is invalid." };
+    }
+  }
 
   if (customerName.length < CUSTOMER_NAME_MIN_LENGTH || customerName.length > CUSTOMER_NAME_MAX_LENGTH) {
     return { error: `Customer name must be ${CUSTOMER_NAME_MIN_LENGTH}-${CUSTOMER_NAME_MAX_LENGTH} characters long.` };
@@ -2701,17 +4380,46 @@ function validateCheckoutPayload(payload) {
     return { error: `Total amount must be between ${TOTAL_AMOUNT_MIN} and ${TOTAL_AMOUNT_MAX}.` };
   }
 
+  if (Array.isArray(loyaltyRewardIdsRaw) && loyaltyRewardIdsRaw.length > 1) {
+    return { error: "Only one loyalty reward can be selected per order." };
+  }
+
+  if (loyaltyRewardIds.length > 1) {
+    return { error: "Only one loyalty reward can be selected per order." };
+  }
+
+  if (
+    Number.isInteger(loyaltyRewardId) &&
+    loyaltyRewardId > 0 &&
+    loyaltyRewardIds.length === 1 &&
+    loyaltyRewardIds[0] !== loyaltyRewardId
+  ) {
+    return { error: "Only one loyalty reward can be selected per order." };
+  }
+
+  const finalLoyaltyRewardId = Number.isInteger(loyaltyRewardId) && loyaltyRewardId > 0
+    ? loyaltyRewardId
+    : (loyaltyRewardIds.length === 1 ? loyaltyRewardIds[0] : null);
+
+  if (loyaltyRewardIdRaw !== null && loyaltyRewardIdRaw !== undefined && loyaltyRewardIdRaw !== "") {
+    if (!Number.isInteger(loyaltyRewardId) || loyaltyRewardId <= 0) {
+      return { error: "loyalty_reward_id must be a valid positive integer." };
+    }
+  }
+
   if (itemsResult.error) {
     return itemsResult;
   }
 
   return {
     value: {
+      customer_id: customerId,
       customer_name: customerName,
       phone,
       address,
       total_amount: totalAmount,
-      items: itemsResult.value
+      items: itemsResult.value,
+      loyalty_reward_id: finalLoyaltyRewardId
     }
   };
 }
@@ -2738,6 +4446,172 @@ function validateOrderUpdatePayload(payload) {
       order_id: orderId,
       payment_status: paymentStatus,
       delivery_status: deliveryStatus
+    }
+  };
+}
+
+function normalizeLoyaltyRewardType(value) {
+  const type = normalizeString(value).toLowerCase();
+  return LOYALTY_REWARD_TYPES.has(type) ? type : "";
+}
+
+function validateLoyaltyRewardPayload(payload, options = {}) {
+  const requireId = options.requireId === true;
+  const rewardId = parseInteger(payload.id ?? payload.reward_id);
+  const name = normalizeString(payload.name);
+  const rewardType = normalizeLoyaltyRewardType(payload.reward_type);
+  const pointsRequired = parseInteger(payload.points_required);
+  const discountValue = parseOptionalMoney(payload.discount_value);
+  const giftProductIdRaw = payload.gift_product_id;
+  const giftProductId = giftProductIdRaw === null || giftProductIdRaw === undefined || giftProductIdRaw === ""
+    ? null
+    : parseInteger(giftProductIdRaw);
+  const isActive = normalizeBoolean(payload.is_active ?? true);
+  const sortOrder = parseInteger(payload.sort_order ?? 0);
+
+  if (requireId && (!Number.isInteger(rewardId) || rewardId <= 0)) {
+    return { error: "Reward ID is invalid." };
+  }
+
+  if (!name || name.length > LOYALTY_REWARD_NAME_MAX_LENGTH) {
+    return { error: `Reward name must be 1-${LOYALTY_REWARD_NAME_MAX_LENGTH} characters long.` };
+  }
+
+  if (!rewardType) {
+    return { error: "Reward type must be either fixed_discount or free_gift." };
+  }
+
+  if (!Number.isInteger(pointsRequired) || pointsRequired <= 0 || pointsRequired > LOYALTY_POINTS_MAX) {
+    return { error: `Points required must be a whole number between 1 and ${LOYALTY_POINTS_MAX}.` };
+  }
+
+  if (giftProductIdRaw !== null && giftProductIdRaw !== undefined && giftProductIdRaw !== "") {
+    if (!Number.isInteger(giftProductId) || giftProductId <= 0) {
+      return { error: "Gift product ID must be a valid positive integer." };
+    }
+  }
+
+  if (isActive === null) {
+    return { error: "Reward active status is invalid." };
+  }
+
+  if (!Number.isInteger(sortOrder) || sortOrder < SORT_ORDER_MIN || sortOrder > SORT_ORDER_MAX) {
+    return { error: `Sort order must be a whole number between ${SORT_ORDER_MIN} and ${SORT_ORDER_MAX}.` };
+  }
+
+  if (rewardType === "fixed_discount") {
+    if (!Number.isFinite(discountValue) || discountValue <= 0) {
+      return { error: "fixed_discount rewards require discount_value > 0." };
+    }
+    if (giftProductId !== null) {
+      return { error: "fixed_discount rewards must not include gift_product_id." };
+    }
+  }
+
+  if (rewardType === "free_gift") {
+    if (!Number.isInteger(giftProductId) || giftProductId <= 0) {
+      return { error: "free_gift rewards require gift_product_id." };
+    }
+    if (discountValue !== null) {
+      return { error: "free_gift rewards must not include discount_value." };
+    }
+  }
+
+  return {
+    value: {
+      id: rewardId,
+      name,
+      reward_type: rewardType,
+      points_required: pointsRequired,
+      discount_value: rewardType === "fixed_discount" ? discountValue : null,
+      gift_product_id: rewardType === "free_gift" ? giftProductId : null,
+      is_active: Boolean(isActive),
+      sort_order: sortOrder
+    }
+  };
+}
+
+function validateLoyaltyRewardPreviewPayload(payload = {}) {
+  const rewardId = parseInteger(payload.reward_id ?? payload.selected_reward_id);
+  const selectedRewardIdsRaw = payload.reward_ids ?? payload.selected_reward_ids;
+  const selectedRewardIds = Array.isArray(selectedRewardIdsRaw)
+    ? selectedRewardIdsRaw
+      .map((value) => parseInteger(value))
+      .filter((value) => Number.isInteger(value) && value > 0)
+    : [];
+  const subtotalAmount = parseMoney(payload.subtotal_amount);
+  const totalAmount = parseOptionalMoney(payload.total_amount);
+  const shippingAmount = parseOptionalMoney(payload.shipping_amount);
+
+  if (Array.isArray(selectedRewardIdsRaw) && selectedRewardIdsRaw.length > 1) {
+    return { error: "Only one loyalty reward can be selected." };
+  }
+
+  if (selectedRewardIds.length > 1) {
+    return { error: "Only one loyalty reward can be selected." };
+  }
+
+  const selectedRewardId = Number.isInteger(rewardId) && rewardId > 0
+    ? rewardId
+    : (selectedRewardIds.length === 1 ? selectedRewardIds[0] : NaN);
+
+  if (
+    Number.isInteger(rewardId) &&
+    rewardId > 0 &&
+    selectedRewardIds.length === 1 &&
+    selectedRewardIds[0] !== rewardId
+  ) {
+    return { error: "Only one loyalty reward can be selected." };
+  }
+
+  if (!Number.isInteger(selectedRewardId) || selectedRewardId <= 0) {
+    return { error: "A valid reward_id is required for preview." };
+  }
+
+  if (!Number.isFinite(subtotalAmount)) {
+    return { error: "subtotal_amount must be a valid number." };
+  }
+
+  if (subtotalAmount < TOTAL_AMOUNT_MIN || subtotalAmount > TOTAL_AMOUNT_MAX) {
+    return { error: `subtotal_amount must be between ${TOTAL_AMOUNT_MIN} and ${TOTAL_AMOUNT_MAX}.` };
+  }
+
+  if (Number.isFinite(totalAmount) && (totalAmount < TOTAL_AMOUNT_MIN || totalAmount > TOTAL_AMOUNT_MAX)) {
+    return { error: `total_amount must be between ${TOTAL_AMOUNT_MIN} and ${TOTAL_AMOUNT_MAX}.` };
+  }
+
+  if (Number.isFinite(shippingAmount) && (shippingAmount < TOTAL_AMOUNT_MIN || shippingAmount > TOTAL_AMOUNT_MAX)) {
+    return { error: `shipping_amount must be between ${TOTAL_AMOUNT_MIN} and ${TOTAL_AMOUNT_MAX}.` };
+  }
+
+  if (Number.isFinite(totalAmount) && totalAmount + 0.01 < subtotalAmount) {
+    return { error: "total_amount cannot be less than subtotal_amount." };
+  }
+
+  if (Number.isFinite(totalAmount) && Number.isFinite(shippingAmount)) {
+    const expectedTotal = Number((subtotalAmount + shippingAmount).toFixed(2));
+    if (Math.abs(expectedTotal - totalAmount) > 0.01) {
+      return { error: "total_amount must match subtotal_amount + shipping_amount." };
+    }
+  }
+
+  let derivedShippingAmount = 0;
+  if (Number.isFinite(shippingAmount)) {
+    derivedShippingAmount = shippingAmount;
+  } else if (Number.isFinite(totalAmount)) {
+    derivedShippingAmount = Number((totalAmount - subtotalAmount).toFixed(2));
+  }
+
+  if (!Number.isFinite(derivedShippingAmount) || derivedShippingAmount < 0) {
+    return { error: "shipping_amount is invalid for the provided subtotal/total." };
+  }
+
+  return {
+    value: {
+      reward_id: selectedRewardId,
+      subtotal_amount: Number(subtotalAmount.toFixed(2)),
+      total_amount: Number((subtotalAmount + derivedShippingAmount).toFixed(2)),
+      shipping_amount: Number(derivedShippingAmount.toFixed(2))
     }
   };
 }
@@ -3008,6 +4882,298 @@ app.post("/api/admin-logout", (req, res) => {
   res.json({ message: "Logged out" });
 });
 
+const handleCustomerRequestOtp = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const schemaCapabilities = await getSchemaCapabilities();
+    if (!schemaCapabilities.hasUsersTable) {
+      return res.status(503).json({ error: "Customer auth storage is not ready." });
+    }
+
+    const phoneRaw = req.body?.phone;
+    if (!isValidCustomerAuthPhone(phoneRaw)) {
+      return res.status(400).json({ error: "Phone number is invalid." });
+    }
+    const phone = normalizeCustomerAuthPhone(phoneRaw);
+
+    await client.query("BEGIN");
+    const recentCountResult = await client.query(
+      `
+      SELECT COUNT(*)::int AS recent_count
+      FROM customer_auth_otp_codes
+      WHERE phone = $1
+        AND created_at >= (CURRENT_TIMESTAMP - INTERVAL '10 minutes')
+      `,
+      [phone]
+    );
+    const recentCount = Number(recentCountResult.rows[0]?.recent_count || 0);
+    if (recentCount >= CUSTOMER_OTP_MAX_REQUESTS_PER_10_MIN) {
+      await client.query("ROLLBACK");
+      return res.status(429).json({ error: "Too many OTP requests. Please try again later." });
+    }
+
+    const otp = generateCustomerOtpCode();
+    const otpHash = hashCustomerOtp(phone, otp);
+    await client.query(
+      `
+      INSERT INTO customer_auth_otp_codes (phone, otp_hash, delivery_channel, expires_at)
+      VALUES ($1, $2, 'whatsapp', CURRENT_TIMESTAMP + INTERVAL '${CUSTOMER_OTP_TTL_MINUTES} minutes')
+      `,
+      [phone, otpHash]
+    );
+
+    await sendCustomerWhatsappOtp(phone, otp);
+    await client.query("COMMIT");
+
+    return res.json({
+      success: true,
+      channel: "whatsapp",
+      expires_in_seconds: CUSTOMER_OTP_TTL_MINUTES * 60
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Request customer OTP failed:", error);
+    if (error?.code === "42P01") {
+      return res.status(503).json({ error: "Customer auth storage is not ready." });
+    }
+    return res.status(500).json({ error: "Failed to request OTP." });
+  } finally {
+    client.release();
+  }
+};
+
+app.post("/api/customer/auth/request-otp", handleCustomerRequestOtp);
+// Backward-compatible aliases for environments using older OTP paths.
+app.post("/api/customer/request-otp", handleCustomerRequestOtp);
+app.post("/api/customer/auth/request_otp", handleCustomerRequestOtp);
+
+const handleCustomerVerifyOtp = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const schemaCapabilities = await getSchemaCapabilities();
+    if (!schemaCapabilities.hasUsersTable) {
+      return res.status(503).json({ error: "Customer auth storage is not ready." });
+    }
+
+    const phoneRaw = req.body?.phone;
+    const otp = normalizeString(req.body?.otp);
+    const nameInput = normalizeString(req.body?.name);
+    const emailInput = normalizeString(req.body?.email).toLowerCase();
+    if (!isValidCustomerAuthPhone(phoneRaw)) {
+      return res.status(400).json({ error: "Phone number is invalid." });
+    }
+    if (!/^\d{6}$/.test(otp)) {
+      return res.status(400).json({ error: "OTP must be 6 digits." });
+    }
+    if (emailInput && !isValidEmail(emailInput)) {
+      return res.status(400).json({ error: "Email is invalid." });
+    }
+
+    const phone = normalizeCustomerAuthPhone(phoneRaw);
+    const phoneDigits = normalizePhoneDigits(phone);
+    const otpHash = hashCustomerOtp(phone, otp);
+
+    await client.query("BEGIN");
+    const otpResult = await client.query(
+      `
+      SELECT id, otp_hash, attempt_count, expires_at, used_at
+      FROM customer_auth_otp_codes
+      WHERE phone = $1
+      ORDER BY created_at DESC, id DESC
+      LIMIT 1
+      FOR UPDATE
+      `,
+      [phone]
+    );
+
+    if (otpResult.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ error: "OTP is invalid or expired." });
+    }
+
+    const otpRow = otpResult.rows[0];
+    const expired = new Date(otpRow.expires_at).getTime() < Date.now();
+    if (otpRow.used_at || expired || Number(otpRow.attempt_count || 0) >= CUSTOMER_OTP_MAX_ATTEMPTS) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ error: "OTP is invalid or expired." });
+    }
+
+    if (otpRow.otp_hash !== otpHash) {
+      await client.query(
+        `
+        UPDATE customer_auth_otp_codes
+        SET attempt_count = COALESCE(attempt_count, 0) + 1
+        WHERE id = $1
+        `,
+        [otpRow.id]
+      );
+      await client.query("COMMIT");
+      return res.status(400).json({ error: "OTP is invalid or expired." });
+    }
+
+    await client.query(
+      `
+      UPDATE customer_auth_otp_codes
+      SET used_at = CURRENT_TIMESTAMP
+      WHERE id = $1
+      `,
+      [otpRow.id]
+    );
+
+    const userColumnsResult = await client.query(
+      `
+      SELECT
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'name'
+        ) AS has_name,
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'email'
+        ) AS has_email,
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'phone'
+        ) AS has_phone
+      `
+    );
+    const userColumns = userColumnsResult.rows[0] || {};
+    if (!userColumns.has_phone) {
+      await client.query("ROLLBACK");
+      return res.status(503).json({ error: "Users phone column is required for phone login." });
+    }
+
+    const userLookupResult = await client.query(
+      `
+      SELECT
+        id,
+        ${userColumns.has_name ? "COALESCE(name, '') AS name" : "''::text AS name"},
+        ${userColumns.has_email ? "COALESCE(email, '') AS email" : "''::text AS email"},
+        phone
+      FROM users
+      WHERE regexp_replace(COALESCE(phone, ''), '\D', '', 'g') = $1
+      ORDER BY id ASC
+      LIMIT 1
+      FOR UPDATE
+      `,
+      [phoneDigits]
+    );
+
+    let customer = userLookupResult.rows[0] || null;
+    if (!customer) {
+      const fallbackName = nameInput || `Customer ${phoneDigits.slice(-4)}`;
+      const insertColumns = ["phone"];
+      const insertValues = [phone];
+      if (userColumns.has_name) {
+        insertColumns.push("name");
+        insertValues.push(fallbackName);
+      }
+      if (userColumns.has_email) {
+        insertColumns.push("email");
+        insertValues.push(emailInput || null);
+      }
+
+      const insertResult = await client.query(
+        `
+        INSERT INTO users (${insertColumns.join(", ")})
+        VALUES (${insertValues.map((_, index) => `$${index + 1}`).join(", ")})
+        RETURNING
+          id,
+          ${userColumns.has_name ? "COALESCE(name, '') AS name" : "''::text AS name"},
+          ${userColumns.has_email ? "COALESCE(email, '') AS email" : "''::text AS email"},
+          phone
+        `,
+        insertValues
+      );
+      customer = insertResult.rows[0];
+    }
+
+    if (schemaCapabilities.hasUsersReferralColumns) {
+      await ensureCustomerReferralCode(client, customer.id);
+    }
+
+    await client.query("COMMIT");
+
+    const token = signCustomerAuthToken(customer.id);
+    return res.json({
+      success: true,
+      token,
+      customer: {
+        id: Number(customer.id || 0),
+        name: customer.name || "",
+        email: customer.email || "",
+        phone: customer.phone || phone
+      }
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Verify customer OTP failed:", error);
+    return res.status(500).json({ error: "Failed to verify OTP." });
+  } finally {
+    client.release();
+  }
+};
+
+app.post("/api/customer/auth/verify-otp", handleCustomerVerifyOtp);
+// Backward-compatible aliases for environments using older OTP paths.
+app.post("/api/customer/verify-otp", handleCustomerVerifyOtp);
+app.post("/api/customer/auth/verify_otp", handleCustomerVerifyOtp);
+
+app.get("/api/customer/auth/me", async (req, res) => {
+  try {
+    const customerId = resolveCustomerIdFromRequest(req, { allowQuery: false, allowHeader: true });
+    if (!Number.isInteger(customerId) || customerId <= 0) {
+      return res.status(401).json({ error: "Unauthorized." });
+    }
+
+    const userColumnsResult = await pool.query(
+      `
+      SELECT
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'name'
+        ) AS has_name,
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'email'
+        ) AS has_email,
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'phone'
+        ) AS has_phone
+      `
+    );
+    const userColumns = userColumnsResult.rows[0] || {};
+
+    const accountResult = await pool.query(
+      `
+      SELECT
+        id,
+        ${userColumns.has_name ? "COALESCE(name, '') AS name" : "''::text AS name"},
+        ${userColumns.has_email ? "COALESCE(email, '') AS email" : "''::text AS email"},
+        ${userColumns.has_phone ? "COALESCE(phone, '') AS phone" : "''::text AS phone"}
+      FROM users
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [customerId]
+    );
+
+    if (accountResult.rowCount === 0) {
+      return res.status(404).json({ error: "Customer not found." });
+    }
+
+    return res.json({ customer: accountResult.rows[0] });
+  } catch (error) {
+    console.error("Fetch customer auth me failed:", error);
+    return res.status(500).json({ error: "Failed to fetch customer session." });
+  }
+});
+
+app.post("/api/customer/auth/logout", async (req, res) => {
+  return res.json({ success: true, message: "Logged out." });
+});
+
 app.post("/api/checkout", async (req, res) => {
   console.log("NEW ORDER RECEIVED");
   console.log(req.body);
@@ -3017,7 +5183,7 @@ app.post("/api/checkout", async (req, res) => {
     return res.status(400).json({ error: validation.error });
   }
 
-  const { customer_name, phone, address, total_amount, items } = validation.value;
+  const { customer_id, customer_name, phone, address, total_amount, items, loyalty_reward_id } = validation.value;
   const client = await pool.connect();
 
   try {
@@ -3028,9 +5194,72 @@ app.post("/api/checkout", async (req, res) => {
     }
 
     const normalizedItems = Array.isArray(bundleValidation.value) ? bundleValidation.value : items;
-    const recalculatedTotalAmount = Number(normalizedItems
+    const recalculatedProductSubtotal = Number(normalizedItems
       .reduce((sum, item) => sum + (Number(item.price || 0) * Math.max(1, Number(item.quantity || 1))), 0)
       .toFixed(2));
+
+    const authenticatedCustomerId = resolveCustomerIdFromRequest(req, { allowQuery: false });
+    if (Number.isInteger(loyalty_reward_id) && loyalty_reward_id > 0 && (!Number.isInteger(authenticatedCustomerId) || authenticatedCustomerId <= 0)) {
+      return res.status(401).json({ error: "Login is required to use loyalty rewards at checkout." });
+    }
+
+    const effectiveCustomerId = Number.isInteger(authenticatedCustomerId) && authenticatedCustomerId > 0
+      ? authenticatedCustomerId
+      : customer_id;
+    const loyaltyCustomerId = Number.isInteger(authenticatedCustomerId) && authenticatedCustomerId > 0
+      ? authenticatedCustomerId
+      : null;
+
+    if (
+      Number.isInteger(loyalty_reward_id) && loyalty_reward_id > 0 &&
+      Number.isInteger(customer_id) && customer_id > 0 &&
+      Number.isInteger(authenticatedCustomerId) && authenticatedCustomerId > 0 &&
+      customer_id !== authenticatedCustomerId
+    ) {
+      return res.status(400).json({ error: "Checkout customer context is invalid for loyalty reward usage." });
+    }
+
+    let loyaltyApplication = null;
+    if (Number.isInteger(loyalty_reward_id) && loyalty_reward_id > 0) {
+      if (!Number.isInteger(loyaltyCustomerId) || loyaltyCustomerId <= 0) {
+        return res.status(401).json({ error: "Login is required to use loyalty rewards at checkout." });
+      }
+
+      if (!schemaCapabilities.hasOrderCustomerIdColumn) {
+        return res.status(503).json({ error: "Order customer loyalty linkage is not ready." });
+      }
+
+      const loyaltyColumnsReady =
+        schemaCapabilities.hasOrderLoyaltyRewardIdColumn &&
+        schemaCapabilities.hasOrderLoyaltyRewardTypeColumn &&
+        schemaCapabilities.hasOrderLoyaltyPointsRedeemedColumn &&
+        schemaCapabilities.hasOrderLoyaltyDiscountAmountColumn &&
+        schemaCapabilities.hasOrderLoyaltyFreeGiftProductIdColumn &&
+        schemaCapabilities.hasOrderLoyaltyRedeemedAtColumn;
+
+      if (!loyaltyColumnsReady) {
+        return res.status(503).json({ error: "Order loyalty storage is not ready." });
+      }
+
+      const loyaltyResult = await buildCheckoutLoyaltyApplication(
+        client,
+        schemaCapabilities,
+        {
+          rewardId: loyalty_reward_id,
+          customerId: loyaltyCustomerId,
+          productSubtotal: recalculatedProductSubtotal
+        }
+      );
+
+      if (loyaltyResult.error) {
+        return res.status(loyaltyResult.status || 400).json({ error: loyaltyResult.error });
+      }
+
+      loyaltyApplication = loyaltyResult.value;
+    }
+
+    const loyaltyDiscountAmount = Number(loyaltyApplication?.discount_amount || 0);
+    const recalculatedTotalAmount = Number(Math.max(0, recalculatedProductSubtotal - loyaltyDiscountAmount).toFixed(2));
 
     if (Math.abs(recalculatedTotalAmount - Number(total_amount || 0)) > 0.01) {
       return res.status(400).json({ error: "Checkout total is out of date. Please refresh your cart before placing the order." });
@@ -3038,13 +5267,37 @@ app.post("/api/checkout", async (req, res) => {
 
     await client.query("BEGIN");
 
+    const orderColumns = ["customer_name", "phone", "address", "total_amount"];
+    const orderValues = [customer_name, phone, address, recalculatedTotalAmount];
+    if (schemaCapabilities.hasOrderCustomerIdColumn && Number.isInteger(effectiveCustomerId) && effectiveCustomerId > 0) {
+      orderColumns.unshift("customer_id");
+      orderValues.unshift(effectiveCustomerId);
+    }
+
+    if (loyaltyApplication) {
+      orderColumns.push(
+        "loyalty_reward_id",
+        "loyalty_reward_type",
+        "loyalty_points_redeemed",
+        "loyalty_discount_amount",
+        "loyalty_free_gift_product_id"
+      );
+      orderValues.push(
+        loyaltyApplication.reward_id,
+        loyaltyApplication.reward_type,
+        loyaltyApplication.points_required,
+        loyaltyApplication.discount_amount,
+        loyaltyApplication.free_gift_product_id
+      );
+    }
+
     const orderResult = await client.query(
       `
-      INSERT INTO orders (customer_name, phone, address, total_amount)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO orders (${orderColumns.join(", ")})
+      VALUES (${orderValues.map((_, index) => `$${index + 1}`).join(", ")})
       RETURNING id
       `,
-      [customer_name, phone, address, recalculatedTotalAmount]
+      orderValues
     );
 
     const orderId = orderResult.rows[0].id;
@@ -3125,6 +5378,60 @@ app.post("/api/checkout", async (req, res) => {
       }
     }
 
+    if (loyaltyApplication?.reward_type === "free_gift" && loyaltyApplication.free_gift_product_name) {
+      const loyaltyGiftProductName = `${loyaltyApplication.free_gift_product_name} (Loyalty Reward)`;
+      if (schemaCapabilities.hasOrderItemBundleDetailsColumn) {
+        await client.query(
+          `
+          INSERT INTO order_items
+          (order_id, product_name, quantity, unit_price, size_label, package_label, bundle_details)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
+          `,
+          [
+            orderId,
+            loyaltyGiftProductName,
+            1,
+            0,
+            "",
+            "Loyalty reward",
+            null
+          ]
+        );
+      } else {
+        const giftColumns = ["order_id", "product_name", "quantity", "unit_price", "size_label", "package_label"];
+        const giftValues = [orderId, loyaltyGiftProductName, 1, 0, "", "Loyalty reward"];
+
+        if (schemaCapabilities.hasOrderItemBundleSelectionsColumn) {
+          giftColumns.push("bundle_selections");
+          giftValues.push(JSON.stringify([]));
+        }
+
+        if (schemaCapabilities.hasOrderItemBundleBreakdownColumn) {
+          giftColumns.push("bundle_breakdown");
+          giftValues.push(JSON.stringify([]));
+        }
+
+        await client.query(
+          `
+          INSERT INTO order_items
+          (${giftColumns.join(", ")})
+          VALUES (${giftValues.map((_, index) => `$${index + 1}`).join(", ")})
+          `,
+          giftValues
+        );
+      }
+    }
+
+    const loyaltyRedeemResult = await redeemLoyaltyPointsForOrderIfEligible(client, orderId, schemaCapabilities);
+    if (loyaltyRedeemResult.reason === "insufficient_points_at_commit") {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        error: "Loyalty reward redemption failed because the customer no longer has enough points."
+      });
+    }
+    await awardLoyaltyPointsForOrderIfEligible(client, orderId, schemaCapabilities);
+    await awardReferralBonusesForOrderIfEligible(client, orderId, schemaCapabilities);
+
     await client.query("COMMIT");
 
     res.json({
@@ -3140,48 +5447,1597 @@ app.post("/api/checkout", async (req, res) => {
   }
 });
 
-app.get("/api/orders", requireAdmin, async (req, res) => {
+app.get("/api/customer/account", async (req, res) => {
   try {
     const schemaCapabilities = await getSchemaCapabilities();
-    const deliveryStatusSelect = schemaCapabilities.hasOrderDeliveryStatusColumn
-      ? "delivery_status"
-      : "order_status AS delivery_status";
-    const orderStatusAliasSelect = schemaCapabilities.hasOrderDeliveryStatusColumn
-      ? "delivery_status AS order_status"
-      : "order_status";
-    const trackingNotesSelect = schemaCapabilities.hasOrderTrackingNotesColumn
-      ? "tracking_notes"
-      : "NULL::text AS tracking_notes";
-    // Return raw text for timestamp-without-time-zone fields so the frontend
-    // can parse consistently (avoids implicit server-local timezone shifts).
-    const shippedAtSelect = schemaCapabilities.hasOrderShippedAtColumn
-      ? "shipped_at::text AS shipped_at"
-      : "NULL::text AS shipped_at";
-    const deliveredAtSelect = schemaCapabilities.hasOrderDeliveredAtColumn
-      ? "delivered_at::text AS delivered_at"
-      : "NULL::text AS delivered_at";
-    const updatedAtSelect = schemaCapabilities.hasOrderUpdatedAtColumn
-      ? "updated_at::text AS updated_at"
-      : "created_at::text AS updated_at";
+    if (!schemaCapabilities.hasUsersTable) {
+      return res.status(503).json({ error: "User account storage is not ready." });
+    }
+
+    const customerId = resolveCustomerIdFromRequest(req);
+    if (!Number.isInteger(customerId) || customerId <= 0) {
+      return res.status(400).json({ error: "Customer ID is invalid." });
+    }
+
+    const loyaltyPointsSelect = schemaCapabilities.hasUsersLoyaltyPointsColumns
+      ? "COALESCE(loyalty_points, 0) AS loyalty_points, COALESCE(lifetime_points_earned, 0) AS lifetime_points_earned, COALESCE(lifetime_points_redeemed, 0) AS lifetime_points_redeemed"
+      : "0::integer AS loyalty_points, 0::integer AS lifetime_points_earned, 0::integer AS lifetime_points_redeemed";
+
+    const accountResult = await pool.query(
+      `
+      SELECT id, ${loyaltyPointsSelect}
+      FROM users
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [customerId]
+    );
+
+    if (accountResult.rowCount === 0) {
+      return res.status(404).json({ error: "Customer account not found." });
+    }
+
+    res.json({ account: accountResult.rows[0] });
+  } catch (error) {
+    console.error("Fetch customer account failed:", error);
+    res.status(500).json({ error: "Failed to fetch customer account." });
+  }
+});
+
+app.get("/api/customer/referral", async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const schemaCapabilities = await getSchemaCapabilities();
+    if (!schemaCapabilities.hasUsersTable || !schemaCapabilities.hasUsersLoyaltyPointsColumns || !schemaCapabilities.hasUsersReferralColumns) {
+      return res.status(503).json({ error: "User loyalty storage is not ready." });
+    }
+
+    const customerId = resolveCustomerIdFromRequest(req, { allowQuery: false });
+    if (!Number.isInteger(customerId) || customerId <= 0) {
+      return res.status(401).json({ error: "Login is required." });
+    }
+
+    await client.query("BEGIN");
+    const referralCode = await ensureCustomerReferralCode(client, customerId);
+    if (!referralCode) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Customer account not found." });
+    }
+
+    const customerResult = await client.query(
+      `
+      SELECT
+        id,
+        referral_code,
+        referred_by_user_id,
+        referral_applied_at::text AS referral_applied_at,
+        referral_reward_granted_at::text AS referral_reward_granted_at,
+        referral_reward_reversed_at::text AS referral_reward_reversed_at,
+        referral_reward_order_id
+      FROM users
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [customerId]
+    );
+
+    const summaryResult = await client.query(
+      `
+      SELECT
+        COUNT(*) FILTER (WHERE referral_reward_granted_at IS NOT NULL)::int AS successful_referrals_count,
+        COUNT(*) FILTER (WHERE referral_reward_granted_at IS NULL)::int AS pending_referrals_count
+      FROM users
+      WHERE referred_by_user_id = $1
+      `,
+      [customerId]
+    );
+
+    await client.query("COMMIT");
+
+    const customer = customerResult.rows[0] || {};
+    const summary = summaryResult.rows[0] || {};
+
+    return res.json({
+      referral: {
+        referral_code: normalizeReferralCode(customer.referral_code) || referralCode,
+        referred_by_user_id: customer.referred_by_user_id ? Number(customer.referred_by_user_id) : null,
+        referral_applied_at: customer.referral_applied_at || null,
+        referral_reward_granted_at: customer.referral_reward_granted_at || null,
+        referral_reward_reversed_at: customer.referral_reward_reversed_at || null,
+        referral_reward_order_id: customer.referral_reward_order_id ? Number(customer.referral_reward_order_id) : null,
+        successful_referrals_count: Number(summary.successful_referrals_count || 0),
+        pending_referrals_count: Number(summary.pending_referrals_count || 0),
+        referral_bonus_points: REFERRAL_BONUS_POINTS
+      }
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Fetch customer referral info failed:", error);
+    if (error?.code === "42703" || isMissingRelationError(error)) {
+      return res.status(503).json({ error: "Referral storage is not ready." });
+    }
+    return res.status(500).json({ error: "Failed to fetch referral info." });
+  } finally {
+    client.release();
+  }
+});
+
+app.post("/api/customer/referral/apply", async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const schemaCapabilities = await getSchemaCapabilities();
+    if (!schemaCapabilities.hasUsersTable || !schemaCapabilities.hasOrderCustomerIdColumn || !schemaCapabilities.hasUsersReferralColumns) {
+      return res.status(503).json({ error: "Referral storage is not ready." });
+    }
+
+    const customerId = resolveCustomerIdFromRequest(req, { allowQuery: false });
+    if (!Number.isInteger(customerId) || customerId <= 0) {
+      return res.status(401).json({ error: "Login is required." });
+    }
+
+    const referralCodeInput = normalizeReferralCode(req.body?.referral_code);
+    if (
+      !referralCodeInput ||
+      referralCodeInput.length < REFERRAL_CODE_MIN_LENGTH ||
+      referralCodeInput.length > REFERRAL_CODE_MAX_LENGTH
+    ) {
+      return res.status(400).json({ error: "referral_code is invalid." });
+    }
+
+    await client.query("BEGIN");
+
+    const customerResult = await client.query(
+      `
+      SELECT id, referral_code, referred_by_user_id
+      FROM users
+      WHERE id = $1
+      FOR UPDATE
+      `,
+      [customerId]
+    );
+
+    if (customerResult.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Customer account not found." });
+    }
+
+    const customer = customerResult.rows[0];
+    await ensureCustomerReferralCode(client, customerId);
+
+    if (parseInteger(customer.referred_by_user_id) > 0) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ error: "Referral code is already applied for this customer." });
+    }
+
+    const deliveryStatusColumn = schemaCapabilities.hasOrderDeliveryStatusColumn ? "delivery_status" : "order_status";
+    const hasEligibleCompletedOrderResult = await client.query(
+      `
+      SELECT 1
+      FROM orders
+      WHERE customer_id = $1
+        AND LOWER(COALESCE(payment_status, '')) = 'paid'
+        AND LOWER(COALESCE(${deliveryStatusColumn}, '')) = 'completed'
+      LIMIT 1
+      `,
+      [customerId]
+    );
+
+    if (hasEligibleCompletedOrderResult.rowCount > 0) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ error: "Referral code can only be applied before the first eligible completed order." });
+    }
+
+    const referrerResult = await client.query(
+      `
+      SELECT id, referral_code
+      FROM users
+      WHERE UPPER(COALESCE(referral_code, '')) = $1
+      LIMIT 1
+      `,
+      [referralCodeInput]
+    );
+
+    if (referrerResult.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Referral code was not found." });
+    }
+
+    const referrer = referrerResult.rows[0];
+    const referrerId = parseInteger(referrer.id);
+    if (!Number.isInteger(referrerId) || referrerId <= 0) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ error: "Referral code is invalid." });
+    }
+
+    if (referrerId === customerId) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ error: "Self-referral is not allowed." });
+    }
+
+    await client.query(
+      `
+      UPDATE users
+      SET
+        referred_by_user_id = $1,
+        referral_applied_at = COALESCE(referral_applied_at, CURRENT_TIMESTAMP)
+      WHERE id = $2
+      `,
+      [referrerId, customerId]
+    );
+
+    await client.query("COMMIT");
+    return res.json({
+      success: true,
+      message: "Referral code applied successfully.",
+      referral: {
+        referred_by_user_id: referrerId,
+        referral_code: normalizeReferralCode(referrer.referral_code)
+      }
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Apply referral code failed:", error);
+    if (error?.code === "42703" || isMissingRelationError(error)) {
+      return res.status(503).json({ error: "Referral storage is not ready." });
+    }
+    return res.status(500).json({ error: "Failed to apply referral code." });
+  } finally {
+    client.release();
+  }
+});
+
+app.get("/api/customer/loyalty-transactions", async (req, res) => {
+  try {
+    const schemaCapabilities = await getSchemaCapabilities();
+    if (!schemaCapabilities.hasUsersTable || !schemaCapabilities.hasUsersLoyaltyPointsColumns) {
+      return res.status(503).json({ error: "User loyalty storage is not ready." });
+    }
+    if (!schemaCapabilities.hasLoyaltyPointsTransactionsTable) {
+      return res.status(503).json({ error: "Loyalty transactions storage is not ready." });
+    }
+
+    const customerId = resolveCustomerIdFromRequest(req);
+    if (!Number.isInteger(customerId) || customerId <= 0) {
+      return res.status(400).json({ error: "Customer ID is invalid." });
+    }
+
+    const limitRaw = parseInteger(req.query?.limit);
+    const limit = Number.isInteger(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 100) : 20;
+
+    const customerResult = await pool.query(
+      `
+      SELECT id
+      FROM users
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [customerId]
+    );
+
+    if (customerResult.rowCount === 0) {
+      return res.status(404).json({ error: "Customer account not found." });
+    }
+
+    const txResult = await pool.query(
+      `
+      SELECT
+        id,
+        customer_id,
+        order_id,
+        type,
+        points,
+        description,
+        created_at::text AS created_at
+      FROM loyalty_points_transactions
+      WHERE customer_id = $1
+      ORDER BY created_at DESC, id DESC
+      LIMIT $2
+      `,
+      [customerId, limit]
+    );
+
+    const transactions = txResult.rows.map((row) => ({
+      ...row,
+      type_label: getLoyaltyTransactionTypeLabel(row.type)
+    }));
+
+    res.json({ transactions });
+  } catch (error) {
+    console.error("Fetch customer loyalty transactions failed:", error);
+    if (isMissingRelationError(error)) {
+      return res.status(503).json({ error: "Loyalty transactions storage is not ready." });
+    }
+    res.status(500).json({ error: "Failed to fetch loyalty transactions." });
+  }
+});
+
+app.get("/api/admin/customers/loyalty", requireAdmin, async (req, res) => {
+  try {
+    const schemaCapabilities = await getSchemaCapabilities();
+    if (!schemaCapabilities.hasUsersTable || !schemaCapabilities.hasUsersLoyaltyPointsColumns) {
+      return res.status(503).json({ error: "User loyalty storage is not ready." });
+    }
+
+    const search = normalizeString(req.query?.search).toLowerCase();
+    const limitRaw = parseInteger(req.query?.limit);
+    const limit = Number.isInteger(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 200) : 50;
+    const offsetRaw = parseInteger(req.query?.offset);
+    const offset = Number.isInteger(offsetRaw) && offsetRaw >= 0 ? offsetRaw : 0;
+    const usersColumnsResult = await pool.query(
+      `
+      SELECT
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'name'
+        ) AS has_name,
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'phone'
+        ) AS has_phone,
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'email'
+        ) AS has_email,
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'referral_code'
+        ) AS has_referral_code,
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'referred_by_user_id'
+        ) AS has_referred_by_user_id,
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'referral_reward_granted_at'
+        ) AS has_referral_reward_granted_at
+      `
+    );
+    const usersColumns = usersColumnsResult.rows[0] || {};
+    const nameSelect = usersColumns.has_name ? "COALESCE(u.name, '') AS name" : "''::text AS name";
+    const phoneSelect = usersColumns.has_phone ? "COALESCE(u.phone, '') AS phone" : "''::text AS phone";
+    const emailSelect = usersColumns.has_email ? "COALESCE(u.email, '') AS email" : "''::text AS email";
+    const referralCodeSelect = usersColumns.has_referral_code
+      ? "COALESCE(u.referral_code, '') AS referral_code"
+      : "''::text AS referral_code";
+    const referredBySelect = usersColumns.has_referred_by_user_id
+      ? "u.referred_by_user_id"
+      : "NULL::int AS referred_by_user_id";
+    const referredByNameSelect = (usersColumns.has_referred_by_user_id && usersColumns.has_name)
+      ? "COALESCE(rb.name, '') AS referred_by_name"
+      : "''::text AS referred_by_name";
+    const referralGrantedAtSelect = usersColumns.has_referral_reward_granted_at
+      ? "u.referral_reward_granted_at::text AS referral_reward_granted_at"
+      : "NULL::text AS referral_reward_granted_at";
+    const successfulReferralsSelect = usersColumns.has_referred_by_user_id && usersColumns.has_referral_reward_granted_at
+      ? `(
+          SELECT COUNT(*)::int
+          FROM users ru
+          WHERE ru.referred_by_user_id = u.id
+            AND ru.referral_reward_granted_at IS NOT NULL
+        ) AS successful_referrals_count`
+      : "0::int AS successful_referrals_count";
+    const pendingReferralsSelect = usersColumns.has_referred_by_user_id && usersColumns.has_referral_reward_granted_at
+      ? `(
+          SELECT COUNT(*)::int
+          FROM users ru
+          WHERE ru.referred_by_user_id = u.id
+            AND ru.referral_reward_granted_at IS NULL
+        ) AS pending_referrals_count`
+      : "0::int AS pending_referrals_count";
+    const referredByJoin = usersColumns.has_referred_by_user_id
+      ? "LEFT JOIN users rb ON rb.id = u.referred_by_user_id"
+      : "";
+    const searchPredicates = ["CAST(u.id AS text) ILIKE $2"];
+    if (usersColumns.has_name) searchPredicates.push("COALESCE(u.name, '') ILIKE $2");
+    if (usersColumns.has_phone) searchPredicates.push("COALESCE(u.phone, '') ILIKE $2");
+    if (usersColumns.has_email) searchPredicates.push("COALESCE(u.email, '') ILIKE $2");
+
+    const usersResult = await pool.query(
+      `
+      SELECT
+        u.id,
+        ${nameSelect},
+        ${phoneSelect},
+        ${emailSelect},
+        ${referralCodeSelect},
+        ${referredBySelect},
+        ${referralGrantedAtSelect},
+        ${referredByNameSelect},
+        COALESCE(u.loyalty_points, 0) AS loyalty_points,
+        COALESCE(u.lifetime_points_earned, 0) AS lifetime_points_earned,
+        COALESCE(u.lifetime_points_redeemed, 0) AS lifetime_points_redeemed,
+        ${successfulReferralsSelect},
+        ${pendingReferralsSelect}
+      FROM users u
+      ${referredByJoin}
+      WHERE
+        $1 = ''
+        OR (${searchPredicates.join(" OR ")})
+      ORDER BY u.id DESC
+      LIMIT $3
+      OFFSET $4
+      `,
+      [search, `%${search}%`, limit, offset]
+    );
+
+    res.json({ customers: usersResult.rows });
+  } catch (error) {
+    console.error("Fetch admin customer loyalty list failed:", error);
+    res.status(500).json({ error: "Failed to fetch customer loyalty list." });
+  }
+});
+
+app.get("/api/admin/customers/:id/loyalty-transactions", requireAdmin, async (req, res) => {
+  try {
+    const schemaCapabilities = await getSchemaCapabilities();
+    if (!schemaCapabilities.hasUsersTable || !schemaCapabilities.hasUsersLoyaltyPointsColumns) {
+      return res.status(503).json({ error: "User loyalty storage is not ready." });
+    }
+    if (!schemaCapabilities.hasLoyaltyPointsTransactionsTable) {
+      return res.status(503).json({ error: "Loyalty transactions storage is not ready." });
+    }
+
+    const customerId = parseInteger(req.params.id);
+    if (!Number.isInteger(customerId) || customerId <= 0) {
+      return res.status(400).json({ error: "Customer ID is invalid." });
+    }
+
+    const limitRaw = parseInteger(req.query?.limit);
+    const limit = Number.isInteger(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 200) : 50;
+    const usersColumnsResult = await pool.query(
+      `
+      SELECT
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'name'
+        ) AS has_name,
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'phone'
+        ) AS has_phone,
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'email'
+        ) AS has_email,
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'referral_code'
+        ) AS has_referral_code,
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'referred_by_user_id'
+        ) AS has_referred_by_user_id,
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'referral_applied_at'
+        ) AS has_referral_applied_at,
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'referral_reward_granted_at'
+        ) AS has_referral_reward_granted_at,
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'referral_reward_reversed_at'
+        ) AS has_referral_reward_reversed_at
+      `
+    );
+    const usersColumns = usersColumnsResult.rows[0] || {};
+    const nameSelect = usersColumns.has_name ? "COALESCE(name, '') AS name" : "''::text AS name";
+    const phoneSelect = usersColumns.has_phone ? "COALESCE(phone, '') AS phone" : "''::text AS phone";
+    const emailSelect = usersColumns.has_email ? "COALESCE(email, '') AS email" : "''::text AS email";
+    const referralCodeSelect = usersColumns.has_referral_code
+      ? "COALESCE(referral_code, '') AS referral_code"
+      : "''::text AS referral_code";
+    const referredBySelect = usersColumns.has_referred_by_user_id
+      ? "referred_by_user_id"
+      : "NULL::int AS referred_by_user_id";
+    const referralAppliedAtSelect = usersColumns.has_referral_applied_at
+      ? "referral_applied_at::text AS referral_applied_at"
+      : "NULL::text AS referral_applied_at";
+    const referralRewardGrantedAtSelect = usersColumns.has_referral_reward_granted_at
+      ? "referral_reward_granted_at::text AS referral_reward_granted_at"
+      : "NULL::text AS referral_reward_granted_at";
+    const referralRewardReversedAtSelect = usersColumns.has_referral_reward_reversed_at
+      ? "referral_reward_reversed_at::text AS referral_reward_reversed_at"
+      : "NULL::text AS referral_reward_reversed_at";
+
+    const customerResult = await pool.query(
+      `
+      SELECT
+        id,
+        ${nameSelect},
+        ${phoneSelect},
+        ${emailSelect},
+        ${referralCodeSelect},
+        ${referredBySelect},
+        ${referralAppliedAtSelect},
+        ${referralRewardGrantedAtSelect},
+        ${referralRewardReversedAtSelect},
+        COALESCE(loyalty_points, 0) AS loyalty_points,
+        COALESCE(lifetime_points_earned, 0) AS lifetime_points_earned,
+        COALESCE(lifetime_points_redeemed, 0) AS lifetime_points_redeemed
+      FROM users
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [customerId]
+    );
+
+    if (customerResult.rowCount === 0) {
+      return res.status(404).json({ error: "Customer not found." });
+    }
+    const customer = customerResult.rows[0];
+
+    let referredBy = null;
+    const referredById = parseInteger(customer.referred_by_user_id);
+    if (Number.isInteger(referredById) && referredById > 0) {
+      const referredByNameSelect = usersColumns.has_name ? "COALESCE(name, '') AS name" : "''::text AS name";
+      const referredByEmailSelect = usersColumns.has_email ? "COALESCE(email, '') AS email" : "''::text AS email";
+      const referredByResult = await pool.query(
+        `
+        SELECT
+          id,
+          ${referredByNameSelect},
+          ${referredByEmailSelect}
+        FROM users
+        WHERE id = $1
+        LIMIT 1
+        `,
+        [referredById]
+      );
+      if (referredByResult.rowCount > 0) {
+        referredBy = {
+          id: Number(referredByResult.rows[0].id || 0),
+          name: referredByResult.rows[0].name || "",
+          email: referredByResult.rows[0].email || ""
+        };
+      }
+    }
+
+    const referralSummaryResult = usersColumns.has_referred_by_user_id && usersColumns.has_referral_reward_granted_at
+      ? await pool.query(
+        `
+        SELECT
+          COUNT(*) FILTER (WHERE referral_reward_granted_at IS NOT NULL)::int AS successful_referrals_count,
+          COUNT(*) FILTER (WHERE referral_reward_granted_at IS NULL)::int AS pending_referrals_count
+        FROM users
+        WHERE referred_by_user_id = $1
+        `,
+        [customerId]
+      )
+      : { rows: [{ successful_referrals_count: 0, pending_referrals_count: 0 }] };
+
+    const txResult = await pool.query(
+      `
+      SELECT
+        id,
+        customer_id,
+        order_id,
+        type,
+        points,
+        description,
+        created_at::text AS created_at
+      FROM loyalty_points_transactions
+      WHERE customer_id = $1
+      ORDER BY created_at DESC, id DESC
+      LIMIT $2
+      `,
+      [customerId, limit]
+    );
+
+    const transactions = txResult.rows.map((row) => ({
+      ...row,
+      type_label: getLoyaltyTransactionTypeLabel(row.type)
+    }));
+
+    res.json({
+      customer: {
+        ...customer,
+        referred_by: referredBy
+      },
+      referral_summary: {
+        successful_referrals_count: Number(referralSummaryResult.rows[0]?.successful_referrals_count || 0),
+        pending_referrals_count: Number(referralSummaryResult.rows[0]?.pending_referrals_count || 0),
+        referral_bonus_points: REFERRAL_BONUS_POINTS
+      },
+      transactions
+    });
+  } catch (error) {
+    console.error("Fetch admin customer loyalty transactions failed:", error);
+    res.status(500).json({ error: "Failed to fetch customer loyalty transactions." });
+  }
+});
+
+app.get("/api/admin/loyalty/stats", requireAdmin, async (req, res) => {
+  try {
+    const schemaCapabilities = await getSchemaCapabilities();
+    if (!schemaCapabilities.hasUsersTable || !schemaCapabilities.hasUsersLoyaltyPointsColumns) {
+      return res.status(503).json({ error: "User loyalty storage is not ready." });
+    }
+    if (!schemaCapabilities.hasLoyaltyPointsTransactionsTable) {
+      return res.status(503).json({ error: "Loyalty transactions storage is not ready." });
+    }
+
+    const usersColumnsResult = await pool.query(
+      `
+      SELECT
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'name'
+        ) AS has_name,
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'email'
+        ) AS has_email
+      `
+    );
+    const usersColumns = usersColumnsResult.rows[0] || {};
+    const userNameSelect = usersColumns.has_name ? "COALESCE(u.name, '') AS customer_name" : "''::text AS customer_name";
+    const userEmailSelect = usersColumns.has_email ? "COALESCE(u.email, '') AS customer_email" : "''::text AS customer_email";
+
+    const totalsPromise = pool.query(
+      `
+      SELECT
+        COALESCE(SUM(CASE WHEN type = 'earn' THEN points ELSE 0 END), 0) AS total_points_issued,
+        COALESCE(SUM(CASE WHEN type = 'redeem' THEN points ELSE 0 END), 0) AS total_points_redeemed,
+        COALESCE(SUM(CASE WHEN type = 'earn_reversal' THEN points ELSE 0 END), 0) AS total_points_reversed,
+        COALESCE(SUM(CASE WHEN type = 'redeem_restore' THEN points ELSE 0 END), 0) AS total_points_restored,
+        COALESCE(SUM(CASE WHEN type = 'admin_adjust_add' THEN points ELSE 0 END), 0) AS total_manual_points_added,
+        COALESCE(SUM(CASE WHEN type = 'admin_adjust_deduct' THEN points ELSE 0 END), 0) AS total_manual_points_deducted,
+        COALESCE(SUM(CASE WHEN type = 'referral_bonus_referrer' THEN points ELSE 0 END), 0) AS total_referral_points_referrer,
+        COALESCE(SUM(CASE WHEN type = 'referral_bonus_referred' THEN points ELSE 0 END), 0) AS total_referral_points_referred,
+        COALESCE(SUM(CASE WHEN type = 'referral_bonus_referrer_reversal' THEN points ELSE 0 END), 0) AS total_referral_points_referrer_reversed,
+        COALESCE(SUM(CASE WHEN type = 'referral_bonus_referred_reversal' THEN points ELSE 0 END), 0) AS total_referral_points_referred_reversed,
+        COALESCE(SUM(CASE WHEN type = 'redeem' THEN 1 ELSE 0 END), 0) AS total_reward_redemptions
+      FROM loyalty_points_transactions
+      `
+    );
+
+    const liabilityPromise = pool.query(
+      `
+      SELECT COALESCE(SUM(COALESCE(loyalty_points, 0)), 0) AS active_points_liability
+      FROM users
+      `
+    );
+
+    const loyaltyCustomersPromise = pool.query(
+      `
+      SELECT COUNT(*)::int AS total_loyalty_customers
+      FROM users u
+      WHERE
+        COALESCE(u.loyalty_points, 0) > 0
+        OR EXISTS (
+          SELECT 1
+          FROM loyalty_points_transactions tx
+          WHERE tx.customer_id = u.id
+        )
+      `
+    );
+
+    const topCustomersPromise = pool.query(
+      `
+      SELECT
+        u.id AS customer_id,
+        ${userNameSelect},
+        ${userEmailSelect},
+        COALESCE(u.loyalty_points, 0) AS loyalty_points
+      FROM users u
+      WHERE COALESCE(u.loyalty_points, 0) > 0
+      ORDER BY COALESCE(u.loyalty_points, 0) DESC, u.id ASC
+      LIMIT 10
+      `
+    );
+
+    const recentActivityPromise = pool.query(
+      `
+      SELECT
+        tx.id AS transaction_id,
+        tx.customer_id,
+        ${userNameSelect},
+        ${userEmailSelect},
+        tx.order_id,
+        tx.type,
+        tx.points,
+        tx.description,
+        tx.created_at::text AS created_at
+      FROM loyalty_points_transactions tx
+      LEFT JOIN users u ON u.id = tx.customer_id
+      ORDER BY tx.created_at DESC, tx.id DESC
+      LIMIT 20
+      `
+    );
+
+    const mostRedeemedRewardsPromise = (
+      schemaCapabilities.hasOrderLoyaltyRewardIdColumn && schemaCapabilities.hasLoyaltyRewardsTable
+    )
+      ? pool.query(
+        `
+        SELECT
+          o.loyalty_reward_id AS reward_id,
+          COALESCE(lr.name, CONCAT('Reward #', o.loyalty_reward_id::text)) AS reward_name,
+          COUNT(*)::int AS redemption_count
+        FROM loyalty_points_transactions tx
+        INNER JOIN orders o ON o.id = tx.order_id
+        LEFT JOIN loyalty_rewards lr ON lr.id = o.loyalty_reward_id
+        WHERE tx.type = 'redeem'
+          AND o.loyalty_reward_id IS NOT NULL
+        GROUP BY o.loyalty_reward_id, COALESCE(lr.name, CONCAT('Reward #', o.loyalty_reward_id::text))
+        ORDER BY COUNT(*) DESC, o.loyalty_reward_id ASC
+        LIMIT 10
+        `
+      )
+      : Promise.resolve({ rows: [] });
+
+    const referralCountsPromise = schemaCapabilities.hasUsersReferralColumns
+      ? pool.query(
+        `
+        SELECT
+          COUNT(*) FILTER (WHERE referred_by_user_id IS NOT NULL)::int AS total_referred_customers,
+          COUNT(*) FILTER (WHERE referral_reward_granted_at IS NOT NULL)::int AS successful_referrals_count,
+          COUNT(*) FILTER (WHERE referred_by_user_id IS NOT NULL AND referral_reward_granted_at IS NULL)::int AS pending_referrals_count
+        FROM users
+        `
+      )
+      : Promise.resolve({
+        rows: [{
+          total_referred_customers: 0,
+          successful_referrals_count: 0,
+          pending_referrals_count: 0
+        }]
+      });
+
+    const [
+      totalsResult,
+      liabilityResult,
+      loyaltyCustomersResult,
+      topCustomersResult,
+      recentActivityResult,
+      mostRedeemedRewardsResult,
+      referralCountsResult
+    ] = await Promise.all([
+      totalsPromise,
+      liabilityPromise,
+      loyaltyCustomersPromise,
+      topCustomersPromise,
+      recentActivityPromise,
+      mostRedeemedRewardsPromise,
+      referralCountsPromise
+    ]);
+
+    const totals = totalsResult.rows[0] || {};
+    const stats = {
+      total_points_issued: Number(totals.total_points_issued || 0),
+      total_points_redeemed: Number(totals.total_points_redeemed || 0),
+      total_points_reversed: Number(totals.total_points_reversed || 0),
+      total_points_restored: Number(totals.total_points_restored || 0),
+      total_manual_points_added: Number(totals.total_manual_points_added || 0),
+      total_manual_points_deducted: Number(totals.total_manual_points_deducted || 0),
+      total_referral_points_referrer: Number(totals.total_referral_points_referrer || 0),
+      total_referral_points_referred: Number(totals.total_referral_points_referred || 0),
+      total_referral_points_referrer_reversed: Number(totals.total_referral_points_referrer_reversed || 0),
+      total_referral_points_referred_reversed: Number(totals.total_referral_points_referred_reversed || 0),
+      active_points_liability: Number(liabilityResult.rows[0]?.active_points_liability || 0),
+      total_loyalty_customers: Number(loyaltyCustomersResult.rows[0]?.total_loyalty_customers || 0),
+      total_referred_customers: Number(referralCountsResult.rows[0]?.total_referred_customers || 0),
+      successful_referrals_count: Number(referralCountsResult.rows[0]?.successful_referrals_count || 0),
+      pending_referrals_count: Number(referralCountsResult.rows[0]?.pending_referrals_count || 0),
+      total_reward_redemptions: Number(totals.total_reward_redemptions || 0),
+      most_redeemed_rewards: (mostRedeemedRewardsResult.rows || []).map((row) => ({
+        reward_id: Number(row.reward_id || 0),
+        reward_name: row.reward_name || "",
+        redemption_count: Number(row.redemption_count || 0)
+      })),
+      top_customers_by_points_balance: (topCustomersResult.rows || []).map((row) => ({
+        customer_id: Number(row.customer_id || 0),
+        customer_name: row.customer_name || "",
+        customer_email: row.customer_email || "",
+        loyalty_points: Number(row.loyalty_points || 0)
+      })),
+      recent_loyalty_activity: (recentActivityResult.rows || []).map((row) => ({
+        transaction_id: Number(row.transaction_id || 0),
+        customer_id: Number(row.customer_id || 0),
+        customer_name: row.customer_name || "",
+        customer_email: row.customer_email || "",
+        order_id: row.order_id === null || row.order_id === undefined ? null : Number(row.order_id),
+        type: row.type || "",
+        type_label: getLoyaltyTransactionTypeLabel(row.type),
+        points: Number(row.points || 0),
+        description: row.description || "",
+        created_at: row.created_at || ""
+      }))
+    };
+
+    return res.json({ stats });
+  } catch (error) {
+    console.error("Fetch admin loyalty stats failed:", error);
+    return res.status(500).json({ error: "Failed to fetch loyalty stats." });
+  }
+});
+
+app.get("/api/admin/loyalty-transactions/export.csv", requireAdmin, async (req, res) => {
+  try {
+    const schemaCapabilities = await getSchemaCapabilities();
+    if (!schemaCapabilities.hasLoyaltyPointsTransactionsTable) {
+      return res.status(503).json({ error: "Loyalty transactions storage is not ready." });
+    }
+
+    const customerIdRaw = req.query?.customer_id;
+    const customerId = customerIdRaw === null || customerIdRaw === undefined || customerIdRaw === ""
+      ? null
+      : parseInteger(customerIdRaw);
+
+    if (customerIdRaw !== null && customerIdRaw !== undefined && customerIdRaw !== "") {
+      if (!Number.isInteger(customerId) || customerId <= 0) {
+        return res.status(400).json({ error: "customer_id is invalid." });
+      }
+    }
+
+    const usersColumnsResult = await pool.query(
+      `
+      SELECT
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'name'
+        ) AS has_name,
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'email'
+        ) AS has_email
+      `
+    );
+    const usersColumns = usersColumnsResult.rows[0] || {};
+    const nameSelect = usersColumns.has_name ? "COALESCE(u.name, '') AS customer_name" : "''::text AS customer_name";
+    const emailSelect = usersColumns.has_email ? "COALESCE(u.email, '') AS customer_email" : "''::text AS customer_email";
+
+    const exportLimitRaw = parseInteger(req.query?.limit);
+    const exportLimit = Number.isInteger(exportLimitRaw) && exportLimitRaw > 0 ? Math.min(exportLimitRaw, 50000) : 10000;
+
+    const txResult = await pool.query(
+      `
+      SELECT
+        tx.id AS transaction_id,
+        tx.customer_id,
+        ${nameSelect},
+        ${emailSelect},
+        tx.order_id,
+        tx.type,
+        tx.points,
+        tx.description,
+        tx.created_at::text AS created_at
+      FROM loyalty_points_transactions tx
+      LEFT JOIN users u ON u.id = tx.customer_id
+      WHERE ($1::int IS NULL OR tx.customer_id = $1)
+      ORDER BY tx.created_at DESC, tx.id DESC
+      LIMIT $2
+      `,
+      [customerId, exportLimit]
+    );
+
+    const headers = [
+      "transaction_id",
+      "customer_id",
+      "customer_name",
+      "customer_email",
+      "order_id",
+      "type",
+      "type_label",
+      "points",
+      "description",
+      "created_at"
+    ];
+
+    const rows = txResult.rows.map((row) => ([
+      row.transaction_id,
+      row.customer_id,
+      row.customer_name || "",
+      row.customer_email || "",
+      row.order_id ?? "",
+      row.type || "",
+      getLoyaltyTransactionTypeLabel(row.type),
+      row.points ?? 0,
+      row.description || "",
+      row.created_at || ""
+    ]));
+
+    const csvBody = [
+      headers.map((h) => toCsvCell(h)).join(","),
+      ...rows.map((values) => values.map((value) => toCsvCell(value)).join(","))
+    ].join("\n");
+    const csvWithBom = `\uFEFF${csvBody}`;
+
+    const filename = Number.isInteger(customerId) && customerId > 0
+      ? `loyalty-transactions-customer-${customerId}.csv`
+      : "loyalty-transactions-all.csv";
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename=\"${filename}\"`);
+    return res.status(200).send(csvWithBom);
+  } catch (error) {
+    console.error("Export loyalty transactions CSV failed:", error);
+    return res.status(500).json({ error: "Failed to export loyalty transactions CSV." });
+  }
+});
+
+app.post("/api/admin/customers/loyalty-adjustments", requireAdmin, async (req, res) => {
+  const customerId = parseInteger(req.body?.customer_id);
+  const adjustmentType = normalizeString(req.body?.adjustment_type).toLowerCase();
+  const points = parseInteger(req.body?.points);
+  const reason = normalizeString(req.body?.reason);
+
+  if (!Number.isInteger(customerId) || customerId <= 0) {
+    return res.status(400).json({ error: "customer_id is invalid." });
+  }
+
+  if (!["add", "deduct"].includes(adjustmentType)) {
+    return res.status(400).json({ error: "adjustment_type must be either add or deduct." });
+  }
+
+  if (!Number.isInteger(points) || points <= 0 || points > LOYALTY_POINTS_MAX) {
+    return res.status(400).json({ error: `points must be a whole number between 1 and ${LOYALTY_POINTS_MAX}.` });
+  }
+
+  if (!reason || reason.length > LOYALTY_ADJUSTMENT_REASON_MAX_LENGTH) {
+    return res.status(400).json({ error: `reason must be 1-${LOYALTY_ADJUSTMENT_REASON_MAX_LENGTH} characters long.` });
+  }
+
+  const schemaCapabilities = await getSchemaCapabilities();
+  if (!schemaCapabilities.hasUsersTable || !schemaCapabilities.hasUsersLoyaltyPointsColumns) {
+    return res.status(503).json({ error: "User loyalty storage is not ready." });
+  }
+  if (!schemaCapabilities.hasLoyaltyPointsTransactionsTable) {
+    return res.status(503).json({ error: "Loyalty transactions storage is not ready." });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const customerResult = await client.query(
+      `
+      SELECT
+        id,
+        COALESCE(loyalty_points, 0) AS loyalty_points,
+        COALESCE(lifetime_points_earned, 0) AS lifetime_points_earned,
+        COALESCE(lifetime_points_redeemed, 0) AS lifetime_points_redeemed
+      FROM users
+      WHERE id = $1
+      FOR UPDATE
+      `,
+      [customerId]
+    );
+
+    if (customerResult.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Customer not found." });
+    }
+
+    const currentPoints = clampLoyaltyPoints(customerResult.rows[0].loyalty_points);
+    if (adjustmentType === "deduct" && currentPoints < points) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ error: "Deduction would make loyalty_points negative." });
+    }
+
+    if (adjustmentType === "add") {
+      await client.query(
+        `
+        UPDATE users
+        SET loyalty_points = COALESCE(loyalty_points, 0) + $1
+        WHERE id = $2
+        `,
+        [points, customerId]
+      );
+      // Business decision: manual bonus/ops adjustments should not change
+      // lifetime_points_earned, which is reserved for real order-earned points.
+    } else {
+      await client.query(
+        `
+        UPDATE users
+        SET loyalty_points = COALESCE(loyalty_points, 0) - $1
+        WHERE id = $2
+        `,
+        [points, customerId]
+      );
+      // Intentional: manual deductions do not touch lifetime_points_redeemed.
+    }
+
+    const transactionType = adjustmentType === "add" ? "admin_adjust_add" : "admin_adjust_deduct";
+    const transactionDescription = `${adjustmentType === "add" ? "Admin added" : "Admin deducted"} ${points} points: ${reason}`;
+    const insertTxnResult = await client.query(
+      `
+      INSERT INTO loyalty_points_transactions
+      (customer_id, order_id, type, points, description)
+      VALUES ($1, NULL, $2, $3, $4)
+      RETURNING id, customer_id, order_id, type, points, description, created_at::text AS created_at
+      `,
+      [customerId, transactionType, points, transactionDescription]
+    );
+
+    const updatedCustomerResult = await client.query(
+      `
+      SELECT
+        id,
+        COALESCE(loyalty_points, 0) AS loyalty_points,
+        COALESCE(lifetime_points_earned, 0) AS lifetime_points_earned,
+        COALESCE(lifetime_points_redeemed, 0) AS lifetime_points_redeemed
+      FROM users
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [customerId]
+    );
+
+    await client.query("COMMIT");
+    const transaction = {
+      ...insertTxnResult.rows[0],
+      type_label: getLoyaltyTransactionTypeLabel(insertTxnResult.rows[0]?.type)
+    };
+    return res.json({
+      message: "Loyalty points adjusted successfully.",
+      customer: updatedCustomerResult.rows[0],
+      transaction
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Admin loyalty adjustment failed:", error);
+    return res.status(500).json({ error: "Failed to adjust loyalty points." });
+  } finally {
+    client.release();
+  }
+});
+
+app.get("/api/admin/loyalty-rewards", requireAdmin, async (req, res) => {
+  try {
+    const schemaCapabilities = await getSchemaCapabilities();
+    if (!schemaCapabilities.hasLoyaltyRewardsTable) {
+      return res.status(503).json({ error: "Loyalty rewards storage is not ready." });
+    }
 
     const result = await pool.query(
       `
       SELECT
+        lr.id,
+        lr.name,
+        lr.reward_type,
+        lr.points_required,
+        lr.discount_value,
+        lr.gift_product_id,
+        p.name AS gift_product_name,
+        lr.is_active,
+        lr.sort_order,
+        lr.created_at,
+        lr.updated_at
+      FROM loyalty_rewards lr
+      LEFT JOIN products p ON p.id = lr.gift_product_id
+      ORDER BY lr.sort_order ASC, lr.points_required ASC, lr.id ASC
+      `
+    );
+
+    res.json({ rewards: result.rows });
+  } catch (error) {
+    console.error("Fetch admin loyalty rewards failed:", error);
+    if (isMissingRelationError(error)) {
+      return res.status(503).json({ error: "Loyalty rewards storage is not ready." });
+    }
+    res.status(500).json({ error: "Failed to fetch loyalty rewards." });
+  }
+});
+
+app.post("/api/admin/loyalty-rewards", requireAdmin, async (req, res) => {
+  const validation = validateLoyaltyRewardPayload(req.body);
+  if (validation.error) {
+    return res.status(400).json({ error: validation.error });
+  }
+
+  const reward = validation.value;
+  const client = await pool.connect();
+  try {
+    const schemaCapabilities = await getSchemaCapabilities();
+    if (!schemaCapabilities.hasLoyaltyRewardsTable) {
+      return res.status(503).json({ error: "Loyalty rewards storage is not ready." });
+    }
+
+    await client.query("BEGIN");
+
+    if (reward.reward_type === "free_gift") {
+      const productResult = await client.query(
+        `
+        SELECT id
+        FROM products
+        WHERE id = $1
+        LIMIT 1
+        `,
+        [reward.gift_product_id]
+      );
+
+      if (productResult.rowCount === 0) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({ error: "Gift product does not exist." });
+      }
+    }
+
+    const insertResult = await client.query(
+      `
+      INSERT INTO loyalty_rewards
+        (name, reward_type, points_required, discount_value, gift_product_id, is_active, sort_order, updated_at)
+      VALUES
+        ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+      RETURNING
         id,
-        customer_name,
-        phone,
-        address,
-        total_amount,
-        payment_status,
+        name,
+        reward_type,
+        points_required,
+        discount_value,
+        gift_product_id,
+        is_active,
+        sort_order,
+        created_at,
+        updated_at
+      `,
+      [
+        reward.name,
+        reward.reward_type,
+        reward.points_required,
+        reward.discount_value,
+        reward.gift_product_id,
+        reward.is_active,
+        reward.sort_order
+      ]
+    );
+
+    await client.query("COMMIT");
+    res.status(201).json({
+      message: "Loyalty reward created.",
+      reward: insertResult.rows[0]
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Create loyalty reward failed:", error);
+    if (isMissingRelationError(error)) {
+      return res.status(503).json({ error: "Loyalty rewards storage is not ready." });
+    }
+    res.status(500).json({ error: "Failed to create loyalty reward." });
+  } finally {
+    client.release();
+  }
+});
+
+app.put("/api/admin/loyalty-rewards/:id", requireAdmin, async (req, res) => {
+  const rewardId = parseInteger(req.params.id);
+  if (!Number.isInteger(rewardId) || rewardId <= 0) {
+    return res.status(400).json({ error: "Reward ID is invalid." });
+  }
+
+  const validation = validateLoyaltyRewardPayload({ ...req.body, id: rewardId }, { requireId: true });
+  if (validation.error) {
+    return res.status(400).json({ error: validation.error });
+  }
+
+  const reward = validation.value;
+  const client = await pool.connect();
+  try {
+    const schemaCapabilities = await getSchemaCapabilities();
+    if (!schemaCapabilities.hasLoyaltyRewardsTable) {
+      return res.status(503).json({ error: "Loyalty rewards storage is not ready." });
+    }
+
+    await client.query("BEGIN");
+
+    if (reward.reward_type === "free_gift") {
+      const productResult = await client.query(
+        `
+        SELECT id
+        FROM products
+        WHERE id = $1
+        LIMIT 1
+        `,
+        [reward.gift_product_id]
+      );
+
+      if (productResult.rowCount === 0) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({ error: "Gift product does not exist." });
+      }
+    }
+
+    const updateResult = await client.query(
+      `
+      UPDATE loyalty_rewards
+      SET
+        name = $1,
+        reward_type = $2,
+        points_required = $3,
+        discount_value = $4,
+        gift_product_id = $5,
+        is_active = $6,
+        sort_order = $7,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = $8
+      RETURNING
+        id,
+        name,
+        reward_type,
+        points_required,
+        discount_value,
+        gift_product_id,
+        is_active,
+        sort_order,
+        created_at,
+        updated_at
+      `,
+      [
+        reward.name,
+        reward.reward_type,
+        reward.points_required,
+        reward.discount_value,
+        reward.gift_product_id,
+        reward.is_active,
+        reward.sort_order,
+        reward.id
+      ]
+    );
+
+    if (updateResult.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Loyalty reward not found." });
+    }
+
+    await client.query("COMMIT");
+    res.json({
+      message: "Loyalty reward updated.",
+      reward: updateResult.rows[0]
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Update loyalty reward failed:", error);
+    if (isMissingRelationError(error)) {
+      return res.status(503).json({ error: "Loyalty rewards storage is not ready." });
+    }
+    res.status(500).json({ error: "Failed to update loyalty reward." });
+  } finally {
+    client.release();
+  }
+});
+
+app.delete("/api/admin/loyalty-rewards/:id", requireAdmin, async (req, res) => {
+  const rewardId = parseInteger(req.params.id);
+  if (!Number.isInteger(rewardId) || rewardId <= 0) {
+    return res.status(400).json({ error: "Reward ID is invalid." });
+  }
+
+  try {
+    const schemaCapabilities = await getSchemaCapabilities();
+    if (!schemaCapabilities.hasLoyaltyRewardsTable) {
+      return res.status(503).json({ error: "Loyalty rewards storage is not ready." });
+    }
+
+    const result = await pool.query(
+      `
+      DELETE FROM loyalty_rewards
+      WHERE id = $1
+      RETURNING id
+      `,
+      [rewardId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Loyalty reward not found." });
+    }
+
+    res.json({ message: "Loyalty reward deleted." });
+  } catch (error) {
+    console.error("Delete loyalty reward failed:", error);
+    if (isMissingRelationError(error)) {
+      return res.status(503).json({ error: "Loyalty rewards storage is not ready." });
+    }
+    res.status(500).json({ error: "Failed to delete loyalty reward." });
+  }
+});
+
+app.get("/api/loyalty-rewards", async (req, res) => {
+  try {
+    const schemaCapabilities = await getSchemaCapabilities();
+    if (!schemaCapabilities.hasLoyaltyRewardsTable) {
+      return res.status(503).json({ error: "Loyalty rewards storage is not ready." });
+    }
+
+    const result = await pool.query(
+      `
+      SELECT
+        lr.id,
+        lr.name,
+        lr.reward_type,
+        lr.points_required,
+        lr.discount_value,
+        p.name AS gift_product_name,
+        p.image_url AS gift_product_image_url
+      FROM loyalty_rewards lr
+      LEFT JOIN products p ON p.id = lr.gift_product_id
+      WHERE lr.is_active = TRUE
+      ORDER BY lr.sort_order ASC, lr.points_required ASC, lr.id ASC
+      `
+    );
+
+    res.json({ rewards: result.rows });
+  } catch (error) {
+    console.error("Fetch loyalty rewards failed:", error);
+    if (isMissingRelationError(error)) {
+      return res.status(503).json({ error: "Loyalty rewards storage is not ready." });
+    }
+    res.status(500).json({ error: "Failed to fetch loyalty rewards." });
+  }
+});
+
+app.post("/api/checkout/loyalty-reward-preview", async (req, res) => {
+  const customerId = resolveCustomerIdFromRequest(req, { allowQuery: false });
+  if (!Number.isInteger(customerId) || customerId <= 0) {
+    return res.status(401).json({ error: "Login is required to preview loyalty rewards." });
+  }
+
+  const validation = validateLoyaltyRewardPreviewPayload(req.body);
+  if (validation.error) {
+    return res.status(400).json({ error: validation.error });
+  }
+
+  const {
+    reward_id: rewardId,
+    subtotal_amount: subtotalAmount,
+    total_amount: totalAmount,
+    shipping_amount: shippingAmount
+  } = validation.value;
+
+  try {
+    const schemaCapabilities = await getSchemaCapabilities();
+    if (!schemaCapabilities.hasUsersTable || !schemaCapabilities.hasUsersLoyaltyPointsColumns) {
+      return res.status(503).json({ error: "User loyalty storage is not ready." });
+    }
+    if (!schemaCapabilities.hasLoyaltyRewardsTable) {
+      return res.status(503).json({ error: "Loyalty rewards storage is not ready." });
+    }
+
+    const customerResult = await pool.query(
+      `
+      SELECT id, COALESCE(loyalty_points, 0) AS loyalty_points
+      FROM users
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [customerId]
+    );
+
+    if (customerResult.rowCount === 0) {
+      return res.status(404).json({ error: "Customer account not found." });
+    }
+
+    const rewardResult = await pool.query(
+      `
+      SELECT
+        lr.id,
+        lr.name,
+        lr.reward_type,
+        lr.points_required,
+        lr.discount_value,
+        lr.gift_product_id,
+        p.name AS gift_product_name,
+        p.image_url AS gift_product_image_url
+      FROM loyalty_rewards lr
+      LEFT JOIN products p ON p.id = lr.gift_product_id
+      WHERE lr.id = $1
+        AND lr.is_active = TRUE
+      LIMIT 1
+      `,
+      [rewardId]
+    );
+
+    if (rewardResult.rowCount === 0) {
+      return res.status(404).json({ error: "Selected loyalty reward was not found or is inactive." });
+    }
+
+    const customerPoints = clampLoyaltyPoints(customerResult.rows[0].loyalty_points);
+    const reward = rewardResult.rows[0];
+    const pointsRequired = clampLoyaltyPoints(reward.points_required);
+    if (customerPoints < pointsRequired) {
+      return res.status(400).json({ error: "Not enough loyalty points for this reward." });
+    }
+
+    const originalSubtotal = Number(subtotalAmount.toFixed(2));
+    const originalShipping = Number(shippingAmount.toFixed(2));
+    const originalTotal = Number(totalAmount.toFixed(2));
+
+    let discountPreview = null;
+    let giftPreview = null;
+    let adjustedSubtotal = originalSubtotal;
+    let adjustedTotal = Number((adjustedSubtotal + originalShipping).toFixed(2));
+
+    if (reward.reward_type === "fixed_discount") {
+      const requestedDiscount = parseOptionalMoney(reward.discount_value);
+      const discountValue = Number.isFinite(requestedDiscount) ? requestedDiscount : 0;
+      const maxDiscount = Math.max(0, originalSubtotal);
+      const appliedDiscount = Math.min(discountValue, maxDiscount);
+      adjustedSubtotal = Number(Math.max(0, originalSubtotal - appliedDiscount).toFixed(2));
+      adjustedTotal = Number((adjustedSubtotal + originalShipping).toFixed(2));
+      discountPreview = {
+        discount_amount: Number(appliedDiscount.toFixed(2)),
+        original_subtotal: Number(originalSubtotal.toFixed(2)),
+        adjusted_subtotal: adjustedSubtotal,
+        shipping_amount: Number(originalShipping.toFixed(2)),
+        original_total: Number(originalTotal.toFixed(2)),
+        adjusted_total: adjustedTotal
+      };
+    } else if (reward.reward_type === "free_gift") {
+      const giftProductId = parseInteger(reward.gift_product_id);
+      if (!Number.isInteger(giftProductId) || giftProductId <= 0 || !reward.gift_product_name) {
+        return res.status(409).json({ error: "Selected free gift reward is misconfigured." });
+      }
+
+      const giftValidityColumnsResult = await pool.query(
+        `
+        SELECT
+          EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'products' AND column_name = 'is_active'
+          ) AS has_is_active,
+          EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'products' AND column_name = 'is_hidden'
+          ) AS has_is_hidden,
+          EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'products' AND column_name = 'deleted_at'
+          ) AS has_deleted_at
+        `
+      );
+
+      const giftValidityFlags = giftValidityColumnsResult.rows[0] || {};
+      const validityWhere = ["id = $1"];
+      if (giftValidityFlags.has_is_active) validityWhere.push("is_active = TRUE");
+      if (giftValidityFlags.has_is_hidden) validityWhere.push("(is_hidden = FALSE OR is_hidden IS NULL)");
+      if (giftValidityFlags.has_deleted_at) validityWhere.push("deleted_at IS NULL");
+
+      const validGiftProductResult = await pool.query(
+        `
+        SELECT id
+        FROM products
+        WHERE ${validityWhere.join(" AND ")}
+        LIMIT 1
+        `,
+        [giftProductId]
+      );
+
+      if (validGiftProductResult.rowCount === 0) {
+        return res.status(409).json({ error: "Selected free gift product is unavailable." });
+      }
+
+      giftPreview = {
+        product_name: reward.gift_product_name,
+        product_image_url: normalizeImageUrl(reward.gift_product_image_url)
+      };
+    } else {
+      return res.status(400).json({ error: "Selected reward type is invalid." });
+    }
+
+    return res.json({
+      preview: {
+        customer_points: customerPoints,
+        selected_reward: {
+          id: reward.id,
+          name: reward.name,
+          reward_type: reward.reward_type,
+          points_required: pointsRequired,
+          discount_value: reward.reward_type === "fixed_discount"
+            ? Number((parseOptionalMoney(reward.discount_value) || 0).toFixed(2))
+            : null
+        },
+        points_required: pointsRequired,
+        discount_preview: discountPreview,
+        gift_preview: giftPreview,
+        shipping_amount: Number(originalShipping.toFixed(2)),
+        preview_subtotal: Number(adjustedSubtotal.toFixed(2)),
+        preview_total: Number(adjustedTotal.toFixed(2))
+      }
+    });
+  } catch (error) {
+    console.error("Loyalty reward preview failed:", error);
+    if (isMissingRelationError(error)) {
+      return res.status(503).json({ error: "Loyalty preview storage is not ready." });
+    }
+    return res.status(500).json({ error: "Failed to preview loyalty reward." });
+  }
+});
+
+app.get("/api/orders", requireAdmin, async (req, res) => {
+  try {
+    const schemaCapabilities = await getSchemaCapabilities();
+    const deliveryStatusSelect = schemaCapabilities.hasOrderDeliveryStatusColumn
+      ? "o.delivery_status"
+      : "o.order_status AS delivery_status";
+    const orderStatusAliasSelect = schemaCapabilities.hasOrderDeliveryStatusColumn
+      ? "o.delivery_status AS order_status"
+      : "o.order_status";
+    const trackingNotesSelect = schemaCapabilities.hasOrderTrackingNotesColumn
+      ? "o.tracking_notes"
+      : "NULL::text AS tracking_notes";
+    // Return raw text for timestamp-without-time-zone fields so the frontend
+    // can parse consistently (avoids implicit server-local timezone shifts).
+    const shippedAtSelect = schemaCapabilities.hasOrderShippedAtColumn
+      ? "o.shipped_at::text AS shipped_at"
+      : "NULL::text AS shipped_at";
+    const deliveredAtSelect = schemaCapabilities.hasOrderDeliveredAtColumn
+      ? "o.delivered_at::text AS delivered_at"
+      : "NULL::text AS delivered_at";
+    const updatedAtSelect = schemaCapabilities.hasOrderUpdatedAtColumn
+      ? "o.updated_at::text AS updated_at"
+      : "o.created_at::text AS updated_at";
+    const loyaltyRewardIdSelect = schemaCapabilities.hasOrderLoyaltyRewardIdColumn
+      ? "o.loyalty_reward_id"
+      : "NULL::integer AS loyalty_reward_id";
+    const loyaltyRewardTypeSelect = schemaCapabilities.hasOrderLoyaltyRewardTypeColumn
+      ? "o.loyalty_reward_type"
+      : "NULL::text AS loyalty_reward_type";
+    const loyaltyPointsRedeemedSelect = schemaCapabilities.hasOrderLoyaltyPointsRedeemedColumn
+      ? "COALESCE(o.loyalty_points_redeemed, 0) AS loyalty_points_redeemed"
+      : "0::integer AS loyalty_points_redeemed";
+    const loyaltyDiscountAmountSelect = schemaCapabilities.hasOrderLoyaltyDiscountAmountColumn
+      ? "COALESCE(o.loyalty_discount_amount, 0)::numeric(10,2) AS loyalty_discount_amount"
+      : "0::numeric(10,2) AS loyalty_discount_amount";
+    const loyaltyGiftProductIdSelect = schemaCapabilities.hasOrderLoyaltyFreeGiftProductIdColumn
+      ? "o.loyalty_free_gift_product_id"
+      : "NULL::integer AS loyalty_free_gift_product_id";
+    const loyaltyRedeemedAtSelect = schemaCapabilities.hasOrderLoyaltyRedeemedAtColumn
+      ? "o.loyalty_redeemed_at::text AS loyalty_redeemed_at"
+      : "NULL::text AS loyalty_redeemed_at";
+    const loyaltyEarnReversedAtSelect = schemaCapabilities.hasOrderLoyaltyEarnReversedAtColumn
+      ? "o.loyalty_earn_reversed_at::text AS loyalty_earn_reversed_at"
+      : "NULL::text AS loyalty_earn_reversed_at";
+    const loyaltyRedeemRestoredAtSelect = schemaCapabilities.hasOrderLoyaltyRedeemRestoredAtColumn
+      ? "o.loyalty_redeem_restored_at::text AS loyalty_redeem_restored_at"
+      : "NULL::text AS loyalty_redeem_restored_at";
+    const rewardJoinEnabled = schemaCapabilities.hasLoyaltyRewardsTable && schemaCapabilities.hasOrderLoyaltyRewardIdColumn;
+    const rewardNameSelect = rewardJoinEnabled
+      ? "lr.name AS loyalty_reward_name"
+      : "NULL::text AS loyalty_reward_name";
+    const rewardJoin = rewardJoinEnabled
+      ? "LEFT JOIN loyalty_rewards lr ON lr.id = o.loyalty_reward_id"
+      : "";
+    const giftSummarySelect = schemaCapabilities.hasOrderLoyaltyFreeGiftProductIdColumn
+      ? "gp.name AS loyalty_free_gift_product_name, gp.image_url AS loyalty_free_gift_product_image_url"
+      : "NULL::text AS loyalty_free_gift_product_name, NULL::text AS loyalty_free_gift_product_image_url";
+    const giftJoin = schemaCapabilities.hasOrderLoyaltyFreeGiftProductIdColumn
+      ? "LEFT JOIN products gp ON gp.id = o.loyalty_free_gift_product_id"
+      : "";
+
+    const result = await pool.query(
+      `
+      SELECT
+        o.id,
+        o.customer_name,
+        o.phone,
+        o.address,
+        o.total_amount,
+        o.payment_status,
         ${deliveryStatusSelect},
         ${orderStatusAliasSelect},
         ${trackingNotesSelect},
         ${shippedAtSelect},
         ${deliveredAtSelect},
         ${updatedAtSelect},
-        created_at::text AS created_at
-      FROM orders
-      ORDER BY created_at DESC
+        ${loyaltyRewardIdSelect},
+        ${loyaltyRewardTypeSelect},
+        ${loyaltyPointsRedeemedSelect},
+        ${loyaltyDiscountAmountSelect},
+        ${loyaltyGiftProductIdSelect},
+        ${loyaltyRedeemedAtSelect},
+        ${loyaltyEarnReversedAtSelect},
+        ${loyaltyRedeemRestoredAtSelect},
+        ${rewardNameSelect},
+        ${giftSummarySelect},
+        o.created_at::text AS created_at
+      FROM orders o
+      ${rewardJoin}
+      ${giftJoin}
+      ORDER BY o.created_at DESC
       `
     );
     res.json(result.rows);
@@ -3239,6 +7095,85 @@ app.get("/api/order-items/:id", requireAdmin, async (req, res) => {
   }
 });
 
+app.delete("/api/admin/orders/:id", requireAdmin, async (req, res) => {
+  const orderId = parseInteger(req.params.id);
+  if (!Number.isInteger(orderId) || orderId <= 0) {
+    return res.status(400).json({ error: "Order ID is invalid." });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const schemaCapabilities = await getSchemaCapabilities();
+
+    const orderResult = await client.query(
+      `
+      SELECT id
+      FROM orders
+      WHERE id = $1
+      FOR UPDATE
+      `,
+      [orderId]
+    );
+
+    if (orderResult.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Order not found." });
+    }
+
+    const deletedItemsResult = await client.query(
+      `
+      DELETE FROM order_items
+      WHERE order_id = $1
+      `,
+      [orderId]
+    );
+
+    if (schemaCapabilities.hasLoyaltyPointsTransactionsTable) {
+      await client.query(
+        `
+        UPDATE loyalty_points_transactions
+        SET order_id = NULL
+        WHERE order_id = $1
+        `,
+        [orderId]
+      );
+    }
+
+    if (schemaCapabilities.hasUsersReferralColumns) {
+      await client.query(
+        `
+        UPDATE users
+        SET referral_reward_order_id = NULL
+        WHERE referral_reward_order_id = $1
+        `,
+        [orderId]
+      );
+    }
+
+    await client.query(
+      `
+      DELETE FROM orders
+      WHERE id = $1
+      `,
+      [orderId]
+    );
+
+    await client.query("COMMIT");
+    return res.json({
+      message: "Order deleted successfully.",
+      deleted_order_id: orderId,
+      deleted_order_items: deletedItemsResult.rowCount || 0
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Delete order failed:", error);
+    return res.status(500).json({ error: "Failed to delete order." });
+  } finally {
+    client.release();
+  }
+});
+
 app.post("/api/update-order", requireAdmin, async (req, res) => {
   const validation = validateOrderUpdatePayload(req.body);
   if (validation.error) {
@@ -3246,23 +7181,48 @@ app.post("/api/update-order", requireAdmin, async (req, res) => {
   }
 
   const { order_id, payment_status, delivery_status } = validation.value;
+  const client = await pool.connect();
 
   try {
+    await client.query("BEGIN");
     const schemaCapabilities = await getSchemaCapabilities();
     const statusColumn = schemaCapabilities.hasOrderDeliveryStatusColumn ? "delivery_status" : "order_status";
-    await pool.query(
+    const updateResult = await client.query(
       `
       UPDATE orders
       SET payment_status = $1, ${statusColumn} = $2
       WHERE id = $3
+      RETURNING id
       `,
       [payment_status, delivery_status, order_id]
     );
 
+    if (updateResult.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Order not found." });
+    }
+
+    const loyaltyRedeemResult = await redeemLoyaltyPointsForOrderIfEligible(client, order_id, schemaCapabilities);
+    if (loyaltyRedeemResult.reason === "insufficient_points_at_commit") {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        error: "Loyalty reward redemption failed because the customer no longer has enough points."
+      });
+    }
+
+    await awardLoyaltyPointsForOrderIfEligible(client, order_id, schemaCapabilities);
+    await awardReferralBonusesForOrderIfEligible(client, order_id, schemaCapabilities);
+    await reverseLoyaltyPointsForOrderIfEligible(client, order_id, schemaCapabilities);
+    await reverseReferralBonusesForOrderIfEligible(client, order_id, schemaCapabilities);
+
+    await client.query("COMMIT");
     res.json({ message: "Order updated successfully" });
   } catch (err) {
+    await client.query("ROLLBACK");
     console.error("Update order failed:", err);
     res.status(500).json({ error: "Failed to update order" });
+  } finally {
+    client.release();
   }
 });
 
@@ -3397,6 +7357,7 @@ app.get("/api/track-order", async (req, res) => {
 });
 
 app.put("/api/admin/orders/:id/status", requireAdmin, async (req, res) => {
+  const client = await pool.connect();
   try {
     const id = parseInteger(req.params.id);
     const schemaCapabilities = await getSchemaCapabilities();
@@ -3480,8 +7441,9 @@ app.put("/api/admin/orders/:id/status", requireAdmin, async (req, res) => {
       ? "updated_at"
       : "created_at AS updated_at";
 
+    await client.query("BEGIN");
     values.push(id);
-    const result = await pool.query(
+    const result = await client.query(
       `
       UPDATE orders
       SET ${updates.join(", ")}
@@ -3499,8 +7461,24 @@ app.put("/api/admin/orders/:id/status", requireAdmin, async (req, res) => {
     );
 
     if (result.rows.length === 0) {
+      await client.query("ROLLBACK");
       return res.status(404).json({ error: "Order not found." });
     }
+
+    const loyaltyRedeemResult = await redeemLoyaltyPointsForOrderIfEligible(client, id, schemaCapabilities);
+    if (loyaltyRedeemResult.reason === "insufficient_points_at_commit") {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        error: "Loyalty reward redemption failed because the customer no longer has enough points."
+      });
+    }
+
+    await awardLoyaltyPointsForOrderIfEligible(client, id, schemaCapabilities);
+    await awardReferralBonusesForOrderIfEligible(client, id, schemaCapabilities);
+    await reverseLoyaltyPointsForOrderIfEligible(client, id, schemaCapabilities);
+    await reverseReferralBonusesForOrderIfEligible(client, id, schemaCapabilities);
+
+    await client.query("COMMIT");
 
     res.json({
       success: true,
@@ -3508,8 +7486,11 @@ app.put("/api/admin/orders/:id/status", requireAdmin, async (req, res) => {
       order: result.rows[0]
     });
   } catch (error) {
+    await client.query("ROLLBACK");
     console.error("Update order status error:", error);
     res.status(500).json({ error: "Failed to update order status." });
+  } finally {
+    client.release();
   }
 });
 

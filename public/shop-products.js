@@ -138,6 +138,12 @@ function getProductTranslationKeys(productName = "") {
   if (normalized.includes("cocoa")) {
     return { name: "name_cocoa", desc: "desc_cocoa" };
   }
+  if (normalized.includes("2x") && normalized.includes("800g") && normalized.includes("300g")) {
+    return { name: "bundle_name_2x800_300", desc: "bundle_desc_2x800_300" };
+  }
+  if (normalized.includes("5x") && normalized.includes("800g")) {
+    return { name: "bundle_name_5x800", desc: "bundle_desc_5x800" };
+  }
 
   return null;
 }

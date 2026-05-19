@@ -30,7 +30,7 @@ async function loadGallery() {
       const card = document.createElement("div");
       card.className = "gallery-card gallery-item";
       card.innerHTML = `
-        <img src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.title || "Gallery image")}">
+        <img src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.title || "Gallery image")}" referrerpolicy="no-referrer" loading="lazy" decoding="async">
         <h3>${escapeHtml(item.title || "")}</h3>
         <p>${escapeHtml(item.caption || "")}</p>
       `;
@@ -97,6 +97,7 @@ function initGalleryLightbox(items) {
     if (!items.length) return;
     image.src = items[currentIndex].src;
     image.alt = items[currentIndex].alt || translate("gallery");
+    image.referrerPolicy = "no-referrer";
     if (zoom <= 1) resetPan();
     clampPan();
     image.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;

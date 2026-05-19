@@ -8,7 +8,7 @@
   <link rel="apple-touch-icon" href="/photos/New_Theme Good Logo-02.png">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="overrides.css">
-<link rel="stylesheet" href="premium.css?v=28">
+<link rel="stylesheet" href="premium.css?v=41">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&family=Montserrat:wght@500;600;700;800&family=Nunito+Sans:wght@400;500;600;700;800&display=swap">
 </head>
@@ -16,7 +16,7 @@
 
 <header class="site-header">
   <a href="index.html" class="logo-container" aria-label="ThemeGood home">
-    <img src="photos/New_Theme Good Logo-01 (1).png" class="logo" alt="ThemeGood logo">
+    <img src="photos/Theme Good Logo-03.png" class="logo" alt="ThemeGood logo">
   </a>
 
   <button id="hamburgerBtn" aria-expanded="false" aria-label="Open navigation">
@@ -33,6 +33,7 @@
       <li><a href="index.html#bundles" data-i18n="bundles">Bundles</a></li>
       <li><a href="gallery.html" data-i18n="gallery">Gallery</a></li>
       <li><a href="shopping.html" data-i18n="shopping">Shop</a></li>
+      <li><a href="track-order.html" data-i18n="track_order">Track Order</a></li>
       <li class="nav-item contact-nav">
         <a href="index.html#contact" class="contact-link" data-i18n="contact_us">Contact Us</a>
         <div class="contact-hover-card" aria-hidden="true">
@@ -112,7 +113,13 @@
           <strong><span id="checkout-grand-total">RM 0.00</span></strong>
         </div>
 
+        <div class="checkout-total-row">
+          <span>Loyalty Preview</span>
+          <strong><span id="checkout-loyalty-preview">-RM 0.00</span></strong>
+        </div>
+
         <a href="shopping.html" class="checkout-link">Continue Shopping</a>
+        <a href="account.html" class="checkout-link">My Points</a>
       </div>
 
       <div class="checkout-payment">
@@ -127,6 +134,27 @@
 
           <label for="address">Address</label>
           <textarea id="address" placeholder="Address" required></textarea>
+
+          <label for="customer_id">Customer ID (optional)</label>
+          <input type="number" id="customer_id" min="1" placeholder="Customer ID (optional)">
+
+          <label for="loyalty_reward_id">Loyalty Reward (optional)</label>
+          <select id="loyalty_reward_id">
+            <option value="">No loyalty reward</option>
+          </select>
+
+          <div id="loyalty-preview-box" style="margin:8px 0 12px;padding:12px;border:1px solid #e5e7eb;border-radius:12px;background:#fff7f9;">
+            <strong style="display:block;margin-bottom:6px;">Loyalty Preview</strong>
+            <div id="loyalty-preview-message" style="color:#6b7280;margin-bottom:6px;">Enter customer ID to load rewards and points.</div>
+            <div style="display:grid;gap:4px;font-size:14px;">
+              <div><strong>Current points:</strong> <span id="loyalty-current-points">-</span></div>
+              <div><strong>Points required:</strong> <span id="loyalty-points-required">-</span></div>
+              <div><strong>Selected reward:</strong> <span id="loyalty-selected-reward">None</span></div>
+              <div><strong>Reward preview:</strong> <span id="loyalty-preview-summary">No loyalty reward selected.</span></div>
+              <div><strong>Estimated points earned (estimate, shipping excluded):</strong> <span id="loyalty-estimated-earned">0</span></div>
+            </div>
+            <div style="margin-top:8px;color:#6b7280;font-size:12px;">Loyalty points are finalized after successful payment and order completion.</div>
+          </div>
 
           <label for="total_amount">Total Amount</label>
           <input type="number" id="total_amount" step="0.01" min="0" readonly required>
@@ -148,7 +176,7 @@
   <div class="footer-container">
     <div class="footer-brand">
       <a href="index.html" aria-label="Back to main page">
-        <img src="photos/New_Theme Good Logo-01 (1).png" class="footer-logo" alt="ThemeGood logo">
+        <img src="photos/Theme Good Logo-03.png" class="footer-logo" alt="ThemeGood logo">
       </a>
       <p data-i18n="footer_tagline">ThemeGood Marketing</p>
     </div>
@@ -160,6 +188,7 @@
       <a href="index.html#flavours" data-i18n="flavours">Flavours</a>
       <a href="gallery.html" data-i18n="gallery">Gallery</a>
       <a href="shopping.html" data-i18n="shopping">Shop</a>
+      <a href="track-order.html" data-i18n="track_order">Track Order</a>
       <a href="index.html#bundles" data-i18n="bundles">Bundles</a>
       <a href="index.html#testimonials" data-i18n="testimonials">Testimonials</a>
       <a href="index.html#faq" data-i18n="faq">FAQ</a>
@@ -189,20 +218,51 @@
   <p class="footer-bottom" data-i18n="footer_copy">&copy; 2026 ThemeGood. All Rights Reserved.</p>
 </footer>
 
-<script src="script.js?v=8"></script>
+<script src="script.js?v=10"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
+  const CUSTOMER_ID_STORAGE_KEY = "themegood_customer_id";
+  const CUSTOMER_TOKEN_STORAGE_KEY = "themegood_customer_token";
+  const parseCustomerId = (value) => {
+    const id = Number(value);
+    return Number.isInteger(id) && id > 0 ? id : null;
+  };
+  const getCustomerToken = () => String(localStorage.getItem(CUSTOMER_TOKEN_STORAGE_KEY) || "").trim();
+
   const checkoutList = document.getElementById("checkout-items");
   const checkoutTotal = document.getElementById("checkout-total");
   const checkoutDiscount = document.getElementById("checkout-discount");
   const checkoutGrandTotal = document.getElementById("checkout-grand-total");
+  const checkoutLoyaltyPreview = document.getElementById("checkout-loyalty-preview");
   const checkoutForm = document.getElementById("checkoutForm");
   const totalAmountInput = document.getElementById("total_amount");
   const result = document.getElementById("result");
+  const customerIdInput = document.getElementById("customer_id");
+  const loyaltyRewardSelect = document.getElementById("loyalty_reward_id");
+  const loyaltyPreviewMessage = document.getElementById("loyalty-preview-message");
+  const loyaltyCurrentPoints = document.getElementById("loyalty-current-points");
+  const loyaltyPointsRequired = document.getElementById("loyalty-points-required");
+  const loyaltySelectedReward = document.getElementById("loyalty-selected-reward");
+  const loyaltyPreviewSummary = document.getElementById("loyalty-preview-summary");
+  const loyaltyEstimatedEarned = document.getElementById("loyalty-estimated-earned");
+
+  const storedCustomerId = parseCustomerId(localStorage.getItem(CUSTOMER_ID_STORAGE_KEY));
+  if (storedCustomerId && customerIdInput) {
+    customerIdInput.value = String(storedCustomerId);
+  }
 
   const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
   let cartPromo = JSON.parse(localStorage.getItem("cart_promo")) || { code: "", percent: 0 };
+  let loyaltyPreview = {
+    selectedRewardId: null,
+    discountAmount: 0,
+    baseTotal: 0,
+    customerPoints: null,
+    pointsRequired: null,
+    selectedRewardLabel: "None",
+    previewSummary: "No loyalty reward selected."
+  };
   const t = (key, vars = {}, fallback = key) =>
     typeof window.__themegoodT === "function" ? window.__themegoodT(key, vars) : fallback;
 
@@ -323,6 +383,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (submitButton) submitButton.textContent = t("place_order", {}, "Place Order");
   }
 
+  function renderLoyaltyPreviewState() {
+    checkoutLoyaltyPreview.textContent = `-RM ${Number(loyaltyPreview.discountAmount || 0).toFixed(2)}`;
+    loyaltyCurrentPoints.textContent = loyaltyPreview.customerPoints === null ? "-" : String(Number(loyaltyPreview.customerPoints || 0));
+    loyaltyPointsRequired.textContent = loyaltyPreview.pointsRequired === null ? "-" : String(Number(loyaltyPreview.pointsRequired || 0));
+    loyaltySelectedReward.textContent = loyaltyPreview.selectedRewardLabel || "None";
+    loyaltyPreviewSummary.textContent = loyaltyPreview.previewSummary || "No loyalty reward selected.";
+    loyaltyEstimatedEarned.textContent = String(Math.floor(Math.max(0, Number(totalAmountInput.value || 0))));
+  }
+
   function isBundleCartItem(item) {
     const packageId = String(item?.packageId || "").trim().toLowerCase();
     const packageLabel = String(item?.packageLabel || "").trim().toLowerCase();
@@ -421,11 +490,139 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const discountValue = subtotal * (Number(cartPromo.percent || 0) / 100);
     const grandTotal = Math.max(0, subtotal - discountValue);
+    loyaltyPreview.baseTotal = grandTotal;
+    const finalTotal = Math.max(0, grandTotal - Number(loyaltyPreview.discountAmount || 0));
 
     checkoutTotal.textContent = formatMoney(subtotal);
     checkoutDiscount.textContent = `-${formatMoney(discountValue)}`;
-    checkoutGrandTotal.textContent = formatMoney(grandTotal);
-    totalAmountInput.value = grandTotal.toFixed(2);
+    checkoutGrandTotal.textContent = formatMoney(finalTotal);
+    totalAmountInput.value = finalTotal.toFixed(2);
+    renderLoyaltyPreviewState();
+  }
+
+  function getCustomerHeaders() {
+    const headers = {};
+    const token = getCustomerToken();
+    if (token) headers["x-customer-token"] = token;
+    const customerId = Number(customerIdInput?.value || 0);
+    if (Number.isInteger(customerId) && customerId > 0) {
+      headers["x-customer-id"] = String(customerId);
+    }
+    return headers;
+  }
+
+  async function loadLoyaltyRewardsOptions() {
+    const customerId = Number(customerIdInput?.value || 0);
+    loyaltyRewardSelect.innerHTML = `<option value="">No loyalty reward</option>`;
+    loyaltyPreview.selectedRewardId = null;
+    loyaltyPreview.discountAmount = 0;
+    loyaltyPreview.pointsRequired = null;
+    loyaltyPreview.selectedRewardLabel = "None";
+    loyaltyPreview.previewSummary = "No loyalty reward selected.";
+    loyaltyPreview.customerPoints = null;
+    renderLoyaltyPreviewState();
+
+    if (!Number.isInteger(customerId) || customerId <= 0) {
+      loyaltyPreviewMessage.textContent = "Enter customer ID to load rewards and points.";
+      return;
+    }
+
+    try {
+      const [accountRes, rewardsRes] = await Promise.all([
+        fetch("/api/customer/account", { headers: getCustomerHeaders() }),
+        fetch("/api/loyalty-rewards")
+      ]);
+
+      const accountPayload = await accountRes.json();
+      const rewardsPayload = await rewardsRes.json();
+      if (!accountRes.ok) throw new Error(accountPayload.error || "Failed to load customer points.");
+      if (!rewardsRes.ok) throw new Error(rewardsPayload.error || "Failed to load loyalty rewards.");
+
+      const points = Number(accountPayload?.account?.loyalty_points || 0);
+      loyaltyPreview.customerPoints = points;
+      const rewards = Array.isArray(rewardsPayload?.rewards) ? rewardsPayload.rewards : [];
+      rewards.forEach((reward) => {
+        const option = document.createElement("option");
+        option.value = String(Number(reward.id || 0));
+        option.textContent = `${reward.name} (${reward.reward_type}) - ${Number(reward.points_required || 0)} pts`;
+        option.dataset.pointsRequired = String(Number(reward.points_required || 0));
+        loyaltyRewardSelect.appendChild(option);
+      });
+
+      loyaltyPreviewMessage.textContent = `Current points: ${points}. Select one reward to preview.`;
+      renderLoyaltyPreviewState();
+    } catch (error) {
+      loyaltyPreviewMessage.textContent = error.message || "Failed to load loyalty rewards.";
+    }
+  }
+
+  async function applyLoyaltyPreview() {
+    const rewardId = Number(loyaltyRewardSelect.value || 0);
+    const customerId = Number(customerIdInput?.value || 0);
+    loyaltyPreview.discountAmount = 0;
+    loyaltyPreview.selectedRewardId = null;
+    loyaltyPreview.pointsRequired = null;
+    loyaltyPreview.selectedRewardLabel = "None";
+    loyaltyPreview.previewSummary = "No loyalty reward selected.";
+    renderLoyaltyPreviewState();
+
+    if (!Number.isInteger(rewardId) || rewardId <= 0) {
+      renderCheckoutItems();
+      loyaltyPreviewMessage.textContent = Number.isInteger(customerId) && customerId > 0
+        ? "No loyalty reward selected."
+        : "Enter customer ID to load rewards and points.";
+      return;
+    }
+
+    if (!Number.isInteger(customerId) || customerId <= 0) {
+      loyaltyPreviewMessage.textContent = "Customer ID is required for loyalty preview.";
+      loyaltyRewardSelect.value = "";
+      return;
+    }
+
+    try {
+      const baseTotal = Number(loyaltyPreview.baseTotal || 0);
+      const response = await fetch("/api/checkout/loyalty-reward-preview", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getCustomerHeaders()
+        },
+        body: JSON.stringify({
+          reward_id: rewardId,
+          subtotal_amount: baseTotal,
+          total_amount: baseTotal,
+          shipping_amount: 0
+        })
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Failed to preview loyalty reward.");
+
+      const preview = payload.preview || {};
+      loyaltyPreview.selectedRewardId = Number(preview?.selected_reward?.id || rewardId);
+      loyaltyPreview.discountAmount = Number(preview?.discount_preview?.discount_amount || 0);
+      loyaltyPreview.pointsRequired = Number(preview?.points_required || 0);
+      loyaltyPreview.customerPoints = Number(preview?.customer_points || loyaltyPreview.customerPoints || 0);
+      loyaltyPreview.selectedRewardLabel = `${String(preview?.selected_reward?.name || "Reward")} (${String(preview?.selected_reward?.reward_type || "-")})`;
+      if (preview?.gift_preview?.product_name) {
+        loyaltyPreview.previewSummary = `Free gift: ${preview.gift_preview.product_name}`;
+        loyaltyPreviewMessage.textContent = `Free gift preview: ${preview.gift_preview.product_name}. Points required: ${Number(preview.points_required || 0)}.`;
+      } else {
+        loyaltyPreview.previewSummary = `Discount: RM ${Number(loyaltyPreview.discountAmount || 0).toFixed(2)}, adjusted total: RM ${Number(preview.preview_total || baseTotal).toFixed(2)}`;
+        loyaltyPreviewMessage.textContent = `Discount preview: RM ${Number(loyaltyPreview.discountAmount || 0).toFixed(2)}. Adjusted total: RM ${Number(preview.preview_total || baseTotal).toFixed(2)}.`;
+      }
+
+      renderCheckoutItems();
+    } catch (error) {
+      loyaltyPreviewMessage.textContent = error.message || "Failed to preview loyalty reward.";
+      loyaltyRewardSelect.value = "";
+      loyaltyPreview.selectedRewardId = null;
+      loyaltyPreview.discountAmount = 0;
+      loyaltyPreview.pointsRequired = null;
+      loyaltyPreview.selectedRewardLabel = "None";
+      loyaltyPreview.previewSummary = "No loyalty reward selected.";
+      renderCheckoutItems();
+    }
   }
 
   const promoConfig = await loadPromoConfig();
@@ -446,7 +643,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   checkoutList.innerHTML = "";
 
   if (cartItems.length === 0) {
-    checkoutList.innerHTML = `<li class="empty">Your cart is empty.</li>`;
+    checkoutList.innerHTML = `<li class="empty">${escapeHtml(t("empty_cart", {}, "Your cart is empty."))}</li>`;
   } else {
     checkoutList.innerHTML = cartItems.map((item) => {
       const quantity = Number(item.quantity || 1);
@@ -486,9 +683,22 @@ document.addEventListener("DOMContentLoaded", async () => {
   totalAmountInput.value = grandTotal.toFixed(2);
   renderCheckoutCopy();
   renderCheckoutItems();
+  renderLoyaltyPreviewState();
+  customerIdInput?.addEventListener("change", async () => {
+    const normalizedCustomerId = parseCustomerId(customerIdInput.value);
+    if (normalizedCustomerId) {
+      localStorage.setItem(CUSTOMER_ID_STORAGE_KEY, String(normalizedCustomerId));
+    } else {
+      localStorage.removeItem(CUSTOMER_ID_STORAGE_KEY);
+    }
+    await loadLoyaltyRewardsOptions();
+    await applyLoyaltyPreview();
+  });
+  loyaltyRewardSelect?.addEventListener("change", applyLoyaltyPreview);
   document.addEventListener("themegood:langchange", () => {
     renderCheckoutCopy();
     renderCheckoutItems();
+    renderLoyaltyPreviewState();
   });
 
   checkoutForm.addEventListener("submit", async (e) => {
@@ -505,10 +715,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     const payload = {
+      customer_id: Number(customerIdInput.value || 0) || null,
       customer_name: document.getElementById("customer_name").value.trim(),
       phone: document.getElementById("phone").value.trim(),
       address: document.getElementById("address").value.trim(),
       total_amount: Number(totalAmountInput.value),
+      loyalty_reward_id: loyaltyPreview.selectedRewardId || null,
       items: cartItems.map((item) => ({
         productId: Number(item.id || 0) || null,
         name: item.name,
@@ -526,7 +738,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       const response = await fetch("/api/checkout", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          ...getCustomerHeaders()
         },
         body: JSON.stringify(payload)
       });
@@ -548,10 +761,18 @@ document.addEventListener("DOMContentLoaded", async () => {
       result.textContent = error.message || t("failed_to_place_order", {}, "Failed to place order.");
     }
   });
+
+  loadLoyaltyRewardsOptions();
 });
 </script>
 
 </body>
 </html>
+
+
+
+
+
+
 
 

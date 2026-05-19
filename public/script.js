@@ -5,6 +5,8 @@
   let currentLang = "en";
   let cartPromo = JSON.parse(localStorage.getItem("cart_promo")) || { code: "", percent: 0 };
   let promoConfig = { active: false, code: "", percent: 0 };
+  const CUSTOMER_ID_STORAGE_KEY = "themegood_customer_id";
+  const CUSTOMER_TOKEN_STORAGE_KEY = "themegood_customer_token";
   localStorage.removeItem("wishlist");
 
   let productImagesByProductId = {};
@@ -458,6 +460,8 @@
 
   const dict = {
     en: {
+      brand_name: "ThemeGood",
+      brand_collection: "ThemeGood Collection",
       language: "Language",
       quick_links: "Quick Links",
       follow_us: "Follow Us",
@@ -475,6 +479,13 @@
       checkout: "Checkout",
       wishlist: "Wishlist",
       cart: "Cart",
+      login: "Login",
+      logout_customer: "Logout",
+      my_points: "My Points",
+      enter_customer_id_prompt: "Enter your customer ID to login:",
+      invalid_customer_id: "Please enter a valid customer ID.",
+      customer_login_success: "Logged in as customer #{customerId}.",
+      customer_logged_out: "Logged out successfully.",
       buy_now: "Buy Now",
       learn_more: "Learn More",
       featured_products: "Featured Products",
@@ -546,10 +557,22 @@
       flavour_bilberry_heading: "Calm, refined visuals for a flavour story that feels thoughtful and premium.",
       flavour_bilberry_desc: "A richer profile with deep fruit character and balanced sweetness.",
       flavour_bilberry_cta: "View options",
+      flavour_oat_title: "Oat Beta",
+      flavour_oat_heading: "Golden, comforting flavour storytelling for calm daily wellness positioning.",
+      flavour_oat_desc: "A soft visual direction and balanced flavour profile help it stand out as a dependable everyday option.",
+      flavour_oat_cta: "View options",
       flavour_passion_title: "Passion Fruit",
       flavour_passion_heading: "Brighter, more energetic flavour positioning without losing visual restraint.",
       flavour_passion_desc: "Tropical aroma and refreshing taste for lively everyday enjoyment.",
       flavour_passion_cta: "View options",
+      flavour_melon_title: "Melon Avocado",
+      flavour_melon_heading: "Fresh green storytelling that feels light, modern, and naturally premium.",
+      flavour_melon_desc: "A clean profile with mellow fruit notes for an easy, wellness-first daily choice.",
+      flavour_melon_cta: "View options",
+      flavour_cocoa_title: "Cocoa",
+      flavour_cocoa_heading: "Deep cocoa presentation for richer, indulgent wellness moments.",
+      flavour_cocoa_desc: "Warm cocoa character and smooth finish give this blend a satisfying, comforting identity.",
+      flavour_cocoa_cta: "View options",
       featured_products_title: "Choose your daily wellness blend",
       featured_products_intro: "Switch between sizes and formats while keeping each product story consistent.",
       bundles_title: "Build premium bundles in minutes",
@@ -713,6 +736,11 @@
       bundle_product_label: "Bundle Product",
       size_label: "Size",
       no_image_available: "No image available",
+      options_label: "Options",
+      bundle_name_2x800_300: "2x 800g + 300g",
+      bundle_name_5x800: "5x 800g",
+      bundle_desc_2x800_300: "Custom bundle with 2 selectable 800g slots and a selectable 300g slot.",
+      bundle_desc_5x800: "Custom bundle with 5 selectable 800g slots.",
       product_details_coming_soon: "Product details coming soon.",
       more_product_details_coming_soon: "More product details coming soon.",
       bundle_promo_code: "Bundle Promo Code",
@@ -736,9 +764,16 @@
       zoom_out: "Zoom out",
       facebook: "Facebook",
       instagram: "Instagram",
-      whatsapp: "WhatsApp"
+      whatsapp: "WhatsApp",
+      selected_size_price: "Selected size: {size} | {price}{gift}",
+      selected_total_price: "Selected total: {size} - {package} | {price}{gift}",
+      selected_gift_text: " | Gift: {name}{extra}",
+      selected_gift_extra_paid: " (+{price})",
+      selected_gift_extra_free: " (Free)"
     },
     ms: {
+      brand_name: "ThemeGood",
+      brand_collection: "Koleksi ThemeGood",
       language: "Bahasa",
       quick_links: "Pautan Pantas",
       follow_us: "Ikuti Kami",
@@ -756,6 +791,13 @@
       checkout: "Bayaran",
       wishlist: "Senarai Hajat",
       cart: "Troli",
+      login: "Log Masuk",
+      logout_customer: "Log Keluar",
+      my_points: "Mata Ganjaran Saya",
+      enter_customer_id_prompt: "Masukkan ID pelanggan anda untuk log masuk:",
+      invalid_customer_id: "Sila masukkan ID pelanggan yang sah.",
+      customer_login_success: "Log masuk sebagai pelanggan #{customerId}.",
+      customer_logged_out: "Log keluar berjaya.",
       buy_now: "Beli Sekarang",
       learn_more: "Ketahui Lagi",
       featured_products: "Produk Pilihan",
@@ -827,10 +869,22 @@
       flavour_bilberry_heading: "Visual yang tenang dan halus untuk cerita perisa yang terasa premium dan meyakinkan.",
       flavour_bilberry_desc: "Profil lebih kaya dengan karakter buah mendalam dan kemanisan seimbang.",
       flavour_bilberry_cta: "Lihat pilihan",
+      flavour_oat_title: "Oat Beta",
+      flavour_oat_heading: "Penceritaan perisa keemasan yang selesa untuk posisi kesihatan harian yang tenang.",
+      flavour_oat_desc: "Arah visual yang lembut dan profil rasa seimbang menjadikannya pilihan harian yang diyakini.",
+      flavour_oat_cta: "Lihat pilihan",
       flavour_passion_title: "Passion Fruit",
       flavour_passion_heading: "Posisi perisa yang lebih cerah dan bertenaga tanpa kehilangan kekemasan visual.",
       flavour_passion_desc: "Aroma tropika dan rasa menyegarkan untuk nikmat harian yang lebih bertenaga.",
       flavour_passion_cta: "Lihat pilihan",
+      flavour_melon_title: "Melon Avocado",
+      flavour_melon_heading: "Penceritaan hijau segar yang terasa ringan, moden, dan semula jadi premium.",
+      flavour_melon_desc: "Profil bersih dengan nota buah lembut untuk pilihan harian berteraskan kesihatan.",
+      flavour_melon_cta: "Lihat pilihan",
+      flavour_cocoa_title: "Cocoa",
+      flavour_cocoa_heading: "Persembahan koko yang lebih mendalam untuk momen kesihatan yang lebih memuaskan.",
+      flavour_cocoa_desc: "Karakter koko hangat dan kemasan lembut memberikan identiti yang menenangkan.",
+      flavour_cocoa_cta: "Lihat pilihan",
       featured_products_title: "Pilih campuran kesihatan harian anda",
       featured_products_intro: "Tukar antara saiz dan format sambil mengekalkan cerita produk yang konsisten.",
       bundles_title: "Bina bundle premium dalam beberapa minit",
@@ -1006,6 +1060,11 @@
       bundle_product_label: "Produk Bundle",
       size_label: "Saiz",
       no_image_available: "Tiada imej tersedia",
+      options_label: "Pilihan",
+      bundle_name_2x800_300: "2x 800g + 300g",
+      bundle_name_5x800: "5x 800g",
+      bundle_desc_2x800_300: "Bundle tersuai dengan 2 slot 800g dan 1 slot 300g yang boleh dipilih.",
+      bundle_desc_5x800: "Bundle tersuai dengan 5 slot 800g yang boleh dipilih.",
       product_details_coming_soon: "Butiran produk akan datang.",
       more_product_details_coming_soon: "Lebih banyak butiran produk akan datang.",
       bundle_promo_code: "Kod Promo Bundle",
@@ -1029,9 +1088,16 @@
       zoom_out: "Zum keluar",
       facebook: "Facebook",
       instagram: "Instagram",
-      whatsapp: "WhatsApp"
+      whatsapp: "WhatsApp",
+      selected_size_price: "Saiz dipilih: {size} | {price}{gift}",
+      selected_total_price: "Jumlah dipilih: {size} - {package} | {price}{gift}",
+      selected_gift_text: " | Hadiah: {name}{extra}",
+      selected_gift_extra_paid: " (+{price})",
+      selected_gift_extra_free: " (Percuma)"
     },
     zh: {
+      brand_name: "天榖",
+      brand_collection: "天榖系列",
       language: "语言",
       quick_links: "快速链接",
       follow_us: "关注我们",
@@ -1049,6 +1115,13 @@
       checkout: "结账",
       wishlist: "愿望清单",
       cart: "购物车",
+      login: "登录",
+      logout_customer: "登出",
+      my_points: "我的积分",
+      enter_customer_id_prompt: "请输入您的客户ID进行登录：",
+      invalid_customer_id: "请输入有效的客户ID。",
+      customer_login_success: "已登录客户 #{customerId}。",
+      customer_logged_out: "已成功登出。",
       buy_now: "立即购买",
       learn_more: "了解更多",
       featured_products: "精选产品",
@@ -1072,10 +1145,10 @@
       total: "总计:",
       discount: "折扣",
       back_to_top: "返回顶部",
-      about_themegood: "关于 ThemeGood",
+      about_themegood: "关于 天榖",
       about_lead: "为现代生活打造的优质天然健康营养。",
       hero_slide1_title: "为现代生活方式打造的高端健康营养。",
-      hero_slide1_support: "用更清晰、更高质感的方式在线探索 ThemeGood 产品。",
+      hero_slide1_support: "用更清晰、更高质感的方式在线探索 天榖 产品。",
       hero_slide1_primary: "立即购买",
       hero_slide1_secondary: "了解更多",
       hero_slide2_title: "为家庭而设，为日常而精修。",
@@ -1097,7 +1170,7 @@
       hero_bar3_title: "聚焦日常健康",
       hero_bar3_desc: "为实用日常而设计，营养支持更温和、更易坚持。",
       about_title_new: "为家庭而作，细节用心打磨。",
-      about_lead_new: "ThemeGood 将实用营养科学与精致产品呈现结合，带来更从容的每日健康体验。",
+      about_lead_new: "天榖 将实用营养科学与精致产品呈现结合，带来更从容的每日健康体验。",
       about_card1_title: "严选配料",
       about_card1_desc: "每一款配方都围绕口感、舒适度与日常健康支持而设计。",
       about_card2_title: "实用规格",
@@ -1120,10 +1193,22 @@
       flavour_bilberry_heading: "沉稳而精致的视觉表达，让这款口味故事更显高级感。",
       flavour_bilberry_desc: "更浓郁的果味层次，甜感均衡不腻。",
       flavour_bilberry_cta: "查看选项",
+      flavour_oat_title: "燕麦β",
+      flavour_oat_heading: "金黄色调的口味叙事，更适合沉稳的日常健康定位。",
+      flavour_oat_desc: "柔和视觉与均衡口感，让它成为可靠的日常选择。",
+      flavour_oat_cta: "查看选项",
       flavour_passion_title: "百香果",
       flavour_passion_heading: "更明亮、更有活力的口味定位，同时保持克制的视觉风格。",
       flavour_passion_desc: "热带香气与清新口感，日常饮用更有活力。",
       flavour_passion_cta: "查看选项",
+      flavour_melon_title: "蜜瓜牛油果",
+      flavour_melon_heading: "清新绿色叙事，呈现轻盈、现代且自然高级的风格。",
+      flavour_melon_desc: "干净的风味轮廓与柔和果香，适合日常健康饮用。",
+      flavour_melon_cta: "查看选项",
+      flavour_cocoa_title: "可可",
+      flavour_cocoa_heading: "更深层次的可可呈现，带来更满足的健康享受时刻。",
+      flavour_cocoa_desc: "温暖可可香气与顺滑尾韵，塑造舒适且有记忆点的口味形象。",
+      flavour_cocoa_cta: "查看选项",
       featured_products_title: "选择你的日常健康配方",
       featured_products_intro: "可在不同规格与包装间切换，同时保持一致的产品故事体验。",
       bundles_title: "几分钟完成高端套餐搭配",
@@ -1131,7 +1216,7 @@
       bundles_cta_primary: "搭配套餐",
       bundles_cta_secondary: "查看套餐指南",
       who_we_are: "我们是谁",
-      who_we_are_desc: "ThemeGood 采用精选天然原料与均衡配方，研发营养丰富的健康饮品。",
+      who_we_are_desc: "天榖 采用精选天然原料与均衡配方，研发营养丰富的健康饮品。",
       perfect_recipe: "理想配方",
       perfect_recipe_desc: "我们的配方聚焦膳食纤维、维生素、矿物质，以及日常消化支持。",
       suitability: "适用人群",
@@ -1141,16 +1226,16 @@
       reports_certifications: "报告与认证",
       monthly_orders: "月订单量",
       testimonials_title: "顾客怎么说",
-      testimonials_intro: "来自把 ThemeGood 纳入日常健康习惯的真实顾客反馈。",
+      testimonials_intro: "来自把 天榖 纳入日常健康习惯的真实顾客反馈。",
       faq_title: "常见问题",
       faq_intro: "关于产品规格、下单、配送和日常饮用方式的快速解答。",
       faq_q1: "我应该如何选择 300g、600g 和 800g？",
       faq_a1: "300g 适合初次尝试，600g 适合作为日常补充装，800g 则更适合经常饮用的家庭使用。",
       faq_q2: "我可以直接在网站上下单吗？",
       faq_a2: "您可以在这里查看产品，也可以通过我们的 Lazada 和 Shopee 官方店铺完成更方便的结账流程。",
-      faq_q3: "ThemeGood 营养谷粮产品应如何饮用？",
+      faq_q3: "天榖 营养谷粮产品应如何饮用？",
       faq_a3: "请按照建议的冲调方式准备，并将其作为日常习惯的一部分，不论是早晨饮用还是白天作为营养补充都可以。",
-      faq_q4: "如果我有产品问题，要如何联系 ThemeGood？",
+      faq_q4: "如果我有产品问题，要如何联系 天榖？",
       faq_a4: "您可以通过联系我们页面、社交平台或 WhatsApp 与我们联系，获取更多产品和下单协助信息。",
       faq_q5: "你们提供全国配送吗？",
       faq_a5: "是的，我们提供马来西亚全国配送。配送时效会根据您所在地区与物流安排而有所不同。",
@@ -1160,8 +1245,8 @@
       faq_a7: "在符合相关条件的情况下可申请退货。请联系团队，我们会根据具体情况协助处理。",
       faq_q8: "如果我收到的商品有损坏怎么办？",
       faq_a8: "若商品到货时有损坏，请尽快联系并提供照片凭证，我们会协助您进行后续处理。",
-      faq_q9: "我该如何联系 ThemeGood？",
-      faq_a9: "您可以通过 WhatsApp、电子邮件或 ThemeGood 官方社交平台联系我们。",
+      faq_q9: "我该如何联系 天榖？",
+      faq_a9: "您可以通过 WhatsApp、电子邮件或 天榖 官方社交平台联系我们。",
       faq_q10: "你们接受定制或批发订单吗？",
       faq_a10: "是的，我们接受定制与批发订单。请联系团队洽谈数量、价格与配送安排。",
       testimonial_quote_1: "石榴配方口感顺滑、冲泡方便，已经成为我每天早上的固定选择。",
@@ -1199,12 +1284,12 @@
       phone: "电话:",
       location: "地址:",
       find_our_shop: "查找门店",
-      shop_map_label: "ThemeGood Wellness Nutrition",
+      shop_map_label: "天榖 Wellness Nutrition",
       shop_map_address: "14, Jalan Tokong, Taman Hoover, 31650 Ipoh, Perak, Malaysia",
       hours_label: "营业时间:",
       hours_value: "周一至周日，上午8:00-下午5:00",
       open_in_google_maps: "在 Google 地图打开",
-      shop_location: "ThemeGood 门店位置",
+      shop_location: "天榖 门店位置",
       newsletter: "新闻通讯",
       newsletter_title: "订阅我们的新闻通讯",
       newsletter_desc: "获取新品与特别优惠的最新信息。",
@@ -1218,7 +1303,7 @@
       shopping_cta_title_default: "准备结账？",
       shopping_cta_subtitle_default: "查看购物车并安全完成下单。",
       shopping_cta_button_text_default: "前往结账",
-      shop_themegood: "选购 ThemeGood",
+      shop_themegood: "选购 天榖",
       best_sellers: "热销产品",
       curated_picks: "精选推荐",
       shopping_best_seller_subtitle: "精选三款最受欢迎的产品，呈现更清晰。",
@@ -1253,8 +1338,8 @@
       expiry_date: "到期日",
       cvv: "CVV",
       pay_now: "立即支付",
-      footer_tagline: "ThemeGood Marketing",
-      footer_copy: "© 2026 ThemeGood. 保留所有权利。",
+      footer_tagline: "天榖 Marketing",
+      footer_copy: "© 2026 天榖. 保留所有权利。",
       empty_cart: "您的购物车为空。",
       empty_cart_before_checkout: "您的购物车为空。请先添加产品再结账。",
       payment_success: "付款提交成功。",
@@ -1299,6 +1384,11 @@
       bundle_product_label: "套餐产品",
       size_label: "规格",
       no_image_available: "暂无图片",
+      options_label: "规格选项",
+      bundle_name_2x800_300: "2x 800g + 300g",
+      bundle_name_5x800: "5x 800g",
+      bundle_desc_2x800_300: "自定义套餐，含 2 个可选 800g 槽位和 1 个可选 300g 槽位。",
+      bundle_desc_5x800: "自定义套餐，含 5 个可选 800g 槽位。",
       product_details_coming_soon: "产品详情即将更新。",
       more_product_details_coming_soon: "更多产品详情即将更新。",
       bundle_promo_code: "套餐优惠码",
@@ -1311,7 +1401,7 @@
       bundle_promo_applied: "优惠码 {code} 已应用。",
       bundle_base_price: "套餐基础价",
       bundle_included: "已包含",
-      gallery_title: "ThemeGood 图库",
+      gallery_title: "天榖 图库",
       gallery_subtitle: "探索我们的产品瞬间与健康亮点。",
       out_of_stock: "缺货",
       shop_now: "立即选购",
@@ -1322,7 +1412,12 @@
       zoom_out: "缩小",
       facebook: "Facebook",
       instagram: "Instagram",
-      whatsapp: "WhatsApp"
+      whatsapp: "WhatsApp",
+      selected_size_price: "已选规格：{size} | {price}{gift}",
+      selected_total_price: "已选总价：{size} - {package} | {price}{gift}",
+      selected_gift_text: " | 赠品：{name}{extra}",
+      selected_gift_extra_paid: "（+{price}）",
+      selected_gift_extra_free: "（免费）"
     }
   };
 
@@ -1334,7 +1429,11 @@
   const t = (key, vars = {}, lang = currentLang) => {
     const selected = dict[lang] ? lang : "en";
     const template = dict[selected][key] || dict.en[key] || key;
-    return template.replace(/\{(\w+)\}/g, (_, token) => (vars[token] ?? ""));
+    let output = template.replace(/\{(\w+)\}/g, (_, token) => (vars[token] ?? ""));
+    if (selected === "zh") {
+      output = output.replace(/ThemeGood/g, "天榖");
+    }
+    return output;
   };
   const escapeHtml = (value) => String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -1446,7 +1545,7 @@
           </div>
           <div class="modal-detail-column">
             <div class="modal-copy-top">
-              <p class="modal-kicker">ThemeGood Collection</p>
+              <p class="modal-kicker">${t("brand_collection")}</p>
               <h3 id="modal-title"></h3>
               <p id="modal-description"></p>
             </div>
@@ -1479,10 +1578,26 @@
     overlay.innerHTML = `
       <div class="qr-overlay-panel" role="dialog" aria-modal="true" aria-label="QR code preview">
         <button id="qr-overlay-close" class="qr-overlay-close" type="button" aria-label="Close image">×</button>
-        <img id="qr-overlay-image" src="" alt="ThemeGood QR code">
+        <img id="qr-overlay-image" src="" alt="${t("brand_name")} QR code">
       </div>
     `;
     document.body.appendChild(overlay);
+  }
+
+  function ensureFloatingCertifications() {
+    if (document.getElementById("floating-certifications")) return;
+    const floating = document.createElement("div");
+    floating.id = "floating-certifications";
+    floating.setAttribute("aria-label", "Product certifications");
+    floating.innerHTML = `
+      <span class="floating-cert-badge is-halal" title="Halal certified">
+        <img src="/photos/halal-icon.png" alt="Halal certified">
+      </span>
+      <span class="floating-cert-badge is-vegetarian" title="Suitable for Vegetarian">
+        <img src="/photos/vegetarian-icon.png" alt="Suitable for Vegetarian">
+      </span>
+    `;
+    document.body.appendChild(floating);
   }
 
   // --- Ensure Sidebar Markup Exists ---
@@ -1495,7 +1610,7 @@
           <h2>${t("your_cart")}</h2>
           <button id="close-cart" aria-label="${t("close_cart")}">×</button>
         </div>
-        <ul id="cart-items"></ul>
+        <ul id="cart-items" data-empty-text="${t("empty_cart")}"></ul>
         <div class="cart-summary">
           <p><strong>Subtotal:</strong> <span id="cart-subtotal">RM 0.00</span></p>
           <p><strong>Discount:</strong> <span id="cart-discount">-RM 0.00</span></p>
@@ -1520,6 +1635,7 @@
 
   ensureProductModal();
   ensureQrOverlay();
+  ensureFloatingCertifications();
   ensureCommercePanels();
   // --- UI Elements ---
   const modal = document.getElementById("product-modal");
@@ -1605,6 +1721,44 @@
       <span class="header-action-label">${label}</span>
     `;
     button.appendChild(count);
+  }
+
+  function parseCustomerId(value) {
+    const customerId = Number(value);
+    return Number.isInteger(customerId) && customerId > 0 ? customerId : null;
+  }
+
+  function normalizeString(value) {
+    if (value === null || value === undefined) return "";
+    return String(value).trim();
+  }
+
+  function getStoredCustomerId() {
+    return parseCustomerId(localStorage.getItem(CUSTOMER_ID_STORAGE_KEY));
+  }
+
+  function getStoredCustomerToken() {
+    return normalizeString(localStorage.getItem(CUSTOMER_TOKEN_STORAGE_KEY));
+  }
+
+  function setStoredCustomerId(customerId) {
+    const normalized = parseCustomerId(customerId);
+    if (!normalized) return false;
+    localStorage.setItem(CUSTOMER_ID_STORAGE_KEY, String(normalized));
+    return true;
+  }
+
+  function clearStoredCustomerId() {
+    localStorage.removeItem(CUSTOMER_ID_STORAGE_KEY);
+    localStorage.removeItem(CUSTOMER_TOKEN_STORAGE_KEY);
+  }
+
+  window.getThemeGoodCustomerId = getStoredCustomerId;
+
+  function isCustomerLoggedIn() {
+    const token = getStoredCustomerToken();
+    const customerId = getStoredCustomerId();
+    return Boolean(token) && Number.isInteger(customerId) && customerId > 0;
   }
 
   function isCocoaProduct(productRef) {
@@ -2259,14 +2413,20 @@
       .replace(/[^a-z0-9]+/gi, "");
   }
 
+  function isSachetImageAsset(imageUrl) {
+    const source = `${getComparableImagePath(imageUrl)} ${getComparableImageName(imageUrl)}`.toLowerCase();
+    if (!source.trim()) return false;
+    return /(sachet|stickpack|stick-pack|stick\s*pack|single-serve|singleserve|single\s*serve)/i.test(source);
+  }
+
   function getFallbackGalleryImageForSize(productRef, sizeId) {
     const stored = getStoredImagesForProduct(productRef)
       .map((image) => normalizeImageUrl(image.image_url))
-      .filter(Boolean);
+      .filter((src) => Boolean(src) && !isSachetImageAsset(src));
     const custom = String(productRef?.dataset?.gallery || "")
       .split(",")
       .map((entry) => normalizeImageUrl(entry.trim()))
-      .filter(Boolean);
+      .filter((src) => Boolean(src) && !isSachetImageAsset(src));
     const gallery = [...new Set([...stored, ...custom])];
     if (gallery.length === 0) return "";
     const filenameMatched = gallery.find((src) => inferSizeIdFromImageUrl(src) === sizeId);
@@ -2290,6 +2450,7 @@
       if (normalizeSizeId(variant?.name) !== normalizedSizeId) return false;
       const variantImageUrl = normalizeImageUrl(variant?.imageUrl || "");
       if (!variantImageUrl) return false;
+      if (isSachetImageAsset(variantImageUrl)) return false;
       const inferredImageSizeId = inferSizeIdFromImageUrl(variantImageUrl);
       return !inferredImageSizeId || inferredImageSizeId === normalizedSizeId;
     });
@@ -2302,7 +2463,9 @@
     if (galleryMatchedImage) return galleryMatchedImage;
 
     const looseVariant = variants.find((variant) =>
-      normalizeSizeId(variant?.name) === normalizedSizeId && String(variant?.imageUrl || "").trim()
+      normalizeSizeId(variant?.name) === normalizedSizeId &&
+      String(variant?.imageUrl || "").trim() &&
+      !isSachetImageAsset(variant?.imageUrl || "")
     );
     return normalizeImageUrl(looseVariant?.imageUrl || "");
   }
@@ -2605,7 +2768,7 @@
         comboWrap.className = "purchase-option-wrap";
         const label = document.createElement("label");
         label.className = "package-label";
-        label.textContent = "Options";
+        label.textContent = t("options_label");
         comboSelect = document.createElement("select");
         comboSelect.className = "purchase-option-select";
         comboWrap.appendChild(label);
@@ -2710,11 +2873,21 @@
         const preview = card.querySelector(".package-price-preview");
         if (preview) {
           const giftText = selectedGiftOffer
-            ? ` | Gift: ${selectedGiftOffer.offerName}${selectedGiftOffer.extraPrice > 0 ? ` (+${formatMoney(selectedGiftOffer.extraPrice)})` : " (Free)"}` 
+            ? t("selected_gift_text", {
+              name: selectedGiftOffer.offerName,
+              extra: selectedGiftOffer.extraPrice > 0
+                ? t("selected_gift_extra_paid", { price: formatMoney(selectedGiftOffer.extraPrice) })
+                : t("selected_gift_extra_free")
+            })
             : "";
           preview.textContent = usesDirectVariantPricing
-            ? `Selected size: ${selectedPack.name} | ${formatMoney(finalPrice)}${giftText}`
-            : `Selected total: ${selectedSize.label} - ${selectedPack.name} | ${formatMoney(finalPrice)}${giftText}`;
+            ? t("selected_size_price", { size: selectedPack.name, price: formatMoney(finalPrice), gift: giftText })
+            : t("selected_total_price", {
+              size: selectedSize.label,
+              package: selectedPack.name,
+              price: formatMoney(finalPrice),
+              gift: giftText
+            });
         }
       }
 
@@ -2788,6 +2961,167 @@
         }
       });
     });
+  }
+
+  const flavourSliderItems = [
+    {
+      titleKey: "flavour_pomegranate_title",
+      headingKey: "flavour_pomegranate_heading",
+      descKey: "flavour_pomegranate_desc",
+      ctaKey: "flavour_pomegranate_cta",
+      image: "photos/Pomegranate 800g (1).png",
+      href: "shopping-details.html#product-pomegranate"
+    },
+    {
+      titleKey: "flavour_bilberry_title",
+      headingKey: "flavour_bilberry_heading",
+      descKey: "flavour_bilberry_desc",
+      ctaKey: "flavour_bilberry_cta",
+      image: "photos/Bilberry 800g.png",
+      href: "shopping.html#products"
+    },
+    {
+      titleKey: "flavour_oat_title",
+      headingKey: "flavour_oat_heading",
+      descKey: "flavour_oat_desc",
+      ctaKey: "flavour_oat_cta",
+      image: "photos/Oat Beta 800g (1).png",
+      href: "shopping.html#products"
+    },
+    {
+      titleKey: "flavour_passion_title",
+      headingKey: "flavour_passion_heading",
+      descKey: "flavour_passion_desc",
+      ctaKey: "flavour_passion_cta",
+      image: "photos/Passion Fruit 800g.png",
+      href: "shopping.html#products"
+    },
+    {
+      titleKey: "flavour_melon_title",
+      headingKey: "flavour_melon_heading",
+      descKey: "flavour_melon_desc",
+      ctaKey: "flavour_melon_cta",
+      image: "photos/Melon Avocado 800g.png",
+      href: "shopping.html#products"
+    },
+    {
+      titleKey: "flavour_cocoa_title",
+      headingKey: "flavour_cocoa_heading",
+      descKey: "flavour_cocoa_desc",
+      ctaKey: "flavour_cocoa_cta",
+      image: "photos/Cocoa800g.png",
+      href: "shopping.html#products"
+    }
+  ];
+  let flavourSliderIndex = 0;
+  let flavourSliderIntervalId = null;
+  let flavourSliderStoppedByTab = false;
+
+  function renderFlavourSlider(index = flavourSliderIndex) {
+    const slider = document.querySelector(".home-page .editorial-flavour-slider");
+    if (!slider || flavourSliderItems.length === 0) return;
+    const total = flavourSliderItems.length;
+    flavourSliderIndex = (Number(index) + total) % total;
+
+    const active = flavourSliderItems[flavourSliderIndex];
+    const imageEl = slider.querySelector(".flavour-slider-image");
+    const kickerEl = slider.querySelector(".flavour-slider-kicker");
+    const headingEl = slider.querySelector(".flavour-slider-heading");
+    const descEl = slider.querySelector(".flavour-slider-desc");
+    const linkEl = slider.querySelector(".flavour-slider-link");
+
+    if (imageEl) {
+      imageEl.src = active.image;
+      imageEl.alt = `${t("brand_name")} ${t(active.titleKey)} product`;
+    }
+    if (kickerEl) kickerEl.textContent = t(active.titleKey);
+    if (headingEl) headingEl.textContent = t(active.headingKey);
+    if (descEl) descEl.textContent = t(active.descKey);
+    if (linkEl) {
+      linkEl.textContent = t(active.ctaKey);
+      linkEl.href = active.href;
+    }
+
+    slider.querySelectorAll(".flavour-slider-tab").forEach((tab, tabIndex) => {
+      const item = flavourSliderItems[tabIndex];
+      if (!item) return;
+      const isActive = tabIndex === flavourSliderIndex;
+      tab.textContent = t(item.titleKey);
+      tab.classList.toggle("is-active", isActive);
+      tab.setAttribute("aria-selected", isActive ? "true" : "false");
+      tab.setAttribute("tabindex", isActive ? "0" : "-1");
+    });
+
+    const prevBtn = slider.querySelector(".flavour-slider-nav.prev");
+    const nextBtn = slider.querySelector(".flavour-slider-nav.next");
+    if (prevBtn) prevBtn.setAttribute("aria-label", t("previous_slide"));
+    if (nextBtn) nextBtn.setAttribute("aria-label", t("next_slide"));
+  }
+
+  function restartFlavourSliderInterval() {
+    if (flavourSliderIntervalId) {
+      clearInterval(flavourSliderIntervalId);
+      flavourSliderIntervalId = null;
+    }
+    if (flavourSliderStoppedByTab || flavourSliderItems.length <= 1) return;
+    flavourSliderIntervalId = setInterval(() => {
+      renderFlavourSlider(flavourSliderIndex + 1);
+    }, 4000);
+  }
+
+  function initFlavourSlider() {
+    const slider = document.querySelector(".home-page .editorial-flavour-slider");
+    if (!slider) return;
+
+    if (slider.dataset.ready !== "true") {
+      const tabsWrap = slider.querySelector(".flavour-slider-tabs");
+      if (tabsWrap) {
+        tabsWrap.innerHTML = "";
+        flavourSliderItems.forEach((item, index) => {
+          const tab = document.createElement("button");
+          tab.type = "button";
+          tab.className = "flavour-slider-tab";
+          tab.setAttribute("role", "tab");
+          tab.addEventListener("click", () => {
+            renderFlavourSlider(index);
+            flavourSliderStoppedByTab = true;
+            if (flavourSliderIntervalId) {
+              clearInterval(flavourSliderIntervalId);
+              flavourSliderIntervalId = null;
+            }
+          });
+          tabsWrap.appendChild(tab);
+        });
+      }
+
+      slider.querySelector(".flavour-slider-nav.prev")?.addEventListener("click", () => {
+        renderFlavourSlider(flavourSliderIndex - 1);
+        restartFlavourSliderInterval();
+      });
+
+      slider.querySelector(".flavour-slider-nav.next")?.addEventListener("click", () => {
+        renderFlavourSlider(flavourSliderIndex + 1);
+        restartFlavourSliderInterval();
+      });
+
+      slider.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowLeft") {
+          event.preventDefault();
+          renderFlavourSlider(flavourSliderIndex - 1);
+          restartFlavourSliderInterval();
+        }
+        if (event.key === "ArrowRight") {
+          event.preventDefault();
+          renderFlavourSlider(flavourSliderIndex + 1);
+          restartFlavourSliderInterval();
+        }
+      });
+
+      slider.dataset.ready = "true";
+      restartFlavourSliderInterval();
+    }
+
+    renderFlavourSlider(flavourSliderIndex);
   }
 
   function translateStaticSections() {
@@ -2880,26 +3214,7 @@
     setText(".home-page #flavours .section-kicker", "flavour_collection");
     setText(".home-page #flavours .section-title", "flavour_collection_title");
     setText(".home-page #flavours .section-intro", "flavour_collection_intro");
-    const flavourCards = document.querySelectorAll(".home-page .editorial-flavour");
-    if (flavourCards.length >= 3) {
-      const flavourCfg = [
-        ["flavour_pomegranate_title", "flavour_pomegranate_heading", "flavour_pomegranate_desc", "flavour_pomegranate_cta"],
-        ["flavour_bilberry_title", "flavour_bilberry_heading", "flavour_bilberry_desc", "flavour_bilberry_cta"],
-        ["flavour_passion_title", "flavour_passion_heading", "flavour_passion_desc", "flavour_passion_cta"]
-      ];
-      flavourCards.forEach((card, index) => {
-        const cfg = flavourCfg[index];
-        if (!cfg) return;
-        const kicker = card.querySelector(".section-kicker");
-        const h3 = card.querySelector("h3");
-        const p = card.querySelector(".editorial-flavour-copy > p:not(.section-kicker)");
-        const a = card.querySelector(".text-link");
-        if (kicker) kicker.textContent = t(cfg[0]);
-        if (h3) h3.textContent = t(cfg[1]);
-        if (p) p.textContent = t(cfg[2]);
-        if (a) a.textContent = t(cfg[3]);
-      });
-    }
+    initFlavourSlider();
 
     setText(".home-page #products .section-kicker", "featured_products");
     setText(".home-page #products .section-title", "featured_products_title");
@@ -2965,6 +3280,7 @@
     setText(".product-page .products-hero p", "shopping_subtitle");
     setText("#shoppingHeroTitle", "shopping_hero_title_default");
     setText("#shoppingHeroSubtitle", "shopping_hero_subtitle_default");
+    setText("#product-modal .modal-kicker", "brand_collection");
     setText(".shopping-details-page .products-hero .section-title", "shopping_details_title");
     setText(".shopping-details-page .products-hero p", "shopping_details_subtitle");
 
@@ -3007,6 +3323,7 @@
   }
 
   function translateRuntimeUi() {
+    updateCustomerHeaderButtons();
     setHeaderActionLabel("cart-toggle", "cart", "cart-count", "🛒");
     document.querySelectorAll(".add-to-cart").forEach(btn => {
       const productCard = btn.closest(".product-card, .product");
@@ -3038,6 +3355,7 @@
     setText("#cart-sidebar a.btn", "checkout");
     if (promoInput) promoInput.setAttribute("placeholder", t("promo_code_placeholder"));
     if (applyPromoBtn) applyPromoBtn.textContent = t("apply");
+    if (cartList) cartList.setAttribute("data-empty-text", t("empty_cart"));
     const backToTop = document.getElementById("backToTop");
     if (backToTop) backToTop.setAttribute("aria-label", t("back_to_top"));
     const hamburger = document.getElementById("hamburgerBtn");
@@ -3293,6 +3611,129 @@
   const headerActions = document.querySelector(".header-actions");
   const langSwitch = headerActions?.querySelector(".lang-switch");
   const homepageHero = document.querySelector(".home-page .hero");
+  let customerAccountButton = null;
+  let customerLogoutButton = null;
+
+  function ensureCustomerAccountAnchor() {
+    if (!headerActions) return null;
+    const existing = headerActions.querySelector("#customer-account-btn");
+    if (!existing) return null;
+    if (existing.tagName === "A") return existing;
+
+    const anchor = document.createElement("a");
+    anchor.id = "customer-account-btn";
+    anchor.className = existing.className || "btn header-account-btn";
+    anchor.textContent = existing.textContent || t("login");
+    anchor.setAttribute("aria-label", existing.getAttribute("aria-label") || t("login"));
+    anchor.href = "customer-login.html";
+    existing.replaceWith(anchor);
+    return anchor;
+  }
+
+  function ensureCustomerHeaderButtons() {
+    if (!headerActions) return;
+
+    if (!customerAccountButton || !customerLogoutButton) {
+      customerAccountButton = headerActions.querySelector("#customer-account-btn");
+      customerLogoutButton = headerActions.querySelector("#customer-logout-btn");
+    }
+
+    customerAccountButton = ensureCustomerAccountAnchor() || customerAccountButton;
+
+    if (!customerAccountButton) {
+      customerAccountButton = document.createElement("a");
+      customerAccountButton.id = "customer-account-btn";
+      customerAccountButton.className = "btn header-account-btn";
+      customerAccountButton.textContent = t("login");
+      customerAccountButton.setAttribute("aria-label", t("login"));
+      customerAccountButton.href = "customer-login.html";
+      headerActions.insertBefore(customerAccountButton, document.getElementById("cart-toggle") || langSwitch || null);
+    }
+
+    if (!customerLogoutButton) {
+      customerLogoutButton = document.createElement("button");
+      customerLogoutButton.type = "button";
+      customerLogoutButton.id = "customer-logout-btn";
+      customerLogoutButton.className = "btn header-account-btn";
+      customerLogoutButton.textContent = t("logout_customer");
+      customerLogoutButton.setAttribute("aria-label", t("logout_customer"));
+      customerLogoutButton.hidden = true;
+      customerLogoutButton.style.setProperty("display", "none", "important");
+      headerActions.insertBefore(customerLogoutButton, document.getElementById("cart-toggle") || langSwitch || null);
+    }
+
+    // Defensive default: keep logout hidden unless updateCustomerHeaderButtons explicitly shows it.
+    customerLogoutButton.hidden = true;
+    customerLogoutButton.style.setProperty("display", "none", "important");
+
+    customerLogoutButton.onclick = () => {
+      clearStoredCustomerId();
+      updateCustomerHeaderButtons();
+      showToast(t("customer_logged_out"));
+    };
+  }
+
+  function updateCustomerHeaderButtons() {
+    ensureCustomerHeaderButtons();
+    if (!customerAccountButton || !customerLogoutButton) return;
+
+    if (isCustomerLoggedIn()) {
+      const storedCustomerId = getStoredCustomerId();
+      customerAccountButton.textContent = t("my_points");
+      customerAccountButton.setAttribute("aria-label", t("my_points"));
+      customerAccountButton.href = storedCustomerId
+        ? `account.html?customer_id=${encodeURIComponent(String(storedCustomerId))}`
+        : "customer-login.html";
+      customerLogoutButton.textContent = t("logout_customer");
+      customerLogoutButton.setAttribute("aria-label", t("logout_customer"));
+      customerLogoutButton.hidden = false;
+      customerLogoutButton.style.removeProperty("display");
+    } else {
+      customerAccountButton.textContent = t("login");
+      customerAccountButton.setAttribute("aria-label", t("login"));
+      customerAccountButton.href = "customer-login.html";
+      customerLogoutButton.hidden = true;
+      customerLogoutButton.style.setProperty("display", "none", "important");
+    }
+  }
+
+  async function validateStoredCustomerSession() {
+    const token = getStoredCustomerToken();
+    if (!token) {
+      clearStoredCustomerId();
+      updateCustomerHeaderButtons();
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/customer/auth/me", {
+        headers: { "x-customer-token": token }
+      });
+      if (!response.ok) {
+        clearStoredCustomerId();
+      } else {
+        const payload = await response.json().catch(() => ({}));
+        const sessionCustomerId = parseCustomerId(payload?.customer?.id);
+        if (!sessionCustomerId) {
+          clearStoredCustomerId();
+        } else {
+          localStorage.setItem(CUSTOMER_ID_STORAGE_KEY, String(sessionCustomerId));
+        }
+      }
+    } catch {
+      clearStoredCustomerId();
+    }
+
+    updateCustomerHeaderButtons();
+  }
+
+  function removeDuplicateShopNavLink() {
+    const shopNowCta = document.querySelector(".header-shop-cta");
+    if (!shopNowCta) return;
+    const duplicateShopLink = document.querySelector("#navMenu a[data-i18n='shopping']");
+    if (!duplicateShopLink) return;
+    duplicateShopLink.closest("li")?.remove();
+  }
 
   function syncHeaderState() {
     if (!siteHeader) return;
@@ -3329,6 +3770,9 @@
   }
 
   syncMobileHeaderLayout();
+  removeDuplicateShopNavLink();
+  updateCustomerHeaderButtons();
+  validateStoredCustomerSession();
   syncHeaderState();
   window.addEventListener("resize", syncMobileHeaderLayout);
   window.addEventListener("resize", syncHeaderState);
@@ -3422,7 +3866,10 @@
     if (cartSubtotal) cartSubtotal.textContent = formatMoney(subtotal);
     if (cartDiscount) cartDiscount.textContent = `-${formatMoney(discountValue)}`;
     if (cartTotal) cartTotal.textContent = formatMoney(finalTotal);
-    if (cartCount) cartCount.textContent = count;
+    if (cartCount) {
+      cartCount.textContent = count;
+      cartCount.classList.toggle("is-empty", count <= 0);
+    }
     if (promoInput) promoInput.value = cartPromo.code || "";
     if (promoStatus && cartPromo.code) promoStatus.textContent = t("promo_applied", { code: cartPromo.code, percent: cartPromo.percent });
     if (promoStatus && !cartPromo.code) promoStatus.textContent = "";
@@ -3665,21 +4112,21 @@
   const getProductGallery = (el) => {
     const stored = getStoredImagesForProduct(el)
       .map((image) => normalizeImageUrl(image.image_url))
-      .filter(Boolean);
+      .filter((src) => Boolean(src) && !isSachetImageAsset(src));
     if (stored.length > 0) {
       return [...new Set(stored)];
     }
 
     const variantImages = getVariantsForProduct(el)
       .map((variant) => normalizeImageUrl(variant?.imageUrl || ""))
-      .filter(Boolean);
+      .filter((src) => Boolean(src) && !isSachetImageAsset(src));
     const custom = (el.dataset.gallery || "")
       .split(",")
       .map(s => s.trim())
-      .filter(Boolean);
+      .filter((src) => Boolean(src) && !isSachetImageAsset(src));
     const base = normalizeImageUrl(el.dataset.image || el.querySelector("img")?.getAttribute("src") || "");
     const hover = normalizeImageUrl(el.dataset.hoverImage || "");
-    return [...new Set([base, hover, ...variantImages, ...custom, ...stored].filter(Boolean))];
+    return [...new Set([base, hover, ...variantImages, ...custom, ...stored].filter((src) => Boolean(src) && !isSachetImageAsset(src)))];
   };
 
   const setActiveModalGalleryImage = (imageUrl) => {
@@ -3954,8 +4401,9 @@
     const selectedSize = getSelectedSize(el);
     const selectedPackage = getSelectedPackage(el);
     const packagePrice = calculatePackagePrice(price, selectedPackage, selectedSize, el);
+    const packageImage = normalizeImageUrl(selectedPackage.imageUrl || "");
     const modalProductImage =
-      normalizeImageUrl(selectedPackage.imageUrl || "") ||
+      (packageImage && !isSachetImageAsset(packageImage) ? packageImage : "") ||
       getVariantImageForSize(el, selectedSize.id) ||
       gallery[Math.min(getSizeIndex(selectedSize.id), Math.max(gallery.length - 1, 0))] ||
       gallery[0] ||
@@ -3969,13 +4417,17 @@
 
       const unique = [];
       const seen = new Set();
+      const hasUploadedGallery = Array.isArray(gallery) && gallery.length > 0;
 
-      bySize.forEach((row) => {
-        const key = normalizeImageUrl(row.src);
-        if (!key || seen.has(key)) return;
-        seen.add(key);
-        unique.push(row);
-      });
+      // Prefer uploaded product gallery images when available.
+      if (!hasUploadedGallery) {
+        bySize.forEach((row) => {
+          const key = normalizeImageUrl(row.src);
+          if (!key || seen.has(key)) return;
+          seen.add(key);
+          unique.push(row);
+        });
+      }
 
       gallery.forEach((src) => {
         const key = normalizeImageUrl(src);
@@ -3986,6 +4438,16 @@
           sizeId: ""
         });
       });
+
+      // Safety fallback in case both arrays are empty.
+      if (unique.length === 0) {
+        bySize.forEach((row) => {
+          const key = normalizeImageUrl(row.src);
+          if (!key || seen.has(key)) return;
+          seen.add(key);
+          unique.push(row);
+        });
+      }
 
       return unique;
     })();
@@ -4122,7 +4584,7 @@
     img.addEventListener("click", () => {
       if (!qrOverlay || !qrOverlayImage) return;
       qrOverlayImage.src = img.currentSrc || img.src;
-      qrOverlayImage.alt = img.alt || "ThemeGood QR code";
+      qrOverlayImage.alt = img.alt || `${t("brand_name")} QR code`;
       qrOverlay.classList.add("open");
       qrOverlay.setAttribute("aria-hidden", "false");
       document.body.classList.add("qr-overlay-open");

@@ -398,7 +398,7 @@ body{
 
 table{
   width:100%;
-  min-width:1120px;
+  min-width:1260px;
   border-collapse:collapse;
 }
 
@@ -457,6 +457,11 @@ tr:hover td{
 .table-btn.view{
   background:var(--brand-soft);
   color:var(--brand-deep);
+}
+
+.table-btn.delete{
+  background:#fee2e2;
+  color:#991b1b;
 }
 
 .table-btn.copy{
@@ -816,6 +821,101 @@ tr:hover td{
         </article>
       </section>
 
+      <section class="card" style="margin-bottom:16px;">
+        <div class="section-head">
+          <div>
+            <h2>Loyalty Performance</h2>
+            <p>Live loyalty stats from existing transaction and user balance data.</p>
+          </div>
+          <button id="refreshLoyaltyStatsBtn" class="secondary-btn" type="button">Refresh Loyalty Stats</button>
+        </div>
+
+        <div class="stats-grid">
+          <article class="stat-card">
+            <h3>Issued</h3>
+            <p id="loyalty-stat-issued">0</p>
+            <div class="stat-note">Earn transactions</div>
+          </article>
+          <article class="stat-card">
+            <h3>Redeemed</h3>
+            <p id="loyalty-stat-redeemed">0</p>
+            <div class="stat-note">Redeem transactions</div>
+          </article>
+          <article class="stat-card">
+            <h3>Liability</h3>
+            <p id="loyalty-stat-liability">0</p>
+            <div class="stat-note">Current points balance total</div>
+          </article>
+          <article class="stat-card">
+            <h3>Loyalty Customers</h3>
+            <p id="loyalty-stat-customers">0</p>
+            <div class="stat-note">With activity or positive balance</div>
+          </article>
+        </div>
+
+        <div class="stats-grid" style="margin-bottom:14px;">
+          <article class="stat-card">
+            <h3>Earn Reversed</h3>
+            <p id="loyalty-stat-reversed">0</p>
+            <div class="stat-note">earn_reversal points</div>
+          </article>
+          <article class="stat-card">
+            <h3>Redeem Restored</h3>
+            <p id="loyalty-stat-restored">0</p>
+            <div class="stat-note">redeem_restore points</div>
+          </article>
+          <article class="stat-card">
+            <h3>Manual Added</h3>
+            <p id="loyalty-stat-manual-added">0</p>
+            <div class="stat-note">admin_adjust_add points</div>
+          </article>
+          <article class="stat-card">
+            <h3>Manual Deducted</h3>
+            <p id="loyalty-stat-manual-deducted">0</p>
+            <div class="stat-note">admin_adjust_deduct points</div>
+          </article>
+        </div>
+
+        <div class="stats-grid" style="margin-bottom:14px;">
+          <article class="stat-card">
+            <h3>Referred Customers</h3>
+            <p id="loyalty-stat-referred-customers">0</p>
+            <div class="stat-note">Customers who applied referral code</div>
+          </article>
+          <article class="stat-card">
+            <h3>Successful Referrals</h3>
+            <p id="loyalty-stat-successful-referrals">0</p>
+            <div class="stat-note">Referral bonuses granted</div>
+          </article>
+          <article class="stat-card">
+            <h3>Pending Referrals</h3>
+            <p id="loyalty-stat-pending-referrals">0</p>
+            <div class="stat-note">Waiting for first eligible order</div>
+          </article>
+          <article class="stat-card">
+            <h3>Referral Bonus Points</h3>
+            <p id="loyalty-stat-referral-issued">0</p>
+            <div class="stat-note">Referrer + referred bonuses</div>
+          </article>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card">
+            <h3>Most Redeemed Rewards</h3>
+            <div id="loyaltyTopRewardsList">No data yet.</div>
+          </div>
+          <div class="detail-card">
+            <h3>Top Customers by Points Balance</h3>
+            <div id="loyaltyTopCustomersList">No data yet.</div>
+          </div>
+        </div>
+
+        <div class="detail-items" style="margin-top:14px;">
+          <h3>Recent Loyalty Activity</h3>
+          <div id="loyaltyRecentActivityList">No data yet.</div>
+        </div>
+      </section>
+
       <section class="card">
         <div class="section-head">
           <div>
@@ -897,13 +997,50 @@ tr:hover td{
                 <th>Payment Badge</th>
                 <th>Status Badge</th>
                 <th>Update</th>
+                <th>Loyalty</th>
                 <th>Created</th>
                 <th>Details</th>
               </tr>
             </thead>
             <tbody id="ordersBody">
               <tr>
-                <td colspan="11">Loading orders.</td>
+                <td colspan="12">Loading orders.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card" style="margin-top:16px;">
+        <div class="section-head">
+          <div>
+            <h2>Customer Loyalty</h2>
+            <p>Search customer balances and inspect recent loyalty transactions.</p>
+          </div>
+        </div>
+
+        <div class="filter-row" style="grid-template-columns:2fr auto auto;">
+          <input id="loyaltySearchInput" type="text" placeholder="Search customer ID, name, phone, or email">
+          <button id="loyaltySearchBtn" class="primary-btn" type="button">Search Loyalty</button>
+          <button id="loyaltyExportAllBtn" class="secondary-btn" type="button">Export All CSV</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>Contact</th>
+                <th>Current Points</th>
+                <th>Lifetime Earned</th>
+                <th>Lifetime Redeemed</th>
+                <th>Referral</th>
+                <th>History</th>
+              </tr>
+            </thead>
+            <tbody id="loyaltyCustomersBody">
+              <tr>
+                <td colspan="7">Run a loyalty search to load customer data.</td>
               </tr>
             </tbody>
           </table>
@@ -921,8 +1058,34 @@ tr:hover td{
   </div>
 </div>
 
+<div id="adjustPointsModal" class="modal">
+  <div id="adjustPointsModalOverlay" class="modal-overlay"></div>
+  <div class="modal-content">
+    <button id="adjustPointsModalCloseBtn" class="modal-close" type="button">&times;</button>
+    <div>
+      <h2 style="margin-top:0;">Adjust Loyalty Points</h2>
+      <p style="color:#6b7280;">Apply manual add/deduct adjustment for a customer.</p>
+      <form id="adjustPointsForm" style="display:grid;gap:12px;">
+        <input id="adjustCustomerId" type="number" min="1" readonly>
+        <label for="adjustType">Adjustment Type</label>
+        <select id="adjustType" required>
+          <option value="add">Add</option>
+          <option value="deduct">Deduct</option>
+        </select>
+        <label for="adjustPoints">Points</label>
+        <input id="adjustPoints" type="number" min="1" step="1" required>
+        <label for="adjustReason">Reason</label>
+        <textarea id="adjustReason" minlength="1" maxlength="500" required style="min-height:100px;padding:12px;border:1px solid #d4dae4;border-radius:10px;"></textarea>
+        <button type="submit" class="primary-btn">Submit Adjustment</button>
+      </form>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script src="admin-orders.js"></script>
 </body>
 </html>
+
+

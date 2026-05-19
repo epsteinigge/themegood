@@ -1,9 +1,15 @@
 let allOrders = [];
 const MALAYSIA_TIME_ZONE = "Asia/Kuala_Lumpur";
 const AUTO_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+let currentAdjustCustomerId = null;
 
 function parseOrderDate(value) {
-  const parsed = new Date(value);
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+
+  const hasTimezone = /(?:Z|[+\-]\d{2}:?\d{2})$/i.test(raw);
+  const normalized = raw.replace(" ", "T");
+  const parsed = new Date(hasTimezone ? normalized : `${normalized}Z`);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
@@ -25,8 +31,8 @@ function formatDateLabel(date) {
 }
 
 function formatMalaysiaDateTime(value) {
-  const parsed = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "-";
+  const parsed = value instanceof Date ? value : parseOrderDate(value);
+  if (!parsed || Number.isNaN(parsed.getTime())) return "-";
   return parsed.toLocaleString("en-MY", {
     timeZone: MALAYSIA_TIME_ZONE,
     year: "numeric",
@@ -198,6 +204,41 @@ function csvCell(value) {
   return `"${stringValue.replace(/"/g, '""')}"`;
 }
 
+async function exportLoyaltyTransactionsCsv(customerId = null) {
+  const query = Number.isInteger(Number(customerId)) && Number(customerId) > 0
+    ? `?customer_id=${encodeURIComponent(String(Number(customerId)))}`
+    : "";
+  const response = await fetch(`/api/admin/loyalty-transactions/export.csv${query}`, {
+    headers: getAdminHeaders()
+  });
+
+  if (!response.ok) {
+    if (handleUnauthorized(response.status)) return;
+    let errorMessage = "Failed to export loyalty CSV";
+    try {
+      const payload = await response.json();
+      errorMessage = payload.error || errorMessage;
+    } catch {
+      // ignore JSON parse failure
+    }
+    throw new Error(errorMessage);
+  }
+
+  const blob = await response.blob();
+  const contentDisposition = response.headers.get("content-disposition") || "";
+  const filenameMatch = contentDisposition.match(/filename=\"?([^\";]+)\"?/i);
+  const filename = filenameMatch?.[1] || (customerId ? `loyalty-transactions-customer-${customerId}.csv` : "loyalty-transactions-all.csv");
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 async function updateOrderTracking(orderId, updates) {
   const response = await fetch(`/api/admin/orders/${orderId}/status`, {
     method: "PUT",
@@ -266,6 +307,125 @@ function formatOrderItemPackage(item) {
   return parts.join(" | ");
 }
 
+function formatLoyaltyOrderSummary(order) {
+  const rewardId = Number(order?.loyalty_reward_id || 0);
+  const rewardType = String(order?.loyalty_reward_type || "").trim();
+  const pointsRedeemed = Number(order?.loyalty_points_redeemed || 0);
+  const discountAmount = Number(order?.loyalty_discount_amount || 0);
+  const freeGiftName = String(order?.loyalty_free_gift_product_name || "").trim();
+  const parts = [];
+
+  if (!rewardId || !rewardType) {
+    return '<span style="color:#6b7280;">None</span>';
+  }
+
+  parts.push(`<div><strong>#${rewardId}</strong> ${escapeHtml(rewardType)}</div>`);
+  if (pointsRedeemed > 0) parts.push(`<div>Points: ${pointsRedeemed}</div>`);
+  if (discountAmount > 0) parts.push(`<div>Discount: RM ${discountAmount.toFixed(2)}</div>`);
+  if (freeGiftName) parts.push(`<div>Gift: ${escapeHtml(freeGiftName)}</div>`);
+
+  if (order?.loyalty_redeemed_at) {
+    parts.push(`<div>Redeemed: ${escapeHtml(formatMalaysiaDateTime(order.loyalty_redeemed_at))}</div>`);
+  }
+  if (order?.loyalty_earn_reversed_at) {
+    parts.push(`<div>Earn Reversed: ${escapeHtml(formatMalaysiaDateTime(order.loyalty_earn_reversed_at))}</div>`);
+  }
+  if (order?.loyalty_redeem_restored_at) {
+    parts.push(`<div>Redeem Restored: ${escapeHtml(formatMalaysiaDateTime(order.loyalty_redeem_restored_at))}</div>`);
+  }
+
+  return `<div style="display:grid;gap:4px;font-size:12px;">${parts.join("")}</div>`;
+}
+
+function formatInteger(value) {
+  return new Intl.NumberFormat("en-MY", { maximumFractionDigits: 0 }).format(Number(value || 0));
+}
+
+function renderLoyaltyStats(stats = {}) {
+  const setText = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = formatInteger(value);
+  };
+
+  setText("loyalty-stat-issued", stats.total_points_issued);
+  setText("loyalty-stat-redeemed", stats.total_points_redeemed);
+  setText("loyalty-stat-reversed", stats.total_points_reversed);
+  setText("loyalty-stat-restored", stats.total_points_restored);
+  setText("loyalty-stat-manual-added", stats.total_manual_points_added);
+  setText("loyalty-stat-manual-deducted", stats.total_manual_points_deducted);
+  setText("loyalty-stat-referred-customers", stats.total_referred_customers);
+  setText("loyalty-stat-successful-referrals", stats.successful_referrals_count);
+  setText("loyalty-stat-pending-referrals", stats.pending_referrals_count);
+  setText(
+    "loyalty-stat-referral-issued",
+    Number(stats.total_referral_points_referrer || 0) + Number(stats.total_referral_points_referred || 0)
+  );
+  setText("loyalty-stat-liability", stats.active_points_liability);
+  setText("loyalty-stat-customers", stats.total_loyalty_customers);
+
+  const rewardsContainer = document.getElementById("loyaltyTopRewardsList");
+  const rewards = Array.isArray(stats.most_redeemed_rewards) ? stats.most_redeemed_rewards : [];
+  if (rewardsContainer) {
+    rewardsContainer.innerHTML = rewards.length
+      ? rewards.map((reward) => `
+          <div style="padding:8px 0;border-bottom:1px solid #eef2f6;">
+            <strong>${escapeHtml(reward.reward_name || `Reward #${Number(reward.reward_id || 0)}`)}</strong>
+            <div style="color:#6b7280;">Redemptions: ${formatInteger(reward.redemption_count)}</div>
+          </div>
+        `).join("")
+      : "<div style='color:#6b7280;'>No reward redemptions yet.</div>";
+  }
+
+  const customersContainer = document.getElementById("loyaltyTopCustomersList");
+  const customers = Array.isArray(stats.top_customers_by_points_balance) ? stats.top_customers_by_points_balance : [];
+  if (customersContainer) {
+    customersContainer.innerHTML = customers.length
+      ? customers.map((customer) => `
+          <div style="padding:8px 0;border-bottom:1px solid #eef2f6;">
+            <strong>#${Number(customer.customer_id || 0)} ${escapeHtml(customer.customer_name || "")}</strong>
+            <div style="color:#6b7280;">${escapeHtml(customer.customer_email || "-")}</div>
+            <div>Points: ${formatInteger(customer.loyalty_points)}</div>
+          </div>
+        `).join("")
+      : "<div style='color:#6b7280;'>No customer balances available.</div>";
+  }
+
+  const activityContainer = document.getElementById("loyaltyRecentActivityList");
+  const activity = Array.isArray(stats.recent_loyalty_activity) ? stats.recent_loyalty_activity : [];
+  if (activityContainer) {
+    activityContainer.innerHTML = activity.length
+      ? activity.map((tx) => `
+          <div class="detail-item">
+            <p><strong>${escapeHtml(tx.type_label || tx.type || "")}</strong> | ${formatInteger(tx.points)} points | ${escapeHtml(formatMalaysiaDateTime(tx.created_at))}</p>
+            <p>Customer: #${Number(tx.customer_id || 0)} ${escapeHtml(tx.customer_name || "")} (${escapeHtml(tx.customer_email || "-")})</p>
+            <p>Order: ${tx.order_id ? `#${Number(tx.order_id)}` : "-"}</p>
+            <p style="color:#6b7280;">Type: ${escapeHtml(tx.type || "-")}</p>
+            <p>${escapeHtml(tx.description || "-")}</p>
+          </div>
+        `).join("")
+      : "<div style='color:#6b7280;'>No recent loyalty activity.</div>";
+  }
+}
+
+async function loadLoyaltyStats() {
+  try {
+    const response = await fetch("/api/admin/loyalty/stats", {
+      headers: getAdminHeaders()
+    });
+    const payload = await response.json();
+
+    if (!response.ok) {
+      if (handleUnauthorized(response.status)) return;
+      throw new Error(payload.error || "Failed to load loyalty stats");
+    }
+
+    renderLoyaltyStats(payload.stats || {});
+  } catch (error) {
+    console.error("Failed to load loyalty stats:", error);
+    showToast(error.message || "Failed to load loyalty stats", "error");
+  }
+}
+
 function updateStats(orders) {
   const totalOrders = orders.length;
   const unpaidOrders = orders.filter(order => order.payment_status === "pending").length;
@@ -297,7 +457,7 @@ function renderOrders(orders) {
   if (!Array.isArray(orders) || orders.length === 0) {
     ordersBody.innerHTML = `
       <tr>
-        <td colspan="11">No orders found.</td>
+        <td colspan="12">No orders found.</td>
       </tr>
     `;
     return;
@@ -355,9 +515,13 @@ function renderOrders(orders) {
           <button class="table-btn save js-save-order" type="button" data-order-id="${Number(order.id)}">Save</button>
         </div>
       </td>
+      <td>${formatLoyaltyOrderSummary(order)}</td>
       <td>${formatMalaysiaDateTime(order.created_at)}</td>
       <td>
-        <button class="table-btn view js-view-order" type="button" data-order-id="${Number(order.id)}">View</button>
+        <div class="select-inline">
+          <button class="table-btn view js-view-order" type="button" data-order-id="${Number(order.id)}">View</button>
+          <button class="table-btn delete js-delete-order" type="button" data-order-id="${Number(order.id)}">Delete</button>
+        </div>
       </td>
     `;
 
@@ -368,11 +532,11 @@ function renderOrders(orders) {
 async function loadOrders() {
   const ordersBody = document.getElementById("ordersBody");
   if (ordersBody) {
-    ordersBody.innerHTML = `
-      <tr>
-        <td colspan="11">Loading orders.</td>
-      </tr>
-    `;
+      ordersBody.innerHTML = `
+        <tr>
+          <td colspan="12">Loading orders.</td>
+        </tr>
+      `;
   }
 
   try {
@@ -388,7 +552,11 @@ async function loadOrders() {
     }
 
     allOrders = Array.isArray(orders) ? orders : [];
-    allOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    allOrders.sort((a, b) => {
+      const aTime = parseOrderDate(a.created_at)?.getTime() || 0;
+      const bTime = parseOrderDate(b.created_at)?.getTime() || 0;
+      return bTime - aTime;
+    });
 
     applyFilters();
   } catch (error) {
@@ -396,7 +564,7 @@ async function loadOrders() {
     if (ordersBody) {
       ordersBody.innerHTML = `
         <tr>
-          <td colspan="11">Failed to load orders.</td>
+          <td colspan="12">Failed to load orders.</td>
         </tr>
       `;
     }
@@ -570,6 +738,20 @@ async function openOrderModal(orderId) {
       </div>
 
       <div class="detail-items">
+        <h3>Loyalty Summary</h3>
+        <div class="detail-item">
+          <p><strong>Reward:</strong> ${order.loyalty_reward_id ? `#${Number(order.loyalty_reward_id)} ${escapeHtml(order.loyalty_reward_name || order.loyalty_reward_type || "")}` : "None"}</p>
+          <p><strong>Type:</strong> ${escapeHtml(order.loyalty_reward_type || "-")}</p>
+          <p><strong>Points Redeemed:</strong> ${Number(order.loyalty_points_redeemed || 0)}</p>
+          <p><strong>Discount Amount:</strong> RM ${Number(order.loyalty_discount_amount || 0).toFixed(2)}</p>
+          <p><strong>Free Gift:</strong> ${escapeHtml(order.loyalty_free_gift_product_name || "-")}</p>
+          <p><strong>Redeemed At:</strong> ${escapeHtml(order.loyalty_redeemed_at ? formatMalaysiaDateTime(order.loyalty_redeemed_at) : "-")}</p>
+          <p><strong>Earn Reversed At:</strong> ${escapeHtml(order.loyalty_earn_reversed_at ? formatMalaysiaDateTime(order.loyalty_earn_reversed_at) : "-")}</p>
+          <p><strong>Redeem Restored At:</strong> ${escapeHtml(order.loyalty_redeem_restored_at ? formatMalaysiaDateTime(order.loyalty_redeem_restored_at) : "-")}</p>
+        </div>
+      </div>
+
+      <div class="detail-items">
         <h3>Items</h3>
         ${
           Array.isArray(items) && items.length > 0
@@ -599,6 +781,252 @@ async function openOrderModal(orderId) {
   } catch (error) {
     console.error("Failed to open modal:", error);
     modalBody.innerHTML = "Failed to load order details.";
+  }
+}
+
+async function deleteOrder(orderId) {
+  const target = allOrders.find(order => Number(order.id) === Number(orderId));
+  const customerName = target?.customer_name ? ` (${target.customer_name})` : "";
+  const confirmed = window.confirm(
+    `Delete order #${orderId}${customerName}? This action cannot be undone.`
+  );
+
+  if (!confirmed) return;
+
+  try {
+    const response = await fetch(`/api/admin/orders/${orderId}`, {
+      method: "DELETE",
+      headers: getAdminHeaders()
+    });
+
+    let payload = {};
+    try {
+      payload = await response.json();
+    } catch {
+      payload = {};
+    }
+
+    if (!response.ok) {
+      if (handleUnauthorized(response.status)) return;
+      throw new Error(payload.error || "Failed to delete order");
+    }
+
+    allOrders = allOrders.filter(order => Number(order.id) !== Number(orderId));
+    applyFilters();
+    showToast(`Order #${orderId} deleted.`, "success");
+  } catch (error) {
+    console.error("Failed to delete order:", error);
+    showToast(error.message || "Failed to delete order", "error");
+  }
+}
+
+async function loadLoyaltyCustomers() {
+  const loyaltyBody = document.getElementById("loyaltyCustomersBody");
+  const loyaltySearchInput = document.getElementById("loyaltySearchInput");
+  if (!loyaltyBody) return;
+
+  loyaltyBody.innerHTML = `<tr><td colspan="7">Loading loyalty customers.</td></tr>`;
+
+  try {
+    const search = String(loyaltySearchInput?.value || "").trim();
+    const response = await fetch(`/api/admin/customers/loyalty?search=${encodeURIComponent(search)}&limit=50`, {
+      headers: getAdminHeaders()
+    });
+    const payload = await response.json();
+
+    if (!response.ok) {
+      if (handleUnauthorized(response.status)) return;
+      throw new Error(payload.error || "Failed to load customer loyalty list");
+    }
+
+    const customers = Array.isArray(payload.customers) ? payload.customers : [];
+    if (customers.length === 0) {
+      loyaltyBody.innerHTML = `<tr><td colspan="7">No customers found.</td></tr>`;
+      return;
+    }
+
+    loyaltyBody.innerHTML = customers.map((customer) => `
+      <tr>
+        <td><strong>#${Number(customer.id)}</strong> ${escapeHtml(customer.name || "")}</td>
+        <td>
+          <div>${escapeHtml(customer.phone || "-")}</div>
+          <div style="color:#6b7280;font-size:12px;">${escapeHtml(customer.email || "-")}</div>
+        </td>
+        <td><strong>${Number(customer.loyalty_points || 0)}</strong></td>
+        <td>${Number(customer.lifetime_points_earned || 0)}</td>
+        <td>${Number(customer.lifetime_points_redeemed || 0)}</td>
+        <td>
+          <div style="font-size:12px;line-height:1.5;">
+            <div><strong>Code:</strong> ${escapeHtml(customer.referral_code || "-")}</div>
+            <div><strong>Referred By:</strong> ${customer.referred_by_user_id ? `#${Number(customer.referred_by_user_id)} ${escapeHtml(customer.referred_by_name || "")}` : "-"}</div>
+            <div><strong>Success/Pending:</strong> ${Number(customer.successful_referrals_count || 0)} / ${Number(customer.pending_referrals_count || 0)}</div>
+          </div>
+        </td>
+        <td>
+          <div class="mini-actions">
+            <button class="table-btn view js-view-customer-loyalty" type="button" data-customer-id="${Number(customer.id)}">View History</button>
+            <button class="table-btn save js-adjust-points" type="button" data-customer-id="${Number(customer.id)}">Adjust Points</button>
+          </div>
+        </td>
+      </tr>
+    `).join("");
+  } catch (error) {
+    console.error("Failed to load loyalty customers:", error);
+    loyaltyBody.innerHTML = `<tr><td colspan="7">Failed to load customer loyalty list.</td></tr>`;
+    showToast(error.message || "Failed to load customer loyalty list", "error");
+  }
+}
+
+async function openCustomerLoyaltyModal(customerId) {
+  const modal = document.getElementById("orderModal");
+  const modalBody = document.getElementById("orderModalBody");
+  if (!modal || !modalBody) return;
+
+  modal.style.display = "block";
+  modalBody.innerHTML = "Loading customer loyalty history.";
+
+  try {
+    const response = await fetch(`/api/admin/customers/${customerId}/loyalty-transactions?limit=100`, {
+      headers: getAdminHeaders()
+    });
+    const payload = await response.json();
+
+    if (!response.ok) {
+      if (handleUnauthorized(response.status)) return;
+      throw new Error(payload.error || "Failed to load customer loyalty history");
+    }
+
+    const customer = payload.customer || {};
+    const transactions = Array.isArray(payload.transactions) ? payload.transactions : [];
+
+    modalBody.innerHTML = `
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;">
+        <h2 style="margin-top:0;">Customer Loyalty #${Number(customer.id || customerId)}</h2>
+        <button class="secondary-btn js-export-customer-loyalty-csv" type="button" data-customer-id="${Number(customer.id || customerId)}">Export CSV</button>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-card">
+          <h3>Customer</h3>
+          <p><strong>Name:</strong> ${escapeHtml(customer.name || "-")}</p>
+          <p><strong>Phone:</strong> ${escapeHtml(customer.phone || "-")}</p>
+          <p><strong>Email:</strong> ${escapeHtml(customer.email || "-")}</p>
+          <p><strong>Referral Code:</strong> ${escapeHtml(customer.referral_code || "-")}</p>
+          <p><strong>Referred By:</strong> ${
+            customer.referred_by?.id
+              ? `#${Number(customer.referred_by.id)} ${escapeHtml(customer.referred_by.name || "")} (${escapeHtml(customer.referred_by.email || "-")})`
+              : "-"
+          }</p>
+        </div>
+        <div class="detail-card">
+          <h3>Balances</h3>
+          <p><strong>Current Points:</strong> ${Number(customer.loyalty_points || 0)}</p>
+          <p><strong>Lifetime Earned:</strong> ${Number(customer.lifetime_points_earned || 0)}</p>
+          <p><strong>Lifetime Redeemed:</strong> ${Number(customer.lifetime_points_redeemed || 0)}</p>
+          <p><strong>Referral Applied At:</strong> ${escapeHtml(customer.referral_applied_at ? formatMalaysiaDateTime(customer.referral_applied_at) : "-")}</p>
+          <p><strong>Referral Bonus Granted At:</strong> ${escapeHtml(customer.referral_reward_granted_at ? formatMalaysiaDateTime(customer.referral_reward_granted_at) : "-")}</p>
+          <p><strong>Referral Bonus Reversed At:</strong> ${escapeHtml(customer.referral_reward_reversed_at ? formatMalaysiaDateTime(customer.referral_reward_reversed_at) : "-")}</p>
+          <p><strong>Referrals (Success/Pending):</strong> ${Number(payload.referral_summary?.successful_referrals_count || 0)} / ${Number(payload.referral_summary?.pending_referrals_count || 0)}</p>
+        </div>
+      </div>
+
+      <div class="detail-items">
+        <h3>Recent Loyalty Transactions</h3>
+        ${
+          transactions.length > 0
+            ? transactions.map((tx) => `
+              <div class="detail-item">
+                <p><strong>${escapeHtml(String(tx.type_label || tx.type || ""))}</strong> | ${Number(tx.points || 0)} points | ${escapeHtml(formatMalaysiaDateTime(tx.created_at))}</p>
+                <p>Order: ${tx.order_id ? `#${Number(tx.order_id)}` : "-"}</p>
+                <p>Type code: ${escapeHtml(String(tx.type || "-"))}</p>
+                <p>${escapeHtml(tx.description || "-")}</p>
+              </div>
+            `).join("")
+            : "<p>No loyalty transactions found.</p>"
+        }
+      </div>
+    `;
+  } catch (error) {
+    console.error("Failed to load customer loyalty modal:", error);
+    modalBody.innerHTML = "Failed to load customer loyalty history.";
+  }
+}
+
+function openAdjustPointsModal(customerId) {
+  const modal = document.getElementById("adjustPointsModal");
+  const customerIdInput = document.getElementById("adjustCustomerId");
+  const pointsInput = document.getElementById("adjustPoints");
+  const reasonInput = document.getElementById("adjustReason");
+  const typeInput = document.getElementById("adjustType");
+
+  if (!modal || !customerIdInput || !pointsInput || !reasonInput || !typeInput) return;
+  currentAdjustCustomerId = Number(customerId);
+  customerIdInput.value = String(currentAdjustCustomerId || "");
+  pointsInput.value = "";
+  reasonInput.value = "";
+  typeInput.value = "add";
+  modal.style.display = "block";
+}
+
+function closeAdjustPointsModal() {
+  const modal = document.getElementById("adjustPointsModal");
+  if (modal) modal.style.display = "none";
+  currentAdjustCustomerId = null;
+}
+
+async function submitAdjustPointsForm(event) {
+  event.preventDefault();
+
+  const customerId = Number(document.getElementById("adjustCustomerId")?.value || 0);
+  const adjustmentType = String(document.getElementById("adjustType")?.value || "").trim().toLowerCase();
+  const points = Number(document.getElementById("adjustPoints")?.value || 0);
+  const reason = String(document.getElementById("adjustReason")?.value || "").trim();
+
+  if (!Number.isInteger(customerId) || customerId <= 0) {
+    showToast("Customer ID is invalid.", "error");
+    return;
+  }
+  if (!["add", "deduct"].includes(adjustmentType)) {
+    showToast("Adjustment type is invalid.", "error");
+    return;
+  }
+  if (!Number.isInteger(points) || points <= 0) {
+    showToast("Points must be a positive integer.", "error");
+    return;
+  }
+  if (!reason) {
+    showToast("Reason is required.", "error");
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/admin/customers/loyalty-adjustments", {
+      method: "POST",
+      headers: getAdminHeaders({
+        "Content-Type": "application/json"
+      }),
+      body: JSON.stringify({
+        customer_id: customerId,
+        adjustment_type: adjustmentType,
+        points,
+        reason
+      })
+    });
+    const payload = await response.json();
+
+    if (!response.ok) {
+      if (handleUnauthorized(response.status)) return;
+      throw new Error(payload.error || "Failed to adjust points");
+    }
+
+    showToast("Loyalty points adjusted.", "success");
+    closeAdjustPointsModal();
+    await loadLoyaltyCustomers();
+    await loadLoyaltyStats();
+    await openCustomerLoyaltyModal(customerId);
+  } catch (error) {
+    console.error("Failed to submit loyalty adjustment:", error);
+    showToast(error.message || "Failed to adjust points", "error");
   }
 }
 
@@ -678,6 +1106,13 @@ window.addEventListener("DOMContentLoaded", () => {
   const dateFromFilter = document.getElementById("dateFromFilter");
   const dateToFilter = document.getElementById("dateToFilter");
   const resetTimelineBtn = document.getElementById("resetTimelineBtn");
+  const loyaltySearchBtn = document.getElementById("loyaltySearchBtn");
+  const loyaltySearchInput = document.getElementById("loyaltySearchInput");
+  const loyaltyExportAllBtn = document.getElementById("loyaltyExportAllBtn");
+  const adjustPointsModalOverlay = document.getElementById("adjustPointsModalOverlay");
+  const adjustPointsModalCloseBtn = document.getElementById("adjustPointsModalCloseBtn");
+  const adjustPointsForm = document.getElementById("adjustPointsForm");
+  const refreshLoyaltyStatsBtn = document.getElementById("refreshLoyaltyStatsBtn");
 
   if (logoutBtn) {
     logoutBtn.addEventListener("click", logoutAdmin);
@@ -706,6 +1141,26 @@ window.addEventListener("DOMContentLoaded", () => {
   if (resetTimelineBtn) {
     resetTimelineBtn.addEventListener("click", resetTimeline);
   }
+  if (loyaltySearchBtn) {
+    loyaltySearchBtn.addEventListener("click", loadLoyaltyCustomers);
+  }
+  if (loyaltyExportAllBtn) {
+    loyaltyExportAllBtn.addEventListener("click", async () => {
+      try {
+        await exportLoyaltyTransactionsCsv(null);
+        showToast("Loyalty CSV exported.", "success");
+      } catch (error) {
+        console.error("Failed to export all loyalty CSV:", error);
+        showToast(error.message || "Failed to export loyalty CSV", "error");
+      }
+    });
+  }
+  loyaltySearchInput?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      loadLoyaltyCustomers();
+    }
+  });
 
   if (orderModalOverlay) {
     orderModalOverlay.addEventListener("click", closeOrderModal);
@@ -713,6 +1168,18 @@ window.addEventListener("DOMContentLoaded", () => {
 
   if (orderModalCloseBtn) {
     orderModalCloseBtn.addEventListener("click", closeOrderModal);
+  }
+  if (adjustPointsModalOverlay) {
+    adjustPointsModalOverlay.addEventListener("click", closeAdjustPointsModal);
+  }
+  if (adjustPointsModalCloseBtn) {
+    adjustPointsModalCloseBtn.addEventListener("click", closeAdjustPointsModal);
+  }
+  if (adjustPointsForm) {
+    adjustPointsForm.addEventListener("submit", submitAdjustPointsForm);
+  }
+  if (refreshLoyaltyStatsBtn) {
+    refreshLoyaltyStatsBtn.addEventListener("click", loadLoyaltyStats);
   }
 
   searchInput?.addEventListener("input", applyFilters);
@@ -763,6 +1230,15 @@ window.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    const deleteBtn = event.target.closest(".js-delete-order");
+    if (deleteBtn) {
+      const orderId = Number(deleteBtn.dataset.orderId);
+      if (orderId) {
+        deleteOrder(orderId);
+      }
+      return;
+    }
+
     const mobileRow = event.target.closest(".js-order-row");
     if (
       mobileRow &&
@@ -782,10 +1258,45 @@ window.addEventListener("DOMContentLoaded", () => {
       if (orderId) {
         saveTrackingNote(orderId);
       }
+      return;
+    }
+
+    const customerLoyaltyBtn = event.target.closest(".js-view-customer-loyalty");
+    if (customerLoyaltyBtn) {
+      const customerId = Number(customerLoyaltyBtn.dataset.customerId);
+      if (customerId) {
+        openCustomerLoyaltyModal(customerId);
+      }
+      return;
+    }
+
+    const adjustPointsBtn = event.target.closest(".js-adjust-points");
+    if (adjustPointsBtn) {
+      const customerId = Number(adjustPointsBtn.dataset.customerId);
+      if (customerId) {
+        openAdjustPointsModal(customerId);
+      }
+      return;
+    }
+
+    const exportCustomerCsvBtn = event.target.closest(".js-export-customer-loyalty-csv");
+    if (exportCustomerCsvBtn) {
+      const customerId = Number(exportCustomerCsvBtn.dataset.customerId);
+      if (customerId) {
+        exportLoyaltyTransactionsCsv(customerId)
+          .then(() => showToast(`Loyalty CSV exported for customer #${customerId}.`, "success"))
+          .catch((error) => {
+            console.error("Failed to export customer loyalty CSV:", error);
+            showToast(error.message || "Failed to export loyalty CSV", "error");
+          });
+      }
     }
   });
 
   syncTimelineInputs();
   loadOrders();
+  loadLoyaltyCustomers();
+  loadLoyaltyStats();
   setInterval(loadOrders, AUTO_REFRESH_INTERVAL_MS);
+  setInterval(loadLoyaltyStats, AUTO_REFRESH_INTERVAL_MS);
 });
