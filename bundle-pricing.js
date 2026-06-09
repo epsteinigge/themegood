@@ -275,8 +275,10 @@ function calculateBundleTotal({ bundleName = "", bundlePrice = 0, slots = [], se
   } else if (profile === "five_800g_discounted") {
     let surchargeTotal = 0;
     let cocoaCount = 0;
+    const discountedIndex = orderedSelections.findIndex((selection) => !selection.isCocoa);
+    const resolvedDiscountedIndex = discountedIndex >= 0 ? discountedIndex : 0;
     orderedSelections.forEach((selection, index) => {
-      const isDiscountedCan = index === 0;
+      const isDiscountedCan = index === resolvedDiscountedIndex;
       const isCocoa = selection.isCocoa;
       const cocoaPrice = cocoaCount === 0 ? FIVE_CAN_FIRST_COCOA_PRICE : FIVE_CAN_ADDITIONAL_COCOA_PRICE;
       const surcharge = isCocoa ? roundMoney(cocoaPrice - TWO_CAN_800G_PRICE) : 0;

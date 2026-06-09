@@ -193,8 +193,10 @@ function buildDetailBundleBreakdownRowsFromSelects(selects = []) {
 
   if (isFiveCanBundle) {
     let cocoaCount = 0;
+    const discountedIndex = rows.findIndex((row) => !isBundleCocoaLabel(row.label));
+    const resolvedDiscountedIndex = discountedIndex >= 0 ? discountedIndex : 0;
     return rows.map((row, index) => {
-      const discounted = index === 0;
+      const discounted = index === resolvedDiscountedIndex;
       const isCocoa = isBundleCocoaLabel(row.label);
       const basePrice = discounted ? 54 : 108;
       const cocoaPrice = cocoaCount === 0 ? 138 : 128;
@@ -252,9 +254,11 @@ function normalizeDetailFiveCanBundleBreakdown(rows = []) {
   if (!isDetailFiveCanBreakdown(rows)) return Array.isArray(rows) ? rows : [];
 
   let cocoaCount = 0;
+  const discountedIndex = rows.findIndex((row) => !isBundleCocoaLabel(row?.label));
+  const resolvedDiscountedIndex = discountedIndex >= 0 ? discountedIndex : 0;
   return rows.map((row, index) => {
     const isCocoa = isBundleCocoaLabel(row?.label);
-    const discounted = index === 0;
+    const discounted = index === resolvedDiscountedIndex;
     const basePrice = discounted ? 54 : 108;
     const cocoaPrice = cocoaCount === 0 ? 138 : 128;
     const price = isCocoa ? basePrice + (cocoaPrice - 108) : basePrice;

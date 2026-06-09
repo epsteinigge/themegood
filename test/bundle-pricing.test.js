@@ -168,6 +168,20 @@ runTest("4 mix + 1 cocoa = 516", () => {
   ], 486), 516);
 });
 
+runTest("5x mixed Cocoa discounts a non-Cocoa can", () => {
+  const slots = makeSlots(["800g", "800g", "800g", "800g", "800g"]);
+  const result = resultFor(slots, [
+    { label: "Cocoa Multigrain", size: "800g" },
+    { label: "Cocoa Multigrain", size: "800g" },
+    { label: "Bilberry Multigrain", size: "800g" },
+    { label: "Bilberry Multigrain", size: "800g" },
+    { label: "Bilberry Multigrain", size: "800g" }
+  ], 486);
+  assert.equal(result.subtotal, 536);
+  assert.deepEqual(result.breakdown.map((row) => row.price), [138, 128, 54, 108, 108]);
+  assert.equal(result.breakdown[2].pricing_note, "Discounted 5th can");
+});
+
 runTest("5 cocoa = 596", () => {
   const slots = makeSlots(["800g", "800g", "800g", "800g", "800g"]);
   assert.equal(subtotalFor(slots, [

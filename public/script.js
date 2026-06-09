@@ -2044,8 +2044,10 @@
 
     if (isFiveCanBundle) {
       let cocoaCount = 0;
+      const discountedIndex = rows.findIndex((row) => !row.isCocoa);
+      const resolvedDiscountedIndex = discountedIndex >= 0 ? discountedIndex : 0;
       return rows.map((row, index) => {
-        const discounted = index === 0;
+        const discounted = index === resolvedDiscountedIndex;
         let resolvedPrice = discounted ? 54 : 108;
         let pricingNote = row.pricing_note;
 
@@ -2078,9 +2080,11 @@
     if (!isFiveCanBundleBreakdown(rows)) return Array.isArray(rows) ? rows : [];
 
     let cocoaCount = 0;
+    const discountedIndex = rows.findIndex((row) => !/cocoa/i.test(String(row?.label || "")));
+    const resolvedDiscountedIndex = discountedIndex >= 0 ? discountedIndex : 0;
     return rows.map((row, index) => {
       const isCocoa = /cocoa/i.test(String(row?.label || ""));
-      const discounted = index === 0;
+      const discounted = index === resolvedDiscountedIndex;
       const basePrice = discounted ? 54 : 108;
       const cocoaPrice = cocoaCount === 0 ? 138 : 128;
       const price = isCocoa ? basePrice + (cocoaPrice - 108) : basePrice;
