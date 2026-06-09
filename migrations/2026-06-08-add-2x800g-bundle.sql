@@ -38,7 +38,7 @@ inserted_product AS (
     '2x 800g',
     'Custom bundle with 2 selectable 800g slots.',
     216.00,
-    '/uploads/2x-800g-oat-melon-bundle.webp',
+    '/uploads/2x-800g-bilberry-pomegranate.webp',
     stock,
     0,
     'bundle',
@@ -87,7 +87,7 @@ WITH inserted_product AS (
   WHERE name = '2x 800g' AND product_type = 'bundle'
 )
 INSERT INTO product_images (product_id, image_url, sort_order, is_primary)
-SELECT inserted_product.id, '/uploads/2x-800g-oat-melon-bundle.webp', 0, true
+SELECT inserted_product.id, '/uploads/2x-800g-bilberry-pomegranate.webp', 0, true
 FROM inserted_product
 WHERE NOT EXISTS (
   SELECT 1 FROM product_images WHERE product_id = inserted_product.id
