@@ -165,8 +165,18 @@ app.use(compression());
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use("/api", (req, res, next) => {
+  res.setHeader("Cache-Control", "no-store");
+  next();
+});
 app.use("/uploads", express.static(uploadDir));
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "public"), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith(".html") || filePath.endsWith(".js")) {
+      res.setHeader("Cache-Control", "no-cache");
+    }
+  }
+}));
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -2085,23 +2095,18 @@ async function getGeneralPromoConfig(client = pool) {
 }
 
 function getBundleSlotNote(profile, slotIndex, slots = [], requiredSize = "") {
-  if (isFreeCanSlot(slotIndex, slots, profile)) {
-    return "Free can slot. Cocoa flavour is not allowed here.";
-  }
-
-  if (profile === "five_800g_discounted") {
-    return "The discounted 5th-can price is applied automatically after all flavours are selected.";
-  }
-
-  if (profile === "six_plus_one_800g" || profile === "twelve_plus_three_800g") {
-    return "Final pricing updates after all paid and free can flavours are selected.";
-  }
-
   if (profile === "two_800g_one_300g" && getCanonicalBundleSize(requiredSize) === "300g") {
     return "300g add-on pricing updates automatically when Cocoa is chosen.";
   }
 
-  if (profile === "two_800g_one_300g" && getCanonicalBundleSize(requiredSize) === "800g") {
+  if (
+    (profile === "two_800g" ||
+      profile === "two_800g_one_300g" ||
+      profile === "five_800g_discounted" ||
+      profile === "six_plus_one_800g" ||
+      profile === "twelve_plus_three_800g") &&
+    getCanonicalBundleSize(requiredSize) === "800g"
+  ) {
     return "Cocoa 800g selections update the bundle total automatically.";
   }
 
@@ -2109,26 +2114,16 @@ function getBundleSlotNote(profile, slotIndex, slots = [], requiredSize = "") {
 }
 
 function getBundleOptionNote(profile, option, displayAdjustment) {
-  if (profile === "two_800g_one_300g" && Number.isFinite(displayAdjustment) && displayAdjustment > 0) {
+  if (
+    (profile === "two_800g" ||
+      profile === "two_800g_one_300g" ||
+      profile === "five_800g_discounted" ||
+      profile === "six_plus_one_800g" ||
+      profile === "twelve_plus_three_800g") &&
+    Number.isFinite(displayAdjustment) &&
+    displayAdjustment > 0
+  ) {
     return `Adds RM ${Number(displayAdjustment).toFixed(2)} to this bundle.`;
-  }
-
-  if (profile === "five_800g_discounted" && isCocoaFlavor(option?.product_name)) {
-    return "Cocoa changes the package total once all 5 cans are selected.";
-  }
-
-  if (
-    (profile === "five_800g_discounted" || profile === "six_plus_one_800g" || profile === "twelve_plus_three_800g") &&
-    isPassionBeetrootFlavor(option?.product_name)
-  ) {
-    return "Passion Beetroot gets its qualifying 5+ can bundle discount automatically.";
-  }
-
-  if (
-    (profile === "six_plus_one_800g" || profile === "twelve_plus_three_800g") &&
-    isNoSurchargeMixFlavor(option?.product_name)
-  ) {
-    return "Allowed in both paid and free-can slots.";
   }
 
   return "";

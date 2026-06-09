@@ -135,32 +135,10 @@ function isBundlePassionBeetrootLabel(label) {
   return normalized.includes("passion") && normalized.includes("beetroot");
 }
 
-function getQualifying800gBundlePrice(label, qualifiesForPassionDiscount) {
-  if (qualifiesForPassionDiscount && isBundlePassionBeetrootLabel(label) && !isBundleCocoaLabel(label)) {
-    return 98;
-  }
-  return 103;
-}
-
-function getDiscountedFifthBundlePrice(label, qualifiesForPassionDiscount) {
-  if (qualifiesForPassionDiscount && isBundlePassionBeetrootLabel(label) && !isBundleCocoaLabel(label)) {
-    return 49;
-  }
-  return 54;
-}
-
-function findDiscountedFifthIndex(rows = []) {
-  const plainMixIndex = rows.findIndex((row) => !isBundleCocoaLabel(row?.label) && !isBundlePassionBeetrootLabel(row?.label));
-  if (plainMixIndex >= 0) return plainMixIndex;
-
-  const nonCocoaIndex = rows.findIndex((row) => !isBundleCocoaLabel(row?.label));
-  if (nonCocoaIndex >= 0) return nonCocoaIndex;
-
-  return rows.length > 0 ? 0 : -1;
-}
-
 function buildDetailBundleBreakdownRowsFromSelects(selects = []) {
   const sizes = selects.map((select) => String(select.options[select.selectedIndex]?.dataset?.choiceSize || "").trim().toLowerCase());
+  const isTwo800gBundle = sizes.length === 2
+    && sizes.every((size) => size === "800g");
   const isTwoPlusOneBundle = sizes.length === 3
     && sizes.filter((size) => size === "800g").length === 2
     && sizes.filter((size) => size === "300g").length === 1;
@@ -177,17 +155,27 @@ function buildDetailBundleBreakdownRowsFromSelects(selects = []) {
     let extra = Number(option?.dataset.extra || 0);
     const pricingNote = normalizeDetailLegacyBundlePricingNote(option?.dataset.pricingNote || "");
 
-    if (isTwoPlusOneBundle) {
+    if (isTwo800gBundle) {
       if (normalizedSize === "800g") {
         if (isCocoa) {
-          price = 128;
+          price = 138;
           extra = 0;
         } else {
-          price = getQualifying800gBundlePrice(label, false) + extra;
+          price = 108;
+          extra = 0;
+        }
+      }
+    } else if (isTwoPlusOneBundle) {
+      if (normalizedSize === "800g") {
+        if (isCocoa) {
+          price = 138;
+          extra = 0;
+        } else {
+          price = 108;
           extra = 0;
         }
       } else if (normalizedSize === "300g") {
-        price = 27 + (isCocoa ? 0 : extra);
+        price = isCocoa ? 36 : 28;
         extra = 0;
       }
     }
@@ -204,20 +192,21 @@ function buildDetailBundleBreakdownRowsFromSelects(selects = []) {
   });
 
   if (isFiveCanBundle) {
-    const discountedIndex = findDiscountedFifthIndex(rows);
-    const qualifiesForPassionDiscount = true;
-
+    let cocoaCount = 0;
     return rows.map((row, index) => {
-      const discounted = index === discountedIndex;
+      const discounted = index === 0;
+      const isCocoa = isBundleCocoaLabel(row.label);
+      const basePrice = discounted ? 54 : 108;
+      const cocoaPrice = cocoaCount === 0 ? 138 : 128;
+      const price = isCocoa ? basePrice + (cocoaPrice - 108) : basePrice;
+      const pricingNote = discounted ? "Discounted 5th can" : (isCocoa && cocoaCount > 0 ? "Additional Cocoa bundle price" : row.pricing_note);
+      if (isCocoa) cocoaCount += 1;
+
       return {
         ...row,
-        price: isBundleCocoaLabel(row.label)
-          ? 128
-          : (discounted
-            ? getDiscountedFifthBundlePrice(row.label, qualifiesForPassionDiscount) + Number(row.extra || 0)
-            : getQualifying800gBundlePrice(row.label, qualifiesForPassionDiscount) + Number(row.extra || 0)),
+        price,
         extra: 0,
-        pricing_note: isBundleCocoaLabel(row.label) ? "" : (discounted ? "Discounted 5th can" : row.pricing_note)
+        pricing_note: pricingNote
       };
     });
   }
@@ -259,12 +248,43 @@ function getDetailPreviewBundleTotalFromRows(rows = []) {
   return Number((Array.isArray(rows) ? rows : []).reduce((sum, row) => sum + Number(row?.price || 0), 0).toFixed(2));
 }
 
+function normalizeDetailFiveCanBundleBreakdown(rows = []) {
+  if (!isDetailFiveCanBreakdown(rows)) return Array.isArray(rows) ? rows : [];
+
+  let cocoaCount = 0;
+  return rows.map((row, index) => {
+    const isCocoa = isBundleCocoaLabel(row?.label);
+    const discounted = index === 0;
+    const basePrice = discounted ? 54 : 108;
+    const cocoaPrice = cocoaCount === 0 ? 138 : 128;
+    const price = isCocoa ? basePrice + (cocoaPrice - 108) : basePrice;
+    const pricingNote = discounted
+      ? "Discounted 5th can"
+      : (isCocoa && cocoaCount > 0 ? "Additional Cocoa bundle price" : (row.pricing_note || "Paid 800g can"));
+    if (isCocoa) cocoaCount += 1;
+
+    return {
+      ...row,
+      price,
+      extra: isCocoa ? Math.max(0, price - basePrice) : 0,
+      pricing_note: pricingNote,
+      is_free_can: false
+    };
+  });
+}
+
 function isDetailTwoPlusOneBreakdown(rows = []) {
   const sizes = (Array.isArray(rows) ? rows : [])
     .map((row) => String(row?.size || "").trim().toLowerCase());
   return sizes.length === 3
     && sizes.filter((size) => size === "800g").length === 2
     && sizes.filter((size) => size === "300g").length === 1;
+}
+
+function isDetailTwo800gBreakdown(rows = []) {
+  const sizes = (Array.isArray(rows) ? rows : [])
+    .map((row) => String(row?.size || "").trim().toLowerCase());
+  return sizes.length === 2 && sizes.every((size) => size === "800g");
 }
 
 function isDetailFiveCanBreakdown(rows = []) {
@@ -276,7 +296,7 @@ function isDetailFiveCanBreakdown(rows = []) {
 function resolveDetailBundleDisplayTotals(rows = [], totals = {}) {
   const previewTotal = getDetailPreviewBundleTotalFromRows(rows);
 
-  if ((isDetailTwoPlusOneBreakdown(rows) || isDetailFiveCanBreakdown(rows)) && previewTotal > 0) {
+  if ((isDetailTwo800gBreakdown(rows) || isDetailTwoPlusOneBreakdown(rows) || isDetailFiveCanBreakdown(rows)) && previewTotal > 0) {
     return {
       subtotal: previewTotal,
       baseBundlePrice: previewTotal,
@@ -296,7 +316,7 @@ function resolveDetailBundleDisplayTotals(rows = [], totals = {}) {
 function renderDetailFullBundleBreakdownPreview(breakdownEl, rows = [], totals = {}) {
   if (!breakdownEl) return;
 
-  const selectedRows = Array.isArray(rows) ? rows : [];
+  const selectedRows = normalizeDetailFiveCanBundleBreakdown(Array.isArray(rows) ? rows : []);
   const baseBundlePrice = Number(totals.baseBundlePrice || 0);
   const subtotal = Number(totals.subtotal || 0);
   const surchargeTotal = Number(totals.surchargeTotal ?? Math.max(0, subtotal - baseBundlePrice));

@@ -1,8 +1,13 @@
-const MIX_800G_PRICE = 103;
+const MIX_800G_PRICE = 108;
 const MIX_300G_PWP_PRICE = 27;
-const DISCOUNTED_FIFTH_MIX_PRICE = 54;
-const QUALIFYING_PASSION_BEETROOT_800G_PRICE = 98;
-const QUALIFYING_DISCOUNTED_FIFTH_PASSION_PRICE = 49;
+const TWO_CAN_800G_PRICE = 108;
+const TWO_CAN_300G_PRICE = 28;
+const TWO_CAN_300G_COCOA_PRICE = 36;
+const COCOA_800G_BUNDLE_PRICE = 138;
+const FIVE_CAN_800G_BASE_PRICE = 486;
+const FIVE_CAN_DISCOUNTED_800G_PRICE = 54;
+const FIVE_CAN_FIRST_COCOA_PRICE = 138;
+const FIVE_CAN_ADDITIONAL_COCOA_PRICE = 128;
 
 function roundMoney(value) {
   const amount = Number(value);
@@ -62,6 +67,10 @@ function detectBundlePricingProfile(bundleName = "", slots = []) {
   const count300g = sizes.filter((size) => size === "300g").length;
   const count600g = sizes.filter((size) => size === "600g").length;
 
+  if (sizes.length === 2 && count800g === 2 && count300g === 0 && count600g === 0) {
+    return "two_800g";
+  }
+
   if (sizes.length === 3 && count800g === 2 && count300g === 1 && count600g === 0) {
     return "two_800g_one_300g";
   }
@@ -82,8 +91,6 @@ function detectBundlePricingProfile(bundleName = "", slots = []) {
 }
 
 function getFreeCanSlotCount(profile) {
-  if (profile === "six_plus_one_800g") return 1;
-  if (profile === "twelve_plus_three_800g") return 3;
   return 0;
 }
 
@@ -93,17 +100,6 @@ function isFreeCanSlot(slotIndex, slots = [], profile = detectBundlePricingProfi
   return Number(slotIndex) >= Math.max(0, slots.length - freeCanSlotCount);
 }
 
-function validateFreeCanFlavor(flavorName) {
-  if (isCocoaFlavor(flavorName)) {
-    return {
-      valid: false,
-      error: "Free can slots cannot use Cocoa flavour."
-    };
-  }
-
-  return { valid: true, error: "" };
-}
-
 function getConfiguredBundleSurcharge(selectionOrOptions = {}) {
   const rawValue = selectionOrOptions?.bundle_extra_price ?? selectionOrOptions?.configured_bundle_extra_price ?? selectionOrOptions?.configuredAmount ?? 0;
   const amount = Number(rawValue);
@@ -111,29 +107,12 @@ function getConfiguredBundleSurcharge(selectionOrOptions = {}) {
 }
 
 function get800gBundleUnitPrice(flavorName, options = {}) {
-  const qualifiesForPassionDiscount = Boolean(options.qualifiesForPassionDiscount);
-  let price = MIX_800G_PRICE;
-
-  if (qualifiesForPassionDiscount && isPassionBeetrootFlavor(flavorName) && !isCocoaFlavor(flavorName)) {
-    price = QUALIFYING_PASSION_BEETROOT_800G_PRICE;
-  }
-
-  return roundMoney(price + getConfiguredBundleSurcharge(options));
+  const price = isCocoaFlavor(flavorName) ? COCOA_800G_BUNDLE_PRICE : MIX_800G_PRICE;
+  return roundMoney(price);
 }
 
 function get300gBundleUnitPrice(flavorName, options = {}) {
   return roundMoney(MIX_300G_PWP_PRICE + getConfiguredBundleSurcharge(options));
-}
-
-function getDiscountedFifthCanPrice(flavorName, options = {}) {
-  const qualifiesForPassionDiscount = Boolean(options.qualifiesForPassionDiscount);
-  let price = DISCOUNTED_FIFTH_MIX_PRICE;
-
-  if (qualifiesForPassionDiscount && isPassionBeetrootFlavor(flavorName) && !isCocoaFlavor(flavorName)) {
-    price = QUALIFYING_DISCOUNTED_FIFTH_PASSION_PRICE;
-  }
-
-  return roundMoney(price + getConfiguredBundleSurcharge(options));
 }
 
 function getBundleBasePrice(profile, configuredPrice, slots = []) {
@@ -143,14 +122,16 @@ function getBundleBasePrice(profile, configuredPrice, slots = []) {
   }
 
   switch (profile) {
+    case "two_800g":
+      return roundMoney(TWO_CAN_800G_PRICE * 2);
     case "two_800g_one_300g":
-      return roundMoney((MIX_800G_PRICE * 2) + MIX_300G_PWP_PRICE);
+      return roundMoney((TWO_CAN_800G_PRICE * 2) + TWO_CAN_300G_PRICE);
     case "five_800g_discounted":
-      return roundMoney((MIX_800G_PRICE * 4) + DISCOUNTED_FIFTH_MIX_PRICE);
+      return FIVE_CAN_800G_BASE_PRICE;
     case "six_plus_one_800g":
-      return roundMoney(MIX_800G_PRICE * 6);
+      return roundMoney(MIX_800G_PRICE * 7);
     case "twelve_plus_three_800g":
-      return roundMoney(MIX_800G_PRICE * 12);
+      return roundMoney(MIX_800G_PRICE * 15);
     default:
       return 0;
   }
@@ -159,25 +140,33 @@ function getBundleBasePrice(profile, configuredPrice, slots = []) {
 function getBundleOptionDisplayAdjustment({ profile, sizeName, flavorName, configuredAmount = 0 }) {
   const canonicalSize = getCanonicalBundleSize(sizeName);
   const parsedConfiguredAmount = Number(configuredAmount);
-  if (profile === "legacy" || profile === "two_800g_one_300g" || profile === "five_800g_discounted" || profile === "six_plus_one_800g" || profile === "twelve_plus_three_800g") {
+  if (
+    profile === "two_800g_one_300g" &&
+    canonicalSize === "300g" &&
+    isCocoaFlavor(flavorName)
+  ) {
+    return roundMoney(TWO_CAN_300G_COCOA_PRICE - TWO_CAN_300G_PRICE);
+  }
+
+  if (
+    (profile === "two_800g" ||
+      profile === "two_800g_one_300g" ||
+      profile === "five_800g_discounted" ||
+      profile === "six_plus_one_800g" ||
+      profile === "twelve_plus_three_800g") &&
+    canonicalSize === "800g" &&
+    isCocoaFlavor(flavorName)
+  ) {
+    return roundMoney(COCOA_800G_BUNDLE_PRICE - MIX_800G_PRICE);
+  }
+
+  if (profile === "legacy" || profile === "two_800g" || profile === "two_800g_one_300g" || profile === "five_800g_discounted" || profile === "six_plus_one_800g" || profile === "twelve_plus_three_800g") {
     return Number.isFinite(parsedConfiguredAmount) && parsedConfiguredAmount > 0
       ? roundMoney(parsedConfiguredAmount)
       : 0;
   }
 
   return 0;
-}
-
-function findDiscountedFifthCanIndex(selections = []) {
-  const plainMixIndex = selections.findIndex(
-    (selection) => !selection.isCocoa && !selection.isPassionBeetroot
-  );
-  if (plainMixIndex >= 0) return plainMixIndex;
-
-  const nonCocoaIndex = selections.findIndex((selection) => !selection.isCocoa);
-  if (nonCocoaIndex >= 0) return nonCocoaIndex;
-
-  return selections.length > 0 ? 0 : -1;
 }
 
 function buildSelectionRow(slot, selection, slotIndex) {
@@ -232,70 +221,86 @@ function calculateBundleTotal({ bundleName = "", bundlePrice = 0, slots = [], se
       validationErrors.push(`${slot.slot_label || `Slot ${index + 1}`} requires ${slot.required_size}.`);
     }
 
-    if (isFreeCanSlot(index, normalizedSlots, profile)) {
-      const validation = validateFreeCanFlavor(selection.product_name);
-      if (!validation.valid) {
-        validationErrors.push(`${slot.slot_label || `Slot ${index + 1}`}: ${validation.error}`);
-      }
-    }
   });
 
-  const qualifiesForPassionDiscount = orderedSelections.filter((selection) => selection.size === "800g").length >= 5;
   let subtotal = 0;
   const breakdown = [];
 
-  if (profile === "two_800g_one_300g") {
-    orderedSelections.forEach((selection, index) => {
-      const slot = normalizedSlots[index];
-      const standardPrice = selection.size === "300g" ? MIX_300G_PWP_PRICE : MIX_800G_PRICE;
-      const linePrice = selection.size === "300g"
-        ? get300gBundleUnitPrice(selection.product_name, selection)
-        : get800gBundleUnitPrice(selection.product_name, selection);
+  if (profile === "two_800g") {
+    let surchargeTotal = 0;
+    orderedSelections.forEach((selection) => {
+      const surcharge = selection.isCocoa ? roundMoney(COCOA_800G_BUNDLE_PRICE - TWO_CAN_800G_PRICE) : 0;
+      const linePrice = roundMoney(TWO_CAN_800G_PRICE + surcharge);
 
-      subtotal += linePrice;
+      surchargeTotal += surcharge;
       breakdown.push({
         slot_id: selection.slot_id,
         slot_label: selection.slot_label,
         label: selection.label,
         size: selection.size,
         price: linePrice,
-        extra: Math.max(0, roundMoney(linePrice - standardPrice)),
+        extra: surcharge,
+        pricing_note: "Paid 800g can",
+        is_free_can: false
+      });
+    });
+
+    subtotal = roundMoney(basePrice + surchargeTotal);
+  } else if (profile === "two_800g_one_300g") {
+    let surchargeTotal = 0;
+    orderedSelections.forEach((selection, index) => {
+      const slot = normalizedSlots[index];
+      const standardPrice = selection.size === "300g" ? TWO_CAN_300G_PRICE : TWO_CAN_800G_PRICE;
+      const surcharge = selection.isCocoa
+        ? (selection.size === "300g"
+          ? roundMoney(TWO_CAN_300G_COCOA_PRICE - TWO_CAN_300G_PRICE)
+          : getConfiguredBundleSurcharge(selection))
+        : 0;
+      const linePrice = roundMoney(standardPrice + surcharge);
+
+      surchargeTotal += surcharge;
+      breakdown.push({
+        slot_id: selection.slot_id,
+        slot_label: selection.slot_label,
+        label: selection.label,
+        size: selection.size,
+        price: linePrice,
+        extra: surcharge,
         pricing_note: selection.size === "300g" ? "300g PWP add-on" : "Paid 800g can",
         is_free_can: false
       });
     });
+
+    subtotal = roundMoney(basePrice + surchargeTotal);
   } else if (profile === "five_800g_discounted") {
-    const discountedIndex = findDiscountedFifthCanIndex(orderedSelections);
-
+    let surchargeTotal = 0;
+    let cocoaCount = 0;
     orderedSelections.forEach((selection, index) => {
-      const isDiscountedFifthCan = index === discountedIndex;
-      const standardPrice = isDiscountedFifthCan ? DISCOUNTED_FIFTH_MIX_PRICE : MIX_800G_PRICE;
-      const linePrice = isDiscountedFifthCan
-        ? getDiscountedFifthCanPrice(selection.product_name, { ...selection, qualifiesForPassionDiscount })
-        : get800gBundleUnitPrice(selection.product_name, { ...selection, qualifiesForPassionDiscount });
+      const isDiscountedCan = index === 0;
+      const isCocoa = selection.isCocoa;
+      const cocoaPrice = cocoaCount === 0 ? FIVE_CAN_FIRST_COCOA_PRICE : FIVE_CAN_ADDITIONAL_COCOA_PRICE;
+      const surcharge = isCocoa ? roundMoney(cocoaPrice - TWO_CAN_800G_PRICE) : 0;
+      const baseLinePrice = isDiscountedCan ? FIVE_CAN_DISCOUNTED_800G_PRICE : TWO_CAN_800G_PRICE;
+      const linePrice = roundMoney(baseLinePrice + surcharge);
+      if (isCocoa) cocoaCount += 1;
 
-      subtotal += linePrice;
+      surchargeTotal += surcharge;
       breakdown.push({
         slot_id: selection.slot_id,
         slot_label: selection.slot_label,
         label: selection.label,
         size: selection.size,
         price: linePrice,
-        extra: Math.max(0, roundMoney(linePrice - standardPrice)),
-        pricing_note: isDiscountedFifthCan
-          ? "Discounted 5th can"
-          : (selection.isPassionBeetroot
-            ? "Passion Beetroot 5+ bundle discount applied"
-            : "Paid 800g can"),
+        extra: surcharge,
+        pricing_note: isDiscountedCan ? "Discounted 5th can" : "Paid 800g can",
         is_free_can: false
       });
     });
+
+    subtotal = roundMoney(basePrice + surchargeTotal);
   } else if (profile === "six_plus_one_800g" || profile === "twelve_plus_three_800g") {
     orderedSelections.forEach((selection, index) => {
-      const freeCan = isFreeCanSlot(index, normalizedSlots, profile);
-      const linePrice = freeCan
-        ? 0
-        : get800gBundleUnitPrice(selection.product_name, { ...selection, qualifiesForPassionDiscount });
+      const linePrice = get800gBundleUnitPrice(selection.product_name, selection);
 
       subtotal += linePrice;
       breakdown.push({
@@ -304,13 +309,9 @@ function calculateBundleTotal({ bundleName = "", bundlePrice = 0, slots = [], se
         label: selection.label,
         size: selection.size,
         price: linePrice,
-        extra: freeCan ? 0 : Math.max(0, roundMoney(linePrice - MIX_800G_PRICE)),
-        pricing_note: freeCan
-          ? "Free can"
-          : (selection.isPassionBeetroot
-            ? "Passion Beetroot 5+ bundle discount applied"
-            : "Paid 800g can"),
-        is_free_can: freeCan
+        extra: Math.max(0, roundMoney(linePrice - MIX_800G_PRICE)),
+        pricing_note: "Paid 800g can",
+        is_free_can: false
       });
     });
   } else {
@@ -347,9 +348,14 @@ function calculateBundleTotal({ bundleName = "", bundlePrice = 0, slots = [], se
 module.exports = {
   MIX_800G_PRICE,
   MIX_300G_PWP_PRICE,
-  DISCOUNTED_FIFTH_MIX_PRICE,
-  QUALIFYING_PASSION_BEETROOT_800G_PRICE,
-  QUALIFYING_DISCOUNTED_FIFTH_PASSION_PRICE,
+  TWO_CAN_800G_PRICE,
+  TWO_CAN_300G_PRICE,
+  TWO_CAN_300G_COCOA_PRICE,
+  FIVE_CAN_800G_BASE_PRICE,
+  FIVE_CAN_DISCOUNTED_800G_PRICE,
+  FIVE_CAN_FIRST_COCOA_PRICE,
+  FIVE_CAN_ADDITIONAL_COCOA_PRICE,
+  COCOA_800G_BUNDLE_PRICE,
   getConfiguredBundleSurcharge,
   getCanonicalBundleSize,
   isCocoaFlavor,
@@ -358,10 +364,8 @@ module.exports = {
   detectBundlePricingProfile,
   getFreeCanSlotCount,
   isFreeCanSlot,
-  validateFreeCanFlavor,
   get800gBundleUnitPrice,
   get300gBundleUnitPrice,
-  getDiscountedFifthCanPrice,
   getBundleBasePrice,
   getBundleOptionDisplayAdjustment,
   calculateBundleTotal

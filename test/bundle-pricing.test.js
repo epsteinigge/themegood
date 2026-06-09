@@ -31,6 +31,15 @@ function subtotalFor(slots, entries, bundlePrice = 0) {
   }).subtotal;
 }
 
+function resultFor(slots, entries, bundlePrice = 0) {
+  return calculateBundleTotal({
+    bundleName: "Test Bundle",
+    bundlePrice,
+    slots,
+    selections: makeSelections(entries)
+  });
+}
+
 function runTest(name, fn) {
   try {
     fn();
@@ -41,20 +50,44 @@ function runTest(name, fn) {
   }
 }
 
-runTest("2x 800g mix + mix300 = 233", () => {
+runTest("2x 800g mix + mix300 = 244", () => {
   const slots = makeSlots(["800g", "800g", "300g"]);
   assert.equal(subtotalFor(slots, [
     { label: "Bilberry Multigrain", size: "800g" },
     { label: "Melon Avocado Multigrain", size: "800g" },
     { label: "Pomegranate Multigrain", size: "300g" }
-  ], 233), 233);
+  ], 244), 244);
+});
+
+runTest("2x 800g mix = 216", () => {
+  const slots = makeSlots(["800g", "800g"]);
+  assert.equal(subtotalFor(slots, [
+    { label: "Bilberry Multigrain", size: "800g" },
+    { label: "Melon Avocado Multigrain", size: "800g" }
+  ], 216), 216);
+});
+
+runTest("2x 800g mix + cocoa = 246", () => {
+  const slots = makeSlots(["800g", "800g"]);
+  assert.equal(subtotalFor(slots, [
+    { label: "Bilberry Multigrain", size: "800g" },
+    { label: "Cocoa Multigrain", size: "800g" }
+  ], 216), 246);
+});
+
+runTest("2x 800g cocoa + cocoa = 276", () => {
+  const slots = makeSlots(["800g", "800g"]);
+  assert.equal(subtotalFor(slots, [
+    { label: "Cocoa Multigrain", size: "800g" },
+    { label: "Cocoa Multigrain", size: "800g" }
+  ], 216), 276);
 });
 
 runTest("embedded size labels still satisfy slot size validation", () => {
   const slots = makeSlots(["800g", "800g", "300g"]);
   const result = calculateBundleTotal({
     bundleName: "Test Bundle",
-    bundlePrice: 233,
+    bundlePrice: 244,
     slots,
     selections: [
       { slot_id: 1, product_name: "Cocoa Multigrain", label: "Cocoa Multigrain", size_name: "Cocoa Multigrain (800g)" },
@@ -66,63 +99,65 @@ runTest("embedded size labels still satisfy slot size validation", () => {
   assert.equal(result.validation_errors.length, 0);
 });
 
-runTest("2x 800g mix + cocoa300 = 250", () => {
+runTest("2x 800g mix + cocoa300 = 252", () => {
   const slots = makeSlots(["800g", "800g", "300g"]);
   assert.equal(subtotalFor(slots, [
     { label: "Bilberry Multigrain", size: "800g" },
     { label: "Melon Avocado Multigrain", size: "800g" },
     { label: "Cocoa Multigrain", size: "300g" }
-  ], 233), 250);
+  ], 244), 252);
 });
 
-runTest("mix + cocoa + mix300 = 263", () => {
+runTest("mix + cocoa + mix300 = 274", () => {
   const slots = makeSlots(["800g", "800g", "300g"]);
   assert.equal(subtotalFor(slots, [
     { label: "Bilberry Multigrain", size: "800g" },
     { label: "Cocoa Multigrain", size: "800g" },
     { label: "Pomegranate Multigrain", size: "300g" }
-  ], 233), 263);
+  ], 244), 274);
 });
 
-runTest("mix + cocoa + cocoa300 = 280", () => {
+runTest("mix + cocoa + cocoa300 = 282", () => {
   const slots = makeSlots(["800g", "800g", "300g"]);
   assert.equal(subtotalFor(slots, [
     { label: "Bilberry Multigrain", size: "800g" },
     { label: "Cocoa Multigrain", size: "800g" },
     { label: "Cocoa Multigrain", size: "300g" }
-  ], 233), 280);
+  ], 244), 282);
 });
 
-runTest("cocoa + cocoa + mix300 = 293", () => {
+runTest("cocoa + cocoa + mix300 = 304", () => {
   const slots = makeSlots(["800g", "800g", "300g"]);
   assert.equal(subtotalFor(slots, [
     { label: "Cocoa Multigrain", size: "800g" },
     { label: "Cocoa Multigrain", size: "800g" },
     { label: "Bilberry Multigrain", size: "300g" }
-  ], 233), 293);
+  ], 244), 304);
 });
 
-runTest("cocoa + cocoa + cocoa300 = 310", () => {
+runTest("cocoa + cocoa + cocoa300 = 312", () => {
   const slots = makeSlots(["800g", "800g", "300g"]);
   assert.equal(subtotalFor(slots, [
     { label: "Cocoa Multigrain", size: "800g" },
     { label: "Cocoa Multigrain", size: "800g" },
     { label: "Cocoa Multigrain", size: "300g" }
-  ], 233), 310);
+  ], 244), 312);
 });
 
-runTest("5 mix = 466", () => {
+runTest("5 mix = 486", () => {
   const slots = makeSlots(["800g", "800g", "800g", "800g", "800g"]);
-  assert.equal(subtotalFor(slots, [
+  const result = resultFor(slots, [
     { label: "Bilberry Multigrain", size: "800g" },
     { label: "Melon Avocado Multigrain", size: "800g" },
     { label: "Pomegranate Multigrain", size: "800g" },
     { label: "Passion Fruit Multigrain", size: "800g" },
     { label: "Bilberry Multigrain", size: "800g" }
-  ], 466), 466);
+  ], 486);
+  assert.equal(result.subtotal, 486);
+  assert.deepEqual(result.breakdown.map((row) => row.price), [54, 108, 108, 108, 108]);
 });
 
-runTest("4 mix + 1 cocoa = 496", () => {
+runTest("4 mix + 1 cocoa = 516", () => {
   const slots = makeSlots(["800g", "800g", "800g", "800g", "800g"]);
   assert.equal(subtotalFor(slots, [
     { label: "Bilberry Multigrain", size: "800g" },
@@ -130,10 +165,10 @@ runTest("4 mix + 1 cocoa = 496", () => {
     { label: "Pomegranate Multigrain", size: "800g" },
     { label: "Passion Fruit Multigrain", size: "800g" },
     { label: "Cocoa Multigrain", size: "800g" }
-  ], 466), 496);
+  ], 486), 516);
 });
 
-runTest("5 cocoa = 616", () => {
+runTest("5 cocoa = 596", () => {
   const slots = makeSlots(["800g", "800g", "800g", "800g", "800g"]);
   assert.equal(subtotalFor(slots, [
     { label: "Cocoa Multigrain", size: "800g" },
@@ -141,10 +176,10 @@ runTest("5 cocoa = 616", () => {
     { label: "Cocoa Multigrain", size: "800g" },
     { label: "Cocoa Multigrain", size: "800g" },
     { label: "Cocoa Multigrain", size: "800g" }
-  ], 466), 616);
+  ], 486), 596);
 });
 
-runTest("4 cocoa + 1 mix = 586", () => {
+runTest("4 cocoa + 1 mix = 576", () => {
   const slots = makeSlots(["800g", "800g", "800g", "800g", "800g"]);
   assert.equal(subtotalFor(slots, [
     { label: "Cocoa Multigrain", size: "800g" },
@@ -152,10 +187,10 @@ runTest("4 cocoa + 1 mix = 586", () => {
     { label: "Cocoa Multigrain", size: "800g" },
     { label: "Cocoa Multigrain", size: "800g" },
     { label: "Bilberry Multigrain", size: "800g" }
-  ], 466), 586);
+  ], 486), 576);
 });
 
-runTest("1 passion + 4 mix = 461", () => {
+runTest("1 passion + 4 mix = 486", () => {
   const slots = makeSlots(["800g", "800g", "800g", "800g", "800g"]);
   assert.equal(subtotalFor(slots, [
     { label: "Passion Beetroot Multigrain", size: "800g" },
@@ -163,10 +198,10 @@ runTest("1 passion + 4 mix = 461", () => {
     { label: "Melon Avocado Multigrain", size: "800g" },
     { label: "Pomegranate Multigrain", size: "800g" },
     { label: "Passion Fruit Multigrain", size: "800g" }
-  ], 466), 461);
+  ], 486), 486);
 });
 
-runTest("2 passion + 3 mix = 456", () => {
+runTest("2 passion + 3 mix = 486", () => {
   const slots = makeSlots(["800g", "800g", "800g", "800g", "800g"]);
   assert.equal(subtotalFor(slots, [
     { label: "Passion Beetroot Multigrain", size: "800g" },
@@ -174,10 +209,10 @@ runTest("2 passion + 3 mix = 456", () => {
     { label: "Bilberry Multigrain", size: "800g" },
     { label: "Melon Avocado Multigrain", size: "800g" },
     { label: "Pomegranate Multigrain", size: "800g" }
-  ], 466), 456);
+  ], 486), 486);
 });
 
-runTest("3 passion + 2 mix = 451", () => {
+runTest("3 passion + 2 mix = 486", () => {
   const slots = makeSlots(["800g", "800g", "800g", "800g", "800g"]);
   assert.equal(subtotalFor(slots, [
     { label: "Passion Beetroot Multigrain", size: "800g" },
@@ -185,10 +220,10 @@ runTest("3 passion + 2 mix = 451", () => {
     { label: "Passion Beetroot Multigrain", size: "800g" },
     { label: "Bilberry Multigrain", size: "800g" },
     { label: "Melon Avocado Multigrain", size: "800g" }
-  ], 466), 451);
+  ], 486), 486);
 });
 
-runTest("4 passion + 1 mix = 446", () => {
+runTest("4 passion + 1 mix = 486", () => {
   const slots = makeSlots(["800g", "800g", "800g", "800g", "800g"]);
   assert.equal(subtotalFor(slots, [
     { label: "Passion Beetroot Multigrain", size: "800g" },
@@ -196,14 +231,14 @@ runTest("4 passion + 1 mix = 446", () => {
     { label: "Passion Beetroot Multigrain", size: "800g" },
     { label: "Passion Beetroot Multigrain", size: "800g" },
     { label: "Bilberry Multigrain", size: "800g" }
-  ], 466), 446);
+  ], 486), 486);
 });
 
-runTest("cocoa cannot be selected as a free can in 6+1", () => {
+runTest("6+1 prices every 800g slot with no free can discount", () => {
   const slots = makeSlots(["800g", "800g", "800g", "800g", "800g", "800g", "800g"]);
   const result = calculateBundleTotal({
     bundleName: "6+1 800g",
-    bundlePrice: 618,
+    bundlePrice: 756,
     slots,
     selections: makeSelections([
       { label: "Bilberry Multigrain", size: "800g" },
@@ -216,14 +251,15 @@ runTest("cocoa cannot be selected as a free can in 6+1", () => {
     ])
   });
 
-  assert.ok(result.validation_errors.some((error) => error.includes("Free can slots cannot use Cocoa flavour")));
+  assert.equal(result.validation_errors.length, 0);
+  assert.equal(result.subtotal, 786);
 });
 
-runTest("cocoa cannot be selected as a free can in 12+3", () => {
+runTest("12+3 prices every 800g slot with no free can discount", () => {
   const slots = makeSlots(Array(15).fill("800g"));
   const result = calculateBundleTotal({
     bundleName: "12+3 800g",
-    bundlePrice: 1236,
+    bundlePrice: 1620,
     slots,
     selections: makeSelections(
       Array(12).fill({ label: "Bilberry Multigrain", size: "800g" }).concat([
@@ -234,7 +270,8 @@ runTest("cocoa cannot be selected as a free can in 12+3", () => {
     )
   });
 
-  assert.ok(result.validation_errors.some((error) => error.includes("Free can slots cannot use Cocoa flavour")));
+  assert.equal(result.validation_errors.length, 0);
+  assert.equal(result.subtotal, 1650);
 });
 
 console.log("All bundle pricing tests passed.");

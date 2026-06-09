@@ -737,8 +737,10 @@
       size_label: "Size",
       no_image_available: "No image available",
       options_label: "Options",
+      bundle_name_2x800: "2x 800g",
       bundle_name_2x800_300: "2x 800g + 300g",
       bundle_name_5x800: "5x 800g",
+      bundle_desc_2x800: "Custom bundle with 2 selectable 800g slots.",
       bundle_desc_2x800_300: "Custom bundle with 2 selectable 800g slots and a selectable 300g slot.",
       bundle_desc_5x800: "Custom bundle with 5 selectable 800g slots.",
       product_details_coming_soon: "Product details coming soon.",
@@ -1061,8 +1063,10 @@
       size_label: "Saiz",
       no_image_available: "Tiada imej tersedia",
       options_label: "Pilihan",
+      bundle_name_2x800: "2x 800g",
       bundle_name_2x800_300: "2x 800g + 300g",
       bundle_name_5x800: "5x 800g",
+      bundle_desc_2x800: "Bundle tersuai dengan 2 slot 800g yang boleh dipilih.",
       bundle_desc_2x800_300: "Bundle tersuai dengan 2 slot 800g dan 1 slot 300g yang boleh dipilih.",
       bundle_desc_5x800: "Bundle tersuai dengan 5 slot 800g yang boleh dipilih.",
       product_details_coming_soon: "Butiran produk akan datang.",
@@ -1385,8 +1389,10 @@
       size_label: "规格",
       no_image_available: "暂无图片",
       options_label: "规格选项",
+      bundle_name_2x800: "2x 800g",
       bundle_name_2x800_300: "2x 800g + 300g",
       bundle_name_5x800: "5x 800g",
+      bundle_desc_2x800: "自定义套餐，含 2 个可选 800g 槽位。",
       bundle_desc_2x800_300: "自定义套餐，含 2 个可选 800g 槽位和 1 个可选 300g 槽位。",
       bundle_desc_5x800: "自定义套餐，含 5 个可选 800g 槽位。",
       product_details_coming_soon: "产品详情即将更新。",
@@ -1979,6 +1985,8 @@
 
   function buildBundleBreakdownRowsFromSelects(selects = []) {
     const sizes = selects.map((select) => String(select.options[select.selectedIndex]?.dataset?.size || "").trim().toLowerCase());
+    const isTwo800gBundle = sizes.length === 2
+      && sizes.every((size) => size === "800g");
     const isTwoPlusOneBundle = sizes.length === 3
       && sizes.filter((size) => size === "800g").length === 2
       && sizes.filter((size) => size === "300g").length === 1;
@@ -1996,17 +2004,27 @@
       let extra = Number(option?.dataset?.extra || 0);
       const pricingNote = normalizeLegacyBundlePricingNote(option?.dataset?.pricingNote || "");
 
-      if (isTwoPlusOneBundle) {
+      if (isTwo800gBundle) {
         if (normalizedSize === "800g") {
           if (isCocoa) {
-            price = 128;
+            price = 138;
             extra = 0;
           } else {
-            price = 103 + extra;
+            price = 108;
+            extra = 0;
+          }
+        }
+      } else if (isTwoPlusOneBundle) {
+        if (normalizedSize === "800g") {
+          if (isCocoa) {
+            price = 138;
+            extra = 0;
+          } else {
+            price = 108;
             extra = 0;
           }
         } else if (normalizedSize === "300g") {
-          price = 27 + (isCocoa ? 0 : extra);
+          price = isCocoa ? 36 : 28;
           extra = 0;
         }
       }
@@ -2025,31 +2043,26 @@
     });
 
     if (isFiveCanBundle) {
-      const discountedIndex = (() => {
-        const plainMixIndex = rows.findIndex((row) => !row.isCocoa && !row.isPassionBeetroot);
-        if (plainMixIndex >= 0) return plainMixIndex;
-        const nonCocoaIndex = rows.findIndex((row) => !row.isCocoa);
-        if (nonCocoaIndex >= 0) return nonCocoaIndex;
-        return rows.length > 0 ? 0 : -1;
-      })();
-
+      let cocoaCount = 0;
       return rows.map((row, index) => {
-        const discounted = index === discountedIndex;
-        let resolvedPrice = 103 + Number(row.extra || 0);
+        const discounted = index === 0;
+        let resolvedPrice = discounted ? 54 : 108;
+        let pricingNote = row.pricing_note;
 
         if (row.isCocoa) {
-          resolvedPrice = 128;
-        } else if (row.isPassionBeetroot && !row.isCocoa) {
-          resolvedPrice = discounted ? 49 : 98;
+          const cocoaPrice = cocoaCount === 0 ? 138 : 128;
+          resolvedPrice = resolvedPrice + (cocoaPrice - 108);
+          pricingNote = discounted ? "Discounted 5th can" : (cocoaCount === 0 ? row.pricing_note : "Additional Cocoa bundle price");
+          cocoaCount += 1;
         } else if (discounted) {
-          resolvedPrice = 54 + Number(row.extra || 0);
+          pricingNote = "Discounted 5th can";
         }
 
         return {
           ...row,
           price: resolvedPrice,
           extra: 0,
-          pricing_note: row.isCocoa ? "" : (discounted ? "Discounted 5th can" : row.pricing_note)
+          pricing_note: pricingNote
         };
       });
     }
@@ -2061,12 +2074,43 @@
     return Number((Array.isArray(rows) ? rows : []).reduce((sum, row) => sum + Number(row?.price || 0), 0).toFixed(2));
   }
 
+  function normalizeFiveCanBundleBreakdown(rows = []) {
+    if (!isFiveCanBundleBreakdown(rows)) return Array.isArray(rows) ? rows : [];
+
+    let cocoaCount = 0;
+    return rows.map((row, index) => {
+      const isCocoa = /cocoa/i.test(String(row?.label || ""));
+      const discounted = index === 0;
+      const basePrice = discounted ? 54 : 108;
+      const cocoaPrice = cocoaCount === 0 ? 138 : 128;
+      const price = isCocoa ? basePrice + (cocoaPrice - 108) : basePrice;
+      const pricingNote = discounted
+        ? "Discounted 5th can"
+        : (isCocoa && cocoaCount > 0 ? "Additional Cocoa bundle price" : (row.pricing_note || "Paid 800g can"));
+      if (isCocoa) cocoaCount += 1;
+
+      return {
+        ...row,
+        price,
+        extra: isCocoa ? Math.max(0, price - basePrice) : 0,
+        pricing_note: pricingNote,
+        is_free_can: false
+      };
+    });
+  }
+
   function isTwoPlusOneBundleBreakdown(rows = []) {
     const sizes = (Array.isArray(rows) ? rows : [])
       .map((row) => String(row?.size || "").trim().toLowerCase());
     return sizes.length === 3
       && sizes.filter((size) => size === "800g").length === 2
       && sizes.filter((size) => size === "300g").length === 1;
+  }
+
+  function isTwo800gBundleBreakdown(rows = []) {
+    const sizes = (Array.isArray(rows) ? rows : [])
+      .map((row) => String(row?.size || "").trim().toLowerCase());
+    return sizes.length === 2 && sizes.every((size) => size === "800g");
   }
 
   function isFiveCanBundleBreakdown(rows = []) {
@@ -2078,7 +2122,7 @@
   function resolveBundleDisplayTotals(rows = [], totals = {}) {
     const previewTotal = getPreviewBundleTotalFromRows(rows);
 
-    if ((isTwoPlusOneBundleBreakdown(rows) || isFiveCanBundleBreakdown(rows)) && previewTotal > 0) {
+    if ((isTwo800gBundleBreakdown(rows) || isTwoPlusOneBundleBreakdown(rows) || isFiveCanBundleBreakdown(rows)) && previewTotal > 0) {
       return {
         baseBundlePrice: previewTotal,
         subtotal: previewTotal,
@@ -2098,7 +2142,7 @@
   function renderFullBundleBreakdownPreview(breakdownEl, rows = [], totals = {}) {
     if (!breakdownEl) return;
 
-    const selectedRows = Array.isArray(rows) ? rows : [];
+    const selectedRows = normalizeFiveCanBundleBreakdown(Array.isArray(rows) ? rows : []);
     const resolvedTotals = resolveBundleDisplayTotals(selectedRows, totals);
     const baseBundlePrice = Number(resolvedTotals.baseBundlePrice || 0);
     const subtotal = Number(resolvedTotals.subtotal || 0);
@@ -2154,7 +2198,7 @@
   function renderPartialBundleBreakdown(breakdownEl, rows = [], note = "Select the remaining flavours to see the final total.") {
     if (!breakdownEl) return;
 
-    const selectedRows = (Array.isArray(rows) ? rows : []).filter((row) => row && row.label);
+    const selectedRows = normalizeFiveCanBundleBreakdown(Array.isArray(rows) ? rows : []).filter((row) => row && row.label);
     if (selectedRows.length === 0) {
       breakdownEl.innerHTML = `<div class="bundle-breakdown-list"><div class="bundle-breakdown-row"><span>${escapeHtml(note)}</span></div></div>`;
       return;
@@ -2321,7 +2365,7 @@
     const payloadRows = Array.isArray(payload.breakdown) && payload.breakdown.length === selects.length
       ? payload.breakdown.map((row) => ({ ...row }))
       : [];
-    const selectedRows = payloadRows.length === selects.length ? payloadRows : fallbackRows;
+    const selectedRows = normalizeFiveCanBundleBreakdown(payloadRows.length === selects.length ? payloadRows : fallbackRows);
     const displayTotals = resolveBundleDisplayTotals(selectedRows, {
       baseBundlePrice,
       subtotal,
@@ -4163,17 +4207,37 @@
     setActiveModalGalleryImage(modalImage.src);
   };
 
-  const renderModalPricingInfo = (selectedSize, selectedPackage, packagePrice) => {
+  const renderModalPricingInfo = (selectedSize, selectedPackage, packagePrice, quantity = 1) => {
     if (!modalExtra) return;
-    const safePrice = Number.isFinite(packagePrice) ? formatMoney(packagePrice) : "RM 0.00";
+    const normalizedQuantity = Math.max(1, Number(quantity || 1));
+    const unitPrice = Number.isFinite(packagePrice) ? Number(packagePrice) : 0;
+    const safePrice = formatMoney(unitPrice);
+    const totalPrice = formatMoney(unitPrice * normalizedQuantity);
     const packageLine = selectedPackage?.hasDirectPrice
       ? `<p class="modal-meta-line"><strong>Size Option:</strong> <span>${selectedPackage.name}</span></p>`
       : `<p class="modal-meta-line"><strong>Package:</strong> <span>${selectedPackage.name} (${getPackageDiscountLabel(selectedPackage)})</span></p>`;
     modalExtra.innerHTML = `
       <p class="modal-price-line"><strong>Price:</strong> <span class="modal-price-value">${safePrice}</span></p>
+      <p class="modal-meta-line modal-total-line"><strong>Total (${normalizedQuantity}):</strong> <span class="modal-total-value">${totalPrice}</span></p>
       <p class="modal-meta-line"><strong>Size:</strong> <span>${selectedSize.label}</span></p>
       ${packageLine}
     `;
+  };
+
+  const refreshRegularModalPricing = () => {
+    if (!currentProduct || currentProduct.isBundle || !modalExtra) return;
+
+    renderModalPricingInfo(
+      { id: currentProduct.sizeId, label: currentProduct.sizeLabel },
+      {
+        id: currentProduct.packageId,
+        name: currentProduct.packageLabel,
+        hasDirectPrice: Boolean(currentProduct.packageHasDirectPrice),
+        units: currentProduct.packageUnits
+      },
+      Number(currentProduct.packagePrice || currentProduct.price || 0),
+      Number(currentProduct.quantity || 1)
+    );
   };
 
   const renderModalSizeOptions = (el, gallery, selectedPackage, basePrice) => {
@@ -4203,10 +4267,11 @@
           currentProduct.sizeLabel = sizeInfo.label;
           currentProduct.packageId = variant.id;
           currentProduct.packageLabel = variant.name;
+          currentProduct.packageHasDirectPrice = true;
           currentProduct.packageUnits = 1;
           currentProduct.packagePrice = Math.max(0, Number(variant.price || 0));
           currentProduct.stock = Number(variant.stock || 0);
-          renderModalPricingInfo(sizeInfo, variant, currentProduct.packagePrice);
+          refreshRegularModalPricing();
         });
         modalSizeOptions.appendChild(btn);
       });
@@ -4231,7 +4296,7 @@
           currentProduct.sizeId = size.id;
         currentProduct.sizeLabel = size.label;
         currentProduct.packagePrice = sizedPrice;
-        renderModalPricingInfo(size, selectedPackage, sizedPrice);
+        refreshRegularModalPricing();
       });
       modalSizeOptions.appendChild(btn);
     });
@@ -4461,6 +4526,7 @@
       sizeLabel: selectedSize.label,
       packageId: selectedPackage.id,
       packageLabel: selectedPackage.name,
+      packageHasDirectPrice: Boolean(selectedPackage?.hasDirectPrice),
       packageUnits: selectedPackage?.hasDirectPrice ? 1 : Math.max(1, Number(selectedPackage.units || 1)),
       giftOffer: getSelectedGiftOffer(el),
       packagePrice,
@@ -4473,7 +4539,7 @@
     };
 
     modalImage.src = modalProductImage;
-    renderModalPricingInfo(selectedSize, selectedPackage, packagePrice);
+    refreshRegularModalPricing();
     renderModalSizeOptions(el, gallery, selectedPackage, price);
     renderModalGallery(sizeLinkedGallery, ({ src, sizeId: linkedSizeId }) => {
       const sizeId = linkedSizeId || getSizeIdForImage(el, src);
@@ -4601,7 +4667,7 @@
     if (e.target === qrOverlay) closeQrOverlay();
   });
 
-  document.getElementById("modal-add-cart")?.addEventListener("click", () => {
+  document.getElementById("modal-add-cart")?.addEventListener("click", async () => {
     if (!currentProduct) return;
 
     if (currentProduct.isBundle) {
@@ -4652,7 +4718,7 @@
       return;
     }
 
-    addToCartAction(currentProduct.id, currentProduct.name, currentProduct.price, {
+    await addToCartAction(currentProduct.id, currentProduct.name, currentProduct.price, {
       priceOverride: currentProduct.packagePrice,
       sizeId: currentProduct.sizeId,
       sizeLabel: currentProduct.sizeLabel,
@@ -4664,7 +4730,7 @@
       freeGiftProductId: currentProduct.freeGiftProductId,
       freeGiftMinQuantity: currentProduct.freeGiftMinQuantity,
       freeGiftQuantity: currentProduct.freeGiftQuantity
-    });
+    }, Number(currentProduct.quantity || 1));
 
     closeProductModal();
   });
@@ -4673,11 +4739,13 @@
     if (!currentProduct) return;
     currentProduct.quantity = Math.max(1, Number(currentProduct.quantity || 1) - 1);
     if (modalQtyValue) modalQtyValue.textContent = String(currentProduct.quantity);
+    refreshRegularModalPricing();
   });
   modalQtyInc?.addEventListener("click", () => {
     if (!currentProduct) return;
     currentProduct.quantity = Math.min(99, Number(currentProduct.quantity || 1) + 1);
     if (modalQtyValue) modalQtyValue.textContent = String(currentProduct.quantity);
+    refreshRegularModalPricing();
   });
   document.querySelector(".close-modal")?.addEventListener("click", closeProductModal);
   window.addEventListener("click", e => { if (e.target === modal) closeProductModal(); });
