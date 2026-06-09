@@ -2043,19 +2043,15 @@
     });
 
     if (isFiveCanBundle) {
-      let cocoaCount = 0;
       const discountedIndex = rows.findIndex((row) => !row.isCocoa);
-      const resolvedDiscountedIndex = discountedIndex >= 0 ? discountedIndex : 0;
       return rows.map((row, index) => {
-        const discounted = index === resolvedDiscountedIndex;
+        const discounted = discountedIndex >= 0 && index === discountedIndex;
         let resolvedPrice = discounted ? 54 : 108;
         let pricingNote = row.pricing_note;
 
         if (row.isCocoa) {
-          const cocoaPrice = cocoaCount === 0 ? 138 : 128;
-          resolvedPrice = resolvedPrice + (cocoaPrice - 108);
-          pricingNote = discounted ? "Discounted 5th can" : (cocoaCount === 0 ? row.pricing_note : "Additional Cocoa bundle price");
-          cocoaCount += 1;
+          resolvedPrice = 128;
+          pricingNote = "Additional Cocoa bundle price";
         } else if (discounted) {
           pricingNote = "Discounted 5th can";
         }
@@ -2079,19 +2075,15 @@
   function normalizeFiveCanBundleBreakdown(rows = []) {
     if (!isFiveCanBundleBreakdown(rows)) return Array.isArray(rows) ? rows : [];
 
-    let cocoaCount = 0;
     const discountedIndex = rows.findIndex((row) => !/cocoa/i.test(String(row?.label || "")));
-    const resolvedDiscountedIndex = discountedIndex >= 0 ? discountedIndex : 0;
     return rows.map((row, index) => {
       const isCocoa = /cocoa/i.test(String(row?.label || ""));
-      const discounted = index === resolvedDiscountedIndex;
+      const discounted = discountedIndex >= 0 && index === discountedIndex;
       const basePrice = discounted ? 54 : 108;
-      const cocoaPrice = cocoaCount === 0 ? 138 : 128;
-      const price = isCocoa ? basePrice + (cocoaPrice - 108) : basePrice;
+      const price = isCocoa ? 128 : basePrice;
       const pricingNote = discounted
         ? "Discounted 5th can"
-        : (isCocoa && cocoaCount > 0 ? "Additional Cocoa bundle price" : (row.pricing_note || "Paid 800g can"));
-      if (isCocoa) cocoaCount += 1;
+        : (isCocoa ? "Additional Cocoa bundle price" : (row.pricing_note || "Paid 800g can"));
 
       return {
         ...row,
