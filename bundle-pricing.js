@@ -6,6 +6,7 @@ const TWO_CAN_300G_COCOA_PRICE = 36;
 const COCOA_800G_BUNDLE_PRICE = 138;
 const FIVE_CAN_800G_BASE_PRICE = 486;
 const FIVE_CAN_DISCOUNTED_800G_PRICE = 54;
+const FIVE_CAN_FIRST_COCOA_PRICE = 138;
 const FIVE_CAN_ADDITIONAL_COCOA_PRICE = 128;
 
 function roundMoney(value) {
@@ -273,14 +274,16 @@ function calculateBundleTotal({ bundleName = "", bundlePrice = 0, slots = [], se
     subtotal = roundMoney(basePrice + surchargeTotal);
   } else if (profile === "five_800g_discounted") {
     let lineTotal = 0;
+    let cocoaCount = 0;
     const discountedIndex = orderedSelections.findIndex((selection) => !selection.isCocoa);
     orderedSelections.forEach((selection, index) => {
       const isDiscountedCan = discountedIndex >= 0 && index === discountedIndex;
       const isCocoa = selection.isCocoa;
       const linePrice = isCocoa
-        ? FIVE_CAN_ADDITIONAL_COCOA_PRICE
+        ? (cocoaCount === 0 ? FIVE_CAN_FIRST_COCOA_PRICE : FIVE_CAN_ADDITIONAL_COCOA_PRICE)
         : (isDiscountedCan ? FIVE_CAN_DISCOUNTED_800G_PRICE : TWO_CAN_800G_PRICE);
       const surcharge = isCocoa ? roundMoney(linePrice - TWO_CAN_800G_PRICE) : 0;
+      if (isCocoa) cocoaCount += 1;
 
       lineTotal += linePrice;
       breakdown.push({
@@ -351,6 +354,7 @@ module.exports = {
   TWO_CAN_300G_COCOA_PRICE,
   FIVE_CAN_800G_BASE_PRICE,
   FIVE_CAN_DISCOUNTED_800G_PRICE,
+  FIVE_CAN_FIRST_COCOA_PRICE,
   FIVE_CAN_ADDITIONAL_COCOA_PRICE,
   COCOA_800G_BUNDLE_PRICE,
   getConfiguredBundleSurcharge,

@@ -192,13 +192,15 @@ function buildDetailBundleBreakdownRowsFromSelects(selects = []) {
   });
 
   if (isFiveCanBundle) {
+    let cocoaCount = 0;
     const discountedIndex = rows.findIndex((row) => !isBundleCocoaLabel(row.label));
     return rows.map((row, index) => {
       const discounted = discountedIndex >= 0 && index === discountedIndex;
       const isCocoa = isBundleCocoaLabel(row.label);
       const basePrice = discounted ? 54 : 108;
-      const price = isCocoa ? 128 : basePrice;
+      const price = isCocoa ? (cocoaCount === 0 ? 138 : 128) : basePrice;
       const pricingNote = discounted ? "Discounted 5th can" : (isCocoa ? "Additional Cocoa bundle price" : row.pricing_note);
+      if (isCocoa) cocoaCount += 1;
 
       return {
         ...row,
@@ -249,15 +251,17 @@ function getDetailPreviewBundleTotalFromRows(rows = []) {
 function normalizeDetailFiveCanBundleBreakdown(rows = []) {
   if (!isDetailFiveCanBreakdown(rows)) return Array.isArray(rows) ? rows : [];
 
+  let cocoaCount = 0;
   const discountedIndex = rows.findIndex((row) => !isBundleCocoaLabel(row?.label));
   return rows.map((row, index) => {
     const isCocoa = isBundleCocoaLabel(row?.label);
     const discounted = discountedIndex >= 0 && index === discountedIndex;
     const basePrice = discounted ? 54 : 108;
-    const price = isCocoa ? 128 : basePrice;
+    const price = isCocoa ? (cocoaCount === 0 ? 138 : 128) : basePrice;
     const pricingNote = discounted
       ? "Discounted 5th can"
       : (isCocoa ? "Additional Cocoa bundle price" : (row.pricing_note || "Paid 800g can"));
+    if (isCocoa) cocoaCount += 1;
 
     return {
       ...row,

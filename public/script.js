@@ -2043,6 +2043,7 @@
     });
 
     if (isFiveCanBundle) {
+      let cocoaCount = 0;
       const discountedIndex = rows.findIndex((row) => !row.isCocoa);
       return rows.map((row, index) => {
         const discounted = discountedIndex >= 0 && index === discountedIndex;
@@ -2050,8 +2051,9 @@
         let pricingNote = row.pricing_note;
 
         if (row.isCocoa) {
-          resolvedPrice = 128;
+          resolvedPrice = cocoaCount === 0 ? 138 : 128;
           pricingNote = "Additional Cocoa bundle price";
+          cocoaCount += 1;
         } else if (discounted) {
           pricingNote = "Discounted 5th can";
         }
@@ -2075,15 +2077,17 @@
   function normalizeFiveCanBundleBreakdown(rows = []) {
     if (!isFiveCanBundleBreakdown(rows)) return Array.isArray(rows) ? rows : [];
 
+    let cocoaCount = 0;
     const discountedIndex = rows.findIndex((row) => !/cocoa/i.test(String(row?.label || "")));
     return rows.map((row, index) => {
       const isCocoa = /cocoa/i.test(String(row?.label || ""));
       const discounted = discountedIndex >= 0 && index === discountedIndex;
       const basePrice = discounted ? 54 : 108;
-      const price = isCocoa ? 128 : basePrice;
+      const price = isCocoa ? (cocoaCount === 0 ? 138 : 128) : basePrice;
       const pricingNote = discounted
         ? "Discounted 5th can"
         : (isCocoa ? "Additional Cocoa bundle price" : (row.pricing_note || "Paid 800g can"));
+      if (isCocoa) cocoaCount += 1;
 
       return {
         ...row,
