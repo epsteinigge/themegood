@@ -1,6 +1,7 @@
 let allOrders = [];
 const MALAYSIA_TIME_ZONE = "Asia/Kuala_Lumpur";
 const AUTO_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+const LOYALTY_ADMIN_VISIBLE = false;
 let currentAdjustCustomerId = null;
 
 function parseOrderDate(value) {
@@ -408,6 +409,8 @@ function renderLoyaltyStats(stats = {}) {
 }
 
 async function loadLoyaltyStats() {
+  if (!LOYALTY_ADMIN_VISIBLE) return;
+
   try {
     const response = await fetch("/api/admin/loyalty/stats", {
       headers: getAdminHeaders()
@@ -457,7 +460,7 @@ function renderOrders(orders) {
   if (!Array.isArray(orders) || orders.length === 0) {
     ordersBody.innerHTML = `
       <tr>
-        <td colspan="12">No orders found.</td>
+        <td colspan="11">No orders found.</td>
       </tr>
     `;
     return;
@@ -515,7 +518,6 @@ function renderOrders(orders) {
           <button class="table-btn save js-save-order" type="button" data-order-id="${Number(order.id)}">Save</button>
         </div>
       </td>
-      <td>${formatLoyaltyOrderSummary(order)}</td>
       <td>${formatMalaysiaDateTime(order.created_at)}</td>
       <td>
         <div class="select-inline">
@@ -534,7 +536,7 @@ async function loadOrders() {
   if (ordersBody) {
       ordersBody.innerHTML = `
         <tr>
-          <td colspan="12">Loading orders.</td>
+          <td colspan="11">Loading orders.</td>
         </tr>
       `;
   }
@@ -564,7 +566,7 @@ async function loadOrders() {
     if (ordersBody) {
       ordersBody.innerHTML = `
         <tr>
-          <td colspan="12">Failed to load orders.</td>
+          <td colspan="11">Failed to load orders.</td>
         </tr>
       `;
     }
@@ -738,20 +740,6 @@ async function openOrderModal(orderId) {
       </div>
 
       <div class="detail-items">
-        <h3>Loyalty Summary</h3>
-        <div class="detail-item">
-          <p><strong>Reward:</strong> ${order.loyalty_reward_id ? `#${Number(order.loyalty_reward_id)} ${escapeHtml(order.loyalty_reward_name || order.loyalty_reward_type || "")}` : "None"}</p>
-          <p><strong>Type:</strong> ${escapeHtml(order.loyalty_reward_type || "-")}</p>
-          <p><strong>Points Redeemed:</strong> ${Number(order.loyalty_points_redeemed || 0)}</p>
-          <p><strong>Discount Amount:</strong> RM ${Number(order.loyalty_discount_amount || 0).toFixed(2)}</p>
-          <p><strong>Free Gift:</strong> ${escapeHtml(order.loyalty_free_gift_product_name || "-")}</p>
-          <p><strong>Redeemed At:</strong> ${escapeHtml(order.loyalty_redeemed_at ? formatMalaysiaDateTime(order.loyalty_redeemed_at) : "-")}</p>
-          <p><strong>Earn Reversed At:</strong> ${escapeHtml(order.loyalty_earn_reversed_at ? formatMalaysiaDateTime(order.loyalty_earn_reversed_at) : "-")}</p>
-          <p><strong>Redeem Restored At:</strong> ${escapeHtml(order.loyalty_redeem_restored_at ? formatMalaysiaDateTime(order.loyalty_redeem_restored_at) : "-")}</p>
-        </div>
-      </div>
-
-      <div class="detail-items">
         <h3>Items</h3>
         ${
           Array.isArray(items) && items.length > 0
@@ -821,6 +809,8 @@ async function deleteOrder(orderId) {
 }
 
 async function loadLoyaltyCustomers() {
+  if (!LOYALTY_ADMIN_VISIBLE) return;
+
   const loyaltyBody = document.getElementById("loyaltyCustomersBody");
   const loyaltySearchInput = document.getElementById("loyaltySearchInput");
   if (!loyaltyBody) return;
@@ -878,6 +868,8 @@ async function loadLoyaltyCustomers() {
 }
 
 async function openCustomerLoyaltyModal(customerId) {
+  if (!LOYALTY_ADMIN_VISIBLE) return;
+
   const modal = document.getElementById("orderModal");
   const modalBody = document.getElementById("orderModalBody");
   if (!modal || !modalBody) return;
@@ -953,6 +945,8 @@ async function openCustomerLoyaltyModal(customerId) {
 }
 
 function openAdjustPointsModal(customerId) {
+  if (!LOYALTY_ADMIN_VISIBLE) return;
+
   const modal = document.getElementById("adjustPointsModal");
   const customerIdInput = document.getElementById("adjustCustomerId");
   const pointsInput = document.getElementById("adjustPoints");
@@ -976,6 +970,7 @@ function closeAdjustPointsModal() {
 
 async function submitAdjustPointsForm(event) {
   event.preventDefault();
+  if (!LOYALTY_ADMIN_VISIBLE) return;
 
   const customerId = Number(document.getElementById("adjustCustomerId")?.value || 0);
   const adjustmentType = String(document.getElementById("adjustType")?.value || "").trim().toLowerCase();
@@ -1141,26 +1136,28 @@ window.addEventListener("DOMContentLoaded", () => {
   if (resetTimelineBtn) {
     resetTimelineBtn.addEventListener("click", resetTimeline);
   }
-  if (loyaltySearchBtn) {
-    loyaltySearchBtn.addEventListener("click", loadLoyaltyCustomers);
-  }
-  if (loyaltyExportAllBtn) {
-    loyaltyExportAllBtn.addEventListener("click", async () => {
-      try {
-        await exportLoyaltyTransactionsCsv(null);
-        showToast("Loyalty CSV exported.", "success");
-      } catch (error) {
-        console.error("Failed to export all loyalty CSV:", error);
-        showToast(error.message || "Failed to export loyalty CSV", "error");
+  if (LOYALTY_ADMIN_VISIBLE) {
+    if (loyaltySearchBtn) {
+      loyaltySearchBtn.addEventListener("click", loadLoyaltyCustomers);
+    }
+    if (loyaltyExportAllBtn) {
+      loyaltyExportAllBtn.addEventListener("click", async () => {
+        try {
+          await exportLoyaltyTransactionsCsv(null);
+          showToast("Loyalty CSV exported.", "success");
+        } catch (error) {
+          console.error("Failed to export all loyalty CSV:", error);
+          showToast(error.message || "Failed to export loyalty CSV", "error");
+        }
+      });
+    }
+    loyaltySearchInput?.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        loadLoyaltyCustomers();
       }
     });
   }
-  loyaltySearchInput?.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      loadLoyaltyCustomers();
-    }
-  });
 
   if (orderModalOverlay) {
     orderModalOverlay.addEventListener("click", closeOrderModal);
@@ -1169,17 +1166,19 @@ window.addEventListener("DOMContentLoaded", () => {
   if (orderModalCloseBtn) {
     orderModalCloseBtn.addEventListener("click", closeOrderModal);
   }
-  if (adjustPointsModalOverlay) {
-    adjustPointsModalOverlay.addEventListener("click", closeAdjustPointsModal);
-  }
-  if (adjustPointsModalCloseBtn) {
-    adjustPointsModalCloseBtn.addEventListener("click", closeAdjustPointsModal);
-  }
-  if (adjustPointsForm) {
-    adjustPointsForm.addEventListener("submit", submitAdjustPointsForm);
-  }
-  if (refreshLoyaltyStatsBtn) {
-    refreshLoyaltyStatsBtn.addEventListener("click", loadLoyaltyStats);
+  if (LOYALTY_ADMIN_VISIBLE) {
+    if (adjustPointsModalOverlay) {
+      adjustPointsModalOverlay.addEventListener("click", closeAdjustPointsModal);
+    }
+    if (adjustPointsModalCloseBtn) {
+      adjustPointsModalCloseBtn.addEventListener("click", closeAdjustPointsModal);
+    }
+    if (adjustPointsForm) {
+      adjustPointsForm.addEventListener("submit", submitAdjustPointsForm);
+    }
+    if (refreshLoyaltyStatsBtn) {
+      refreshLoyaltyStatsBtn.addEventListener("click", loadLoyaltyStats);
+    }
   }
 
   searchInput?.addEventListener("input", applyFilters);
@@ -1261,42 +1260,46 @@ window.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const customerLoyaltyBtn = event.target.closest(".js-view-customer-loyalty");
-    if (customerLoyaltyBtn) {
-      const customerId = Number(customerLoyaltyBtn.dataset.customerId);
-      if (customerId) {
-        openCustomerLoyaltyModal(customerId);
+    if (LOYALTY_ADMIN_VISIBLE) {
+      const customerLoyaltyBtn = event.target.closest(".js-view-customer-loyalty");
+      if (customerLoyaltyBtn) {
+        const customerId = Number(customerLoyaltyBtn.dataset.customerId);
+        if (customerId) {
+          openCustomerLoyaltyModal(customerId);
+        }
+        return;
       }
-      return;
-    }
 
-    const adjustPointsBtn = event.target.closest(".js-adjust-points");
-    if (adjustPointsBtn) {
-      const customerId = Number(adjustPointsBtn.dataset.customerId);
-      if (customerId) {
-        openAdjustPointsModal(customerId);
+      const adjustPointsBtn = event.target.closest(".js-adjust-points");
+      if (adjustPointsBtn) {
+        const customerId = Number(adjustPointsBtn.dataset.customerId);
+        if (customerId) {
+          openAdjustPointsModal(customerId);
+        }
+        return;
       }
-      return;
-    }
 
-    const exportCustomerCsvBtn = event.target.closest(".js-export-customer-loyalty-csv");
-    if (exportCustomerCsvBtn) {
-      const customerId = Number(exportCustomerCsvBtn.dataset.customerId);
-      if (customerId) {
-        exportLoyaltyTransactionsCsv(customerId)
-          .then(() => showToast(`Loyalty CSV exported for customer #${customerId}.`, "success"))
-          .catch((error) => {
-            console.error("Failed to export customer loyalty CSV:", error);
-            showToast(error.message || "Failed to export loyalty CSV", "error");
-          });
+      const exportCustomerCsvBtn = event.target.closest(".js-export-customer-loyalty-csv");
+      if (exportCustomerCsvBtn) {
+        const customerId = Number(exportCustomerCsvBtn.dataset.customerId);
+        if (customerId) {
+          exportLoyaltyTransactionsCsv(customerId)
+            .then(() => showToast(`Loyalty CSV exported for customer #${customerId}.`, "success"))
+            .catch((error) => {
+              console.error("Failed to export customer loyalty CSV:", error);
+              showToast(error.message || "Failed to export loyalty CSV", "error");
+            });
+        }
       }
     }
   });
 
   syncTimelineInputs();
   loadOrders();
-  loadLoyaltyCustomers();
-  loadLoyaltyStats();
   setInterval(loadOrders, AUTO_REFRESH_INTERVAL_MS);
-  setInterval(loadLoyaltyStats, AUTO_REFRESH_INTERVAL_MS);
+  if (LOYALTY_ADMIN_VISIBLE) {
+    loadLoyaltyCustomers();
+    loadLoyaltyStats();
+    setInterval(loadLoyaltyStats, AUTO_REFRESH_INTERVAL_MS);
+  }
 });

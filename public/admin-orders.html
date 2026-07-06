@@ -821,7 +821,7 @@ tr:hover td{
         </article>
       </section>
 
-      <section class="card" style="margin-bottom:16px;">
+      <section class="card" style="margin-bottom:16px;" hidden>
         <div class="section-head">
           <div>
             <h2>Loyalty Performance</h2>
@@ -997,21 +997,20 @@ tr:hover td{
                 <th>Payment Badge</th>
                 <th>Status Badge</th>
                 <th>Update</th>
-                <th>Loyalty</th>
                 <th>Created</th>
                 <th>Details</th>
               </tr>
             </thead>
             <tbody id="ordersBody">
               <tr>
-                <td colspan="12">Loading orders.</td>
+                <td colspan="11">Loading orders.</td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      <section class="card" style="margin-top:16px;">
+      <section class="card" style="margin-top:16px;" hidden>
         <div class="section-head">
           <div>
             <h2>Customer Loyalty</h2>
@@ -1058,7 +1057,7 @@ tr:hover td{
   </div>
 </div>
 
-<div id="adjustPointsModal" class="modal">
+<div id="adjustPointsModal" class="modal" hidden>
   <div id="adjustPointsModalOverlay" class="modal-overlay"></div>
   <div class="modal-content">
     <button id="adjustPointsModalCloseBtn" class="modal-close" type="button">&times;</button>
