@@ -36,6 +36,54 @@
       padding: 12px;
     }
 
+    .site-announcement-bar {
+      width: calc(100% - 24px);
+      margin: 0 auto 12px;
+      padding: 12px 18px;
+      border-radius: 18px;
+      background: linear-gradient(90deg, #3a1d2a 0%, #5a2333 100%);
+      color: #fff7fa;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      box-shadow: 0 18px 40px rgba(58, 29, 42, 0.22);
+    }
+
+    .site-announcement-bar__content {
+      display: grid;
+      gap: 4px;
+    }
+
+    .site-announcement-bar__content strong {
+      font-family: "Montserrat", sans-serif;
+      font-size: 0.95rem;
+    }
+
+    .site-announcement-bar__content span {
+      font-size: 0.88rem;
+      line-height: 1.45;
+      color: rgba(255, 244, 248, 0.9);
+    }
+
+    .site-announcement-bar__action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 0 16px;
+      border-radius: 999px;
+      background: #fff;
+      color: #6a3f27;
+      text-decoration: none;
+      font-family: "Montserrat", sans-serif;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
     .page {
       width: 100%;
       max-width: none;
@@ -196,6 +244,37 @@
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
+    }
+
+    .shipping-alert {
+      display: grid;
+      gap: 8px;
+      padding: 16px 18px;
+      border-radius: 20px;
+      border: 2px solid rgba(193, 18, 47, 0.14);
+      background:
+        radial-gradient(circle at top right, rgba(255, 225, 231, 0.82), transparent 42%),
+        linear-gradient(135deg, rgba(255, 249, 250, 0.98) 0%, rgba(255, 237, 241, 0.96) 100%);
+      box-shadow: 0 16px 34px rgba(193, 18, 47, 0.08);
+    }
+
+    .shipping-alert span {
+      font-family: "Montserrat", sans-serif;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #b32038;
+    }
+
+    .shipping-alert strong {
+      color: var(--brand-deep);
+      font-family: "Montserrat", sans-serif;
+      font-size: 1rem;
+    }
+
+    .shipping-alert p {
+      color: #6c4652;
     }
 
     .order-card,
@@ -462,6 +541,18 @@
         padding: 14px;
       }
 
+      .site-announcement-bar {
+        width: calc(100% - 28px);
+        padding: 14px;
+        border-radius: 16px;
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .site-announcement-bar__action {
+        width: 100%;
+      }
+
       .hero-panel,
       .summary-panel {
         border-radius: 22px;
@@ -509,6 +600,13 @@
   </style>
 </head>
 <body>
+  <section class="site-announcement-bar" role="alert" aria-live="polite">
+    <div class="site-announcement-bar__content">
+      <strong>Shipping fee is not included in website prices.</strong>
+      <span>After placing your order, contact us on WhatsApp to confirm your shipping fee by location and pay the shipping amount separately.</span>
+    </div>
+    <a class="site-announcement-bar__action" href="https://wa.me/60187786000" target="_blank" rel="noopener noreferrer">WhatsApp 018-7786000</a>
+  </section>
   <main class="page">
     <section class="hero-panel">
       <div class="hero-content">
@@ -549,6 +647,12 @@
             proof to our WhatsApp support to finalize the order.
           </p>
         </div>
+      </div>
+
+      <div class="shipping-alert" role="alert">
+        <span>Important Shipping Notice</span>
+        <strong>The website total does not include shipping.</strong>
+        <p>Contact us on WhatsApp at 018-7786000 so we can confirm your shipping fee based on your location. That shipping amount must be paid separately after we inform you.</p>
       </div>
 
       <div class="summary-quick-grid">

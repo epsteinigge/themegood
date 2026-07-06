@@ -4644,6 +4644,7 @@
   };
 
   document.querySelectorAll(".footer-qr img").forEach(img => {
+    if (img.closest("a[href]")) return;
     img.setAttribute("tabindex", "0");
     img.setAttribute("role", "button");
     img.setAttribute("aria-label", "Open QR code");

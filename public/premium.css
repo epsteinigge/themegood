@@ -12,6 +12,7 @@
   --tg-site-max: 1440px;
   --tg-shell-pad: clamp(24px, 4vw, 56px);
   --tg-header-height: 96px;
+  --tg-announcement-height: 48px;
 }
 
 /* ===== Force Product Modal Fullscreen (all products) ===== */
@@ -88,7 +89,6 @@ body.product-page .premium-products-hero-shell {
 body.gallery-page .gallery-hero.section,
 body.shopping-details-page .products-hero.section,
 body.shopping-details-page .product-cta.section,
-body.checkout-page .checkout-hero.section,
 body.checkout-page .checkout-shell.section {
   border-radius: 34px;
   border: 1px solid rgba(159, 122, 70, 0.16);
@@ -111,10 +111,132 @@ body.checkout-page .checkout-grid {
   margin: 0 auto;
 }
 
+.site-announcement-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1300;
+  min-height: var(--tg-announcement-height);
+  padding: 10px var(--tg-shell-pad);
+  background: linear-gradient(90deg, #2f1724 0%, #4b2030 100%);
+  color: #fff7fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  box-shadow: 0 12px 28px rgba(47, 23, 36, 0.18);
+}
+
+.site-announcement-bar__content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.site-announcement-bar__content strong,
+.site-announcement-bar__content span {
+  color: inherit;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.site-announcement-bar__content strong {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 800;
+}
+
+.site-announcement-bar__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff !important;
+  text-decoration: none;
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 body.shopping-details-page #products.section,
 body.checkout-page .checkout-shell.section,
 body.gallery-page .section {
   padding-top: clamp(28px, 3.2vw, 44px) !important;
+}
+
+body.home-page main {
+  padding-top: clamp(148px, 14vw, 196px);
+}
+
+body.product-page main,
+body.gallery-page main,
+body.shopping-details-page main {
+  padding-top: clamp(188px, 15vw, 232px);
+}
+
+body.checkout-page .checkout-shipping-notice {
+  width: min(100%, var(--tg-site-max));
+  margin: 0 auto;
+  padding: clamp(18px, 2.8vw, 28px);
+  border-radius: 28px;
+  border: 2px solid rgba(179, 32, 56, 0.18);
+  background:
+    radial-gradient(circle at top right, rgba(255, 226, 232, 0.92), transparent 42%),
+    linear-gradient(135deg, rgba(255, 248, 249, 0.98) 0%, rgba(255, 236, 240, 0.94) 100%);
+  box-shadow: 0 24px 54px rgba(179, 32, 56, 0.12);
+}
+
+body.checkout-page .checkout-shipping-notice__label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(179, 32, 56, 0.1);
+  color: #8f182a;
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+body.checkout-page .checkout-shipping-notice h2 {
+  margin: 14px 0 10px;
+  color: #611c2b !important;
+  font-family: "Montserrat", sans-serif !important;
+  font-size: clamp(1.4rem, 2.4vw, 2rem);
+  letter-spacing: -0.02em;
+}
+
+body.checkout-page .checkout-shipping-notice p {
+  margin: 0;
+  color: #6c2e3d !important;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+body.checkout-page .checkout-shipping-notice__action {
+  margin-top: 16px;
+}
+
+body.has-site-announcement > header.site-header,
+body.has-site-announcement > header {
+  top: var(--tg-announcement-height) !important;
+}
+
+body.checkout-page main {
+  padding-top: clamp(148px, 12vw, 188px);
 }
 
 body.shopping-details-page .detail-card,
@@ -133,8 +255,7 @@ body.shopping-details-page .detail-card h3,
 body.checkout-page .checkout-summary h2,
 body.checkout-page .checkout-payment h2,
 body.gallery-page .gallery-hero .section-title,
-body.shopping-details-page .products-hero .section-title,
-body.checkout-page .checkout-hero .section-title {
+body.shopping-details-page .products-hero .section-title {
   color: var(--tg-ink) !important;
   font-family: "Cormorant Garamond", serif !important;
   letter-spacing: -0.02em;
@@ -142,7 +263,6 @@ body.checkout-page .checkout-hero .section-title {
 
 body.shopping-details-page .products-hero p,
 body.shopping-details-page .product-cta p,
-body.checkout-page .checkout-hero p,
 body.gallery-page .gallery-hero p,
 body.checkout-page .checkout-summary,
 body.checkout-page .checkout-payment,
@@ -2366,6 +2486,11 @@ body.product-page .premium-product-cta-shell {
   color: var(--tg-accent-deep);
   font-size: 1.3rem;
   font-weight: 800;
+}
+
+.modal-total-line .modal-total-value {
+  color: var(--tg-accent-deep);
+  font-weight: 700;
 }
 
 .modal-size-options {
@@ -5096,6 +5221,47 @@ body.gallery-page .gallery-hero.gallery-hero-minimal p {
     max-width: min(340px, 90vw) !important;
   }
 
+  body.home-page main,
+  body.product-page main,
+  body.gallery-page main,
+  body.shopping-details-page main {
+    padding-top: 196px !important;
+  }
+
+  .site-announcement-bar {
+    min-height: 56px;
+    padding: 10px 12px;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .site-announcement-bar__content {
+    gap: 4px 8px;
+  }
+
+  .site-announcement-bar__content strong,
+  .site-announcement-bar__content span {
+    font-size: 0.78rem;
+  }
+
+  .site-announcement-bar__action {
+    width: 100%;
+    max-width: 280px;
+  }
+
+  body.has-site-announcement > header.site-header,
+  body.has-site-announcement > header {
+    top: 56px !important;
+  }
+
+  body.home-page main,
+  body.product-page main,
+  body.gallery-page main,
+  body.shopping-details-page main,
+  body.checkout-page main {
+    padding-top: 156px !important;
+  }
+
   body.home-page #home.hero .hero-copy .hero-eyebrow {
     margin: 0 0 10px !important;
     font-size: 0.92rem !important;
@@ -5229,7 +5395,6 @@ body.gallery-page .gallery-hero.gallery-hero-minimal p {
   body.product-page .shopping-hero-minimal .section-title,
   body.product-page .shopping-hero-minimal #shoppingHeroTitle,
   body.gallery-page .gallery-hero.gallery-hero-minimal .section-title,
-  body.checkout-page .checkout-hero .section-title,
   body.shopping-details-page .products-hero .section-title {
     font-size: clamp(2rem, 9vw, 2.65rem) !important;
     line-height: 0.98 !important;
