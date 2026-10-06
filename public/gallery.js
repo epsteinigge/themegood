@@ -57,7 +57,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   function openAlbum(album, button) {
     albumOpener = button || grid.querySelector('.event-card');
     photos = album.photos;
-    view.innerHTML = `<div class="album-heading"><h2 id="albumTitle">${escapeHtml(album.title || 'Event album')}</h2><p class="album-meta">${escapeHtml(meta(album))}${meta(album) ? ' ? ' : ''}${photos.length} photos</p><p>${escapeHtml(album.caption)}</p></div><div class="album-photo-grid">${photos.map((p,i) => `<button class="album-photo" data-index="${i}" aria-label="Open photo ${i+1}${p.caption ? ': '+escapeHtml(p.caption) : ''}"><img src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.caption || album.title || 'Event photo')}" loading="lazy" decoding="async"></button>`).join('')}</div>`;
+    const title = album.title || 'Event album';
+    const titleParts = title.match(/^(.*?)\s*\[([^\]]+)\]\s*$/);
+    const heading = titleParts && titleParts[1].trim() ? titleParts[1].trim() : title;
+    const tagline = titleParts && titleParts[1].trim() ? titleParts[2].trim() : '';
+    view.innerHTML = `<div class="album-heading"><div class="album-title-panel"><div class="album-title-copy"><h2 id="albumTitle">${escapeHtml(heading)}</h2>${tagline ? `<p class="album-tagline">${escapeHtml(tagline)}</p>` : ''}${meta(album) ? `<p class="album-meta">${escapeHtml(meta(album))}</p>` : ''}</div><span class="album-photo-count"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.5"/><path d="m5 17 5-5 3 3 3-4 4 5"/></svg>${photos.length} ${photos.length === 1 ? 'photo' : 'photos'}</span></div><p class="album-description">${escapeHtml(album.caption)}</p></div><div class="album-photo-grid">${photos.map((p,i) => `<button class="album-photo" data-index="${i}" aria-label="Open photo ${i+1}${p.caption ? ': '+escapeHtml(p.caption) : ''}"><img src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.caption || album.title || 'Event photo')}" loading="lazy" decoding="async"></button>`).join('')}</div>`;
     if (albumDialog.hidden) {
       background = Array.from(document.body.children).filter(node => node !== albumDialog && node !== lightbox && !['SCRIPT', 'STYLE'].includes(node.tagName)).map(node => [node, node.inert]);
       background.forEach(([node]) => { node.inert = true; });

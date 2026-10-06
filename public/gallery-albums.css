@@ -9,7 +9,7 @@ body.gallery-page .event-card h2 { font-size:20px !important; line-height:1.4 !i
 .event-card p { font-size:14px; color:#62666c; margin:0 0 18px; }
 .event-card .event-link { color:#8d263c; font-size:14px; font-weight:800; }
 .album-heading { max-width:900px; text-align:left; margin:0 0 32px; }
-body.gallery-page .album-heading h2 { font-size:clamp(25px,4vw,38px) !important; margin:24px 0 12px !important; line-height:1.25 !important; color:#202126 !important; text-align:left; }
+body.gallery-page .album-heading h2 { font-family:"Montserrat","Nunito Sans",Arial,sans-serif !important; font-size:clamp(24px,3vw,34px) !important; font-weight:800 !important; letter-spacing:-.035em !important; margin:0 !important; line-height:1.2 !important; color:#542033 !important; text-align:left; overflow-wrap:anywhere; }
 .album-heading p { white-space:pre-line; overflow-wrap:anywhere; }
 .album-dialog { position:fixed; inset:0; z-index:3900; display:flex; align-items:center; justify-content:center; padding:32px; background:rgba(29,19,24,.65); backdrop-filter:blur(5px); }
 .album-dialog-panel { display:flex; flex-direction:column; width:min(1120px,100%); max-height:calc(100dvh - 64px); overflow:hidden; border-radius:24px; background:#fffaf8; box-shadow:0 28px 90px #130b1855; }
@@ -19,6 +19,11 @@ body.gallery-page #albumClose { width:42px !important; height:42px; min-width:42
 .album-dialog .album-heading { max-width:none; margin-bottom:26px; }
 .album-dialog .album-heading p { font-size:16px; line-height:1.75; color:#59616d; margin:14px 0 0; }
 .album-dialog .album-heading .album-meta { font-size:14px; color:#8b3348; }
+.album-title-panel { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; margin-top:20px; padding:24px 26px; border:1px solid #efdce1; border-left:4px solid #a32949; border-radius:4px 18px 18px 4px; background:linear-gradient(110deg,#f8e9ee 0%,#fff8f6 100%); }
+.album-title-copy { min-width:0; }
+.album-dialog .album-heading .album-tagline { display:inline-block; margin:13px 0 0; font-family:"Montserrat","Nunito Sans",Arial,sans-serif; font-size:12px; font-weight:700; line-height:1.5; letter-spacing:.14em; text-transform:uppercase; color:#92314d; }
+.album-photo-count { display:inline-flex; align-items:center; gap:8px; flex-shrink:0; padding:8px 12px; border:1px solid #e8d3d9; border-radius:999px; background:#ffffffb3; font-size:12px; font-weight:700; color:#84334b; white-space:nowrap; }
+.album-dialog .album-heading .album-description { margin:20px 0 0; }
 .album-photo-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
 body.gallery-page .album-photo { padding:0 !important; border:0 !important; background:#eae5df !important; box-shadow:none !important; border-radius:12px !important; overflow:hidden; cursor:zoom-in; aspect-ratio:1; }
 .album-photo img { width:100%; height:100%; object-fit:cover; display:block; }
@@ -31,3 +36,4 @@ body.gallery-page .album-photo { padding:0 !important; border:0 !important; back
 @media(max-width:950px) { body.gallery-page .gallery-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .album-photo-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
 @media(max-width:600px) { body.gallery-page .gallery-grid { grid-template-columns:1fr; gap:20px; } .album-photo-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } .event-card-body { padding:18px; } }
 @media(max-width:600px) { .album-dialog { padding:12px; } .album-dialog-panel { max-height:calc(100dvh - 24px); border-radius:18px; } .album-dialog-bar { padding:10px 16px; } .album-dialog-content { padding:0 18px 22px; } .album-dialog .album-heading p { font-size:15px; } }
+@media(max-width:600px) { .album-title-panel { flex-direction:column; gap:16px; padding:20px 18px; margin-top:18px; } .album-dialog .album-heading .album-tagline { font-size:11px; } .album-photo-count { padding:6px 10px; } }
