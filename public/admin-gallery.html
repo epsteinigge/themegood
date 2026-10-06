@@ -19,6 +19,17 @@ if (!localStorage.getItem("adminToken")) {
 <link rel="stylesheet" href="admin-mobile.css">
 
 <style>
+.admin-album-photos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+.admin-album-photo{border:1px solid #ddd;border-radius:12px;padding:8px;min-width:0;}
+.admin-album-photo img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;}
+.admin-album-photo input{width:100%;padding:8px;margin:8px 0;border:1px solid #ddd;border-radius:6px;}
+.admin-album-photo button{padding:6px;margin:2px;border:1px solid #ddd;border-radius:6px;cursor:pointer;}
+.admin-album-photo button[aria-pressed="true"]{background:#b32038;color:white;}
+button:disabled{opacity:.5;cursor:wait;}
+#galleryStatus{white-space:pre-line;}
+#mergeAlbumsBtn{margin-bottom:18px;}
+.admin-list-card-body{min-width:0;overflow-wrap:anywhere;}
+
 :root{
   --bg:#f4f7fb;
   --bg-soft:#eef3f9;
@@ -598,7 +609,7 @@ body{
       <div class="top-bar">
         <div class="page-heading">
           <h1>Gallery Management</h1>
-          <p>Upload, edit, reorder, and hide gallery items.</p>
+          <p>Create event albums, upload multiple photos, and manage event details.</p>
         </div>
 
         <div class="top-actions">
@@ -609,38 +620,43 @@ body{
 
       <div class="content-grid">
         <section class="card">
-          <h2>Add Gallery Item</h2>
-          <p class="section-copy">Create or edit gallery entries with a real uploaded image.</p>
+          <h2 id="editorHeading">Create Event Album</h2>
+          <p class="section-copy">Write the description once, then add all the photos from your event.</p>
 
           <form id="galleryForm" class="admin-form">
             <input type="hidden" id="galleryId">
 
             <div class="form-row">
-              <label for="galleryTitle">Title</label>
-              <input type="text" id="galleryTitle" maxlength="150" placeholder="Gallery title">
+              <label for="galleryTitle">Event name</label>
+              <input type="text" id="galleryTitle" maxlength="150" placeholder="Event name" required>
             </div>
 
             <div class="form-row">
-              <label for="galleryCaption">Caption</label>
-              <textarea id="galleryCaption" rows="4" maxlength="1000" placeholder="Gallery caption"></textarea>
+              <label for="galleryCaption">Event description</label>
+              <textarea id="galleryCaption" rows="4" maxlength="1000" placeholder="Describe the event once for the whole album"></textarea>
             </div>
 
             <div class="form-row">
-              <label for="galleryImageFile">Upload Image</label>
+              <label for="galleryImageFile">Add event photos</label>
               <div class="inline-upload">
-                <input type="file" id="galleryImageFile" accept="image/png,image/jpeg,image/webp">
-                <button type="button" id="uploadGalleryImageBtn" class="secondary-btn">Upload Image</button>
+                <input type="file" id="galleryImageFile" multiple accept="image/png,image/jpeg,image/webp">
+                <button type="button" id="uploadGalleryImageBtn" class="secondary-btn">Upload selected photos</button>
               </div>
             </div>
 
             <div class="form-row">
-              <label for="galleryImageUrl">Image URL</label>
+              <label for="galleryImageUrl">Or add a photo by URL</label>
               <input type="text" id="galleryImageUrl" placeholder="/uploads/example.webp">
+              <button type="button" id="addPhotoUrl" class="secondary-btn">Add photo URL</button>
             </div>
 
+            <div class="form-row"><label for="galleryDate">Event date (optional)</label><input type="date" id="galleryDate"></div>
+            <div class="form-row"><label for="galleryLocation">Location (optional)</label><input id="galleryLocation" maxlength="200"></div>
+            <div><p>The cover appears on the gallery page. Use the arrows to reorder photos. Changes take effect when you save.</p><div id="albumPhotos" class="admin-album-photos"></div></div>
+            <p id="galleryStatus" role="status" aria-live="polite"></p>
             <div class="form-row">
               <label for="gallerySortOrder">Sort Order</label>
-              <input type="number" id="gallerySortOrder" value="0" min="0">
+              <input type="number" id="gallerySortOrder" value="0" min="0" max="100000">
             </div>
 
             <div class="form-row checkbox-row">
@@ -651,15 +667,16 @@ body{
             </div>
 
             <div class="form-actions">
-              <button type="submit" id="saveGalleryBtn" class="primary-btn">Save Gallery Item</button>
+              <button type="submit" id="saveGalleryBtn" class="primary-btn">Save Event Album</button>
               <button type="button" id="resetGalleryBtn" class="secondary-btn">Reset</button>
             </div>
           </form>
         </section>
 
         <section class="card">
-          <h2>Existing Gallery Items</h2>
-          <p class="section-copy">Review, edit, and delete gallery entries.</p>
+          <h2>Event Albums</h2>
+          <p class="section-copy">Select older entries from the same event to combine their photos. The first selected album supplies the name, description, cover, and date.</p>
+          <button type="button" id="mergeAlbumsBtn" class="secondary-btn" disabled>Combine selected albums</button>
           <div id="galleryItemsList" class="list">
             <p class="empty-state">Loading gallery items...</p>
           </div>
@@ -677,7 +694,7 @@ body{
   </div>
 </div>
 
-<script src="admin-gallery.js"></script>
+<script src="admin-gallery.js?v=2"></script>
 </body>
 </html>
 

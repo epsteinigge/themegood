@@ -1,7 +1,7 @@
 const path = require("path");
 const dotenv = require("dotenv");
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 const requiredEnv = ["DATABASE_URL", "ADMIN_PASSWORD", "JWT_SECRET"];
 const missingEnvAfterDefault = requiredEnv.filter((key) => !process.env[key]);
@@ -163,6 +163,7 @@ app.use(
 );
 app.use(compression());
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+app.use(['/api/add-gallery-item', '/api/update-gallery-item'], express.json({ limit: '1mb' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/api", (req, res, next) => {
@@ -3918,51 +3919,6 @@ function validateProductGiftOptionPayload(payload, options = {}) {
   };
 }
 
-function validateGalleryPayload(payload, options = {}) {
-  const requireId = options.requireId === true;
-  const id = parseInteger(payload.id);
-  const title = normalizeString(payload.title);
-  const caption = normalizeString(payload.caption);
-  const imageUrl = normalizeString(payload.image_url);
-  const sortOrder = parseInteger(payload.sort_order ?? 0);
-  const isActive = normalizeBoolean(payload.is_active ?? true);
-
-  if (requireId && (!Number.isInteger(id) || id <= 0)) {
-    return { error: "Gallery item ID is invalid." };
-  }
-
-  if (title.length > 150) {
-    return { error: "Title must be 150 characters or fewer." };
-  }
-
-  if (caption.length > 1000) {
-    return { error: "Caption must be 1000 characters or fewer." };
-  }
-
-  if (!imageUrl || imageUrl.length > PRODUCT_IMAGE_URL_MAX_LENGTH) {
-    return { error: "Image URL is required and must be valid." };
-  }
-
-  if (!Number.isInteger(sortOrder) || sortOrder < SORT_ORDER_MIN || sortOrder > SORT_ORDER_MAX) {
-    return { error: `Sort order must be a whole number between ${SORT_ORDER_MIN} and ${SORT_ORDER_MAX}.` };
-  }
-
-  if (isActive === null) {
-    return { error: "Active status is invalid." };
-  }
-
-  return {
-    value: {
-      id,
-      title,
-      caption,
-      image_url: imageUrl,
-      sort_order: sortOrder,
-      is_active: isActive
-    }
-  };
-}
-
 function validateHomepageSlidePayload(payload, options = {}) {
   const requireId = options.requireId === true;
   const id = parseInteger(payload.id);
@@ -7489,128 +7445,7 @@ app.put("/api/admin/orders/:id/status", requireAdmin, async (req, res) => {
   }
 });
 
-app.get("/api/gallery", async (req, res) => {
-  try {
-    const result = await pool.query(
-      `
-      SELECT id, title, caption, image_url, sort_order, is_active, created_at
-      FROM gallery_items
-      WHERE is_active = TRUE
-      ORDER BY sort_order ASC, id ASC
-      `
-    );
-
-    res.json(result.rows);
-  } catch (err) {
-    console.error("Fetch gallery failed:", err);
-    res.status(500).json({ error: "Failed to fetch gallery items" });
-  }
-});
-
-app.get("/api/admin/gallery", requireAdmin, async (req, res) => {
-  try {
-    const result = await pool.query(
-      `
-      SELECT id, title, caption, image_url, sort_order, is_active, created_at
-      FROM gallery_items
-      ORDER BY sort_order ASC, id ASC
-      `
-    );
-
-    res.json(result.rows);
-  } catch (err) {
-    console.error("Fetch admin gallery failed:", err);
-    res.status(500).json({ error: "Failed to fetch gallery items" });
-  }
-});
-
-app.post("/api/add-gallery-item", requireAdmin, async (req, res) => {
-  const validation = validateGalleryPayload(req.body);
-  if (validation.error) {
-    return res.status(400).json({ error: validation.error });
-  }
-
-  const { title, caption, image_url, sort_order, is_active } = validation.value;
-
-  try {
-    const result = await pool.query(
-      `
-      INSERT INTO gallery_items (title, caption, image_url, sort_order, is_active)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING id
-      `,
-      [title, caption, image_url, sort_order, is_active]
-    );
-
-    res.json({
-      message: "Gallery item added",
-      id: result.rows[0].id
-    });
-  } catch (err) {
-    console.error("Add gallery item failed:", err);
-    res.status(500).json({ error: "Failed to add gallery item" });
-  }
-});
-
-app.post("/api/update-gallery-item", requireAdmin, async (req, res) => {
-  const validation = validateGalleryPayload(req.body, { requireId: true });
-  if (validation.error) {
-    return res.status(400).json({ error: validation.error });
-  }
-
-  const { id, title, caption, image_url, sort_order, is_active } = validation.value;
-
-  try {
-    const result = await pool.query(
-      `
-      UPDATE gallery_items
-      SET title = $1,
-          caption = $2,
-          image_url = $3,
-          sort_order = $4,
-          is_active = $5
-      WHERE id = $6
-      `,
-      [title, caption, image_url, sort_order, is_active, id]
-    );
-
-    if (result.rowCount === 0) {
-      return res.status(404).json({ error: "Gallery item not found." });
-    }
-
-    res.json({ message: "Gallery item updated" });
-  } catch (err) {
-    console.error("Update gallery item failed:", err);
-    res.status(500).json({ error: "Failed to update gallery item" });
-  }
-});
-
-app.post("/api/delete-gallery-item", requireAdmin, async (req, res) => {
-  const id = parseInteger(req.body.id);
-
-  if (!Number.isInteger(id) || id <= 0) {
-    return res.status(400).json({ error: "Gallery item ID is invalid." });
-  }
-
-  try {
-    const result = await pool.query(
-      `
-      DELETE FROM gallery_items
-      WHERE id = $1
-      `,
-      [id]
-    );
-
-    if (result.rowCount === 0) {
-      return res.status(404).json({ error: "Gallery item not found." });
-    }
-
-    res.json({ message: "Gallery item deleted" });
-  } catch (err) {
-    console.error("Delete gallery item failed:", err);
-    res.status(500).json({ error: "Failed to delete gallery item" });
-  }
-});
+require("./gallery-albums").registerGalleryAlbums(app, pool, requireAdmin);
 
 app.get("/api/homepage", async (req, res) => {
   try {

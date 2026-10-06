@@ -1,199 +1,102 @@
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+﻿function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-async function loadGallery() {
-  const grid = document.getElementById("galleryGrid");
-  if (!grid) return [];
-
-  try {
-    const response = await fetch("/api/gallery");
-    const items = await response.json();
-
-    if (!response.ok) {
-      throw new Error(items.error || "Failed to load gallery");
-    }
-
-    grid.innerHTML = "";
-
-    if (!Array.isArray(items) || items.length === 0) {
-      grid.innerHTML = `<p class="empty-state">No gallery items yet.</p>`;
-      return [];
-    }
-
-    items.forEach((item) => {
-      const card = document.createElement("div");
-      card.className = "gallery-card gallery-item";
-      card.innerHTML = `
-        <img src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.title || "Gallery image")}" referrerpolicy="no-referrer" loading="lazy" decoding="async">
-        <h3>${escapeHtml(item.title || "")}</h3>
-        <p>${escapeHtml(item.caption || "")}</p>
-      `;
-      grid.appendChild(card);
-    });
-
-    return Array.from(grid.querySelectorAll(".gallery-item img"));
-  } catch (error) {
-    console.error(error);
-    grid.innerHTML = `<p class="empty-state">Failed to load gallery.</p>`;
-    return [];
-  }
-}
-
-function initGalleryLightbox(items) {
-  const translate = (key, vars = {}) => {
-    if (typeof window.__themegoodT === "function") return window.__themegoodT(key, vars);
-    return key;
-  };
-
-  const lightbox = document.getElementById("galleryLightbox");
-  const image = document.getElementById("lightboxImage");
-  const prevBtn = document.getElementById("lightboxPrev");
-  const nextBtn = document.getElementById("lightboxNext");
-  const closeBtn = document.getElementById("lightboxClose");
-  const zoomInBtn = document.getElementById("zoomIn");
-  const zoomOutBtn = document.getElementById("zoomOut");
-  const zoomLabel = document.getElementById("zoomLevel");
-  const stage = document.getElementById("lightboxStage");
-
-  if (!lightbox || !image || !prevBtn || !nextBtn || !closeBtn || !zoomInBtn || !zoomOutBtn || !zoomLabel || !stage) {
-    return;
-  }
-
-  let currentIndex = 0;
-  let zoom = 1;
-  const minZoom = 0.6;
-  const maxZoom = 3;
-  let panX = 0;
-  let panY = 0;
-  let isDragging = false;
-  let activePointerId = null;
-  let dragStartX = 0;
-  let dragStartY = 0;
-  let dragOriginX = 0;
-  let dragOriginY = 0;
-
-  function clampPan() {
-    const stageRect = stage.getBoundingClientRect();
-    const imageWidth = stageRect.width * zoom;
-    const imageHeight = stageRect.height * zoom;
-    const maxOffsetX = Math.max(0, (imageWidth - stageRect.width) / 2);
-    const maxOffsetY = Math.max(0, (imageHeight - stageRect.height) / 2);
-    panX = Math.max(-maxOffsetX, Math.min(maxOffsetX, panX));
-    panY = Math.max(-maxOffsetY, Math.min(maxOffsetY, panY));
-  }
-
-  function resetPan() {
-    panX = 0;
-    panY = 0;
-  }
-
-  function render() {
-    if (!items.length) return;
-    image.src = items[currentIndex].src;
-    image.alt = items[currentIndex].alt || translate("gallery");
-    image.referrerPolicy = "no-referrer";
-    if (zoom <= 1) resetPan();
-    clampPan();
+document.addEventListener('DOMContentLoaded', async () => {
+  const grid = document.getElementById('galleryGrid');
+  const view = document.getElementById('albumView');
+  const toolbar = document.getElementById('albumToolbar');
+  const year = document.getElementById('galleryYear');
+  const lightbox = document.getElementById('galleryLightbox');
+  const image = document.getElementById('lightboxImage');
+  const stage = document.getElementById('lightboxStage');
+  const close = document.getElementById('lightboxClose');
+  const prev = document.getElementById('lightboxPrev');
+  const next = document.getElementById('lightboxNext');
+  let albums = [], photos = [], index = 0, zoom = 1, opener, pointer, panX = 0, panY = 0;
+  const meta = album => [album.event_date && new Date(`${album.event_date}T12:00:00`).toLocaleDateString(undefined, {day:'numeric',month:'short',year:'numeric'}), album.location].filter(Boolean).join(' · ');
+  function renderPhoto() {
+    const photo = photos[index];
+    image.src = photo.image_url;
+    image.alt = photo.caption || `Event photo ${index + 1}`;
     image.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
-    zoomLabel.textContent = `${Math.round(zoom * 100)}%`;
-    stage.classList.toggle("is-zoomed", zoom > 1);
-    stage.classList.toggle("is-dragging", isDragging);
+    document.getElementById('zoomLevel').textContent = `${Math.round(zoom * 100)}%`;
+    document.getElementById('photoCounter').textContent = `${index + 1} of ${photos.length}`;
+    document.getElementById('photoCaption').textContent = photo.caption || '';
+    prev.hidden = next.hidden = photos.length < 2;
+    stage.classList.toggle('is-zoomed', zoom > 1);
   }
-
-  function openLightbox(index) {
-    if (!items.length) return;
-    currentIndex = index;
-    zoom = 1;
-    resetPan();
-    lightbox.classList.add("open");
-    lightbox.setAttribute("aria-hidden", "false");
-    document.body.classList.add("no-scroll");
-    render();
+  function changePhoto(step) { index = (index + step + photos.length) % photos.length; zoom = 1; panX = panY = 0; renderPhoto(); }
+  function closePhoto() {
+    lightbox.classList.remove('open');
+    lightbox.setAttribute('aria-hidden','true');
+    document.body.classList.remove('no-scroll');
+    opener?.focus();
   }
-
-  function closeLightbox() {
-    lightbox.classList.remove("open");
-    lightbox.setAttribute("aria-hidden", "true");
-    document.body.classList.remove("no-scroll");
+  function openPhoto(i, button) {
+    index = i; zoom = 1; panX = panY = 0; opener = button;
+    lightbox.classList.add('open');
+    lightbox.setAttribute('aria-hidden','false');
+    document.body.classList.add('no-scroll');
+    renderPhoto(); close.focus();
   }
-
-  function showNext(step) {
-    if (!items.length) return;
-    currentIndex = (currentIndex + step + items.length) % items.length;
-    zoom = 1;
-    resetPan();
-    render();
+  function renderRoute(focus = false) {
+    if (lightbox.classList.contains('open')) closePhoto();
+    const id = new URLSearchParams(location.hash.slice(1)).get('event');
+    const album = albums.find(a => String(a.id) === id);
+    grid.hidden = toolbar.hidden = Boolean(id);
+    view.hidden = !id;
+    if (id) {
+      if (!album) { view.innerHTML = '<div class="album-heading"><a class="album-back" href="#">← All events</a><h2>Event unavailable</h2><p>This album may have been removed or hidden.</p></div>'; return; }
+      photos = album.photos;
+      view.innerHTML = `<div class="album-heading"><a class="album-back" href="#">← All events</a><h2 tabindex="-1">${escapeHtml(album.title || 'Event album')}</h2><p>${escapeHtml(meta(album))}${meta(album) ? ' · ' : ''}${photos.length} photos</p><p>${escapeHtml(album.caption)}</p></div><div class="album-photo-grid">${photos.map((p,i) => `<button class="album-photo" data-index="${i}" aria-label="Open photo ${i+1}${p.caption ? ': '+escapeHtml(p.caption) : ''}"><img src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.caption || album.title || 'Event photo')}" loading="lazy" decoding="async"></button>`).join('')}</div>`;
+      if (focus) view.querySelector('h2').focus({preventScroll:true});
+    } else {
+      const visible = albums.filter(a => !year.value || a.event_date?.slice(0,4) === year.value);
+      grid.innerHTML = visible.length ? visible.map(a => `<a class="event-card" href="#event=${a.id}"><div class="event-card-cover"><img src="${escapeHtml(a.image_url)}" alt="${escapeHtml(a.title || 'Event cover')}" loading="lazy" decoding="async"><span class="event-count">${a.photos.length} ${a.photos.length === 1 ? 'photo' : 'photos'}</span></div><div class="event-card-body"><h2>${escapeHtml(a.title || 'Event album')}</h2>${meta(a) ? `<p>${escapeHtml(meta(a))}</p>` : ''}<span class="event-link">View album &rarr;</span></div></a>`).join('') : '<p class="empty-state">No events to display yet.</p>';
+      if (focus) grid.querySelector('a')?.focus({preventScroll:true});
+    }
   }
-
-  function adjustZoom(delta) {
-    zoom = Math.max(minZoom, Math.min(maxZoom, zoom + delta));
-    render();
-  }
-
-  function onPointerMove(e) {
-    if (!isDragging || e.pointerId !== activePointerId) return;
-    panX = dragOriginX + (e.clientX - dragStartX);
-    panY = dragOriginY + (e.clientY - dragStartY);
-    clampPan();
+  view.addEventListener('click', e => { const button = e.target.closest('[data-index]'); if(button) openPhoto(Number(button.dataset.index),button); });
+  year.addEventListener('change', () => renderRoute());
+  window.addEventListener('hashchange', () => { renderRoute(true); document.querySelector('main').scrollIntoView({behavior:'smooth'}); });
+  close.addEventListener('click',closePhoto);
+  prev.addEventListener('click',() => changePhoto(-1));
+  next.addEventListener('click',() => changePhoto(1));
+  for (const [id,delta] of [['zoomIn',.2],['zoomOut',-.2]]) document.getElementById(id).addEventListener('click',() => { zoom = Math.max(1,Math.min(3,zoom+delta)); if(zoom===1) panX=panY=0; renderPhoto(); });
+  lightbox.addEventListener('click', e => { if(e.target === lightbox) closePhoto(); });
+  stage.addEventListener('pointerdown', e => { pointer = {id:e.pointerId,x:e.clientX,y:e.clientY,panX,panY}; stage.setPointerCapture(e.pointerId); });
+  stage.addEventListener('pointermove', e => {
+    if(!pointer || e.pointerId !== pointer.id || zoom <= 1) return;
+    const maxX = stage.clientWidth * (zoom-1)/2, maxY = stage.clientHeight * (zoom-1)/2;
+    panX = Math.max(-maxX,Math.min(maxX,pointer.panX+e.clientX-pointer.x));
+    panY = Math.max(-maxY,Math.min(maxY,pointer.panY+e.clientY-pointer.y));
     image.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+  });
+  stage.addEventListener('pointerup',e => { if(pointer && zoom === 1) { const dx=e.clientX-pointer.x, dy=e.clientY-pointer.y; if(Math.abs(dx)>50 && Math.abs(dx)>Math.abs(dy)) changePhoto(dx<0?1:-1); } pointer=null; });
+  stage.addEventListener('pointercancel',()=>{pointer=null;});
+  image.addEventListener('dragstart',e=>e.preventDefault());
+  document.addEventListener('keydown',e => {
+    if(!lightbox.classList.contains('open')) return;
+    if(e.key==='Escape') closePhoto();
+    if(e.key==='ArrowRight') changePhoto(1);
+    if(e.key==='ArrowLeft') changePhoto(-1);
+    if(e.key==='Tab') {
+      const buttons=Array.from(lightbox.querySelectorAll('button')).filter(b=>!b.hidden);
+      const first=buttons[0], last=buttons[buttons.length-1];
+      if(e.shiftKey && document.activeElement===first) { e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey && document.activeElement===last) { e.preventDefault(); first.focus(); }
+    }
+  });
+  async function load() {
+    grid.innerHTML='<p class="empty-state">Loading events…</p>';
+    try {
+      const response=await fetch('/api/gallery'); const data=await response.json();
+      if(!response.ok || !Array.isArray(data)) throw new Error('Unable to load albums');
+      albums=data;
+      year.innerHTML='<option value="">All years</option>'+[...new Set(albums.map(a=>a.event_date?.slice(0,4)).filter(Boolean))].sort().reverse().map(y=>`<option>${escapeHtml(y)}</option>`).join('');
+      renderRoute();
+    } catch(error) { grid.hidden=false; view.hidden=true; grid.innerHTML='<p class="empty-state">Unable to load events. <button id="retryGallery">Try again</button></p>'; document.getElementById('retryGallery').addEventListener('click',load); }
   }
-
-  function stopDragging() {
-    isDragging = false;
-    activePointerId = null;
-    stage.classList.remove("is-dragging");
-  }
-
-  items.forEach((img, idx) => {
-    img.style.cursor = "zoom-in";
-    img.addEventListener("click", () => openLightbox(idx));
-  });
-
-  prevBtn.addEventListener("click", () => showNext(-1));
-  nextBtn.addEventListener("click", () => showNext(1));
-  closeBtn.addEventListener("click", closeLightbox);
-  zoomInBtn.addEventListener("click", () => adjustZoom(0.2));
-  zoomOutBtn.addEventListener("click", () => adjustZoom(-0.2));
-
-  lightbox.addEventListener("click", (e) => {
-    if (e.target === lightbox || e.target === stage) closeLightbox();
-  });
-
-  image.addEventListener("pointerdown", (e) => {
-    if (zoom <= 1) return;
-    isDragging = true;
-    activePointerId = e.pointerId;
-    dragStartX = e.clientX;
-    dragStartY = e.clientY;
-    dragOriginX = panX;
-    dragOriginY = panY;
-    stage.classList.add("is-dragging");
-    image.setPointerCapture(e.pointerId);
-    e.preventDefault();
-  });
-
-  image.addEventListener("pointermove", onPointerMove);
-  image.addEventListener("pointerup", stopDragging);
-  image.addEventListener("pointercancel", stopDragging);
-  image.addEventListener("lostpointercapture", stopDragging);
-
-  document.addEventListener("keydown", (e) => {
-    if (!lightbox.classList.contains("open")) return;
-    if (e.key === "Escape") closeLightbox();
-    if (e.key === "ArrowRight") showNext(1);
-    if (e.key === "ArrowLeft") showNext(-1);
-    if (e.key === "+" || e.key === "=") adjustZoom(0.2);
-    if (e.key === "-") adjustZoom(-0.2);
-  });
-}
-
-document.addEventListener("DOMContentLoaded", async () => {
-  const items = await loadGallery();
-  initGalleryLightbox(items);
+  await load();
 });

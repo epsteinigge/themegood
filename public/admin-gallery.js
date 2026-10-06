@@ -1,285 +1,125 @@
-const adminToken = localStorage.getItem("adminToken");
-
-if (!adminToken) {
-  window.location.href = "admin-login.html";
+﻿const adminToken = localStorage.getItem('adminToken');
+if (!adminToken) window.location.href = 'admin-login.html';
+const $ = id => document.getElementById(id);
+const form = $('galleryForm');
+let albums = [], photos = [], cover = '', busy = false, dirty = false;
+const selected = new Set();
+function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function status(text) { $('galleryStatus').textContent = text; }
+function setBusy(value) {
+  busy = value;
+  document.querySelectorAll('#galleryForm input, #galleryForm textarea, #galleryForm button, #galleryItemsList button, #galleryItemsList input, #refreshGalleryBtn').forEach(el => el.disabled = value);
+  $('mergeAlbumsBtn').disabled = value || selected.size < 2;
 }
-
-const galleryIdInput = document.getElementById("galleryId");
-const galleryTitleInput = document.getElementById("galleryTitle");
-const galleryCaptionInput = document.getElementById("galleryCaption");
-const galleryImageFileInput = document.getElementById("galleryImageFile");
-const galleryImageUrlInput = document.getElementById("galleryImageUrl");
-const gallerySortOrderInput = document.getElementById("gallerySortOrder");
-const galleryIsActiveInput = document.getElementById("galleryIsActive");
-const galleryForm = document.getElementById("galleryForm");
-const galleryItemsList = document.getElementById("galleryItemsList");
-const uploadGalleryImageBtn = document.getElementById("uploadGalleryImageBtn");
-const resetGalleryBtn = document.getElementById("resetGalleryBtn");
-const adminLogoutLink = document.getElementById("adminLogoutLink");
-const logoutBtnTop = document.getElementById("logoutBtnTop");
-const refreshGalleryBtn = document.getElementById("refreshGalleryBtn");
-const saveGalleryBtn = document.getElementById("saveGalleryBtn");
-const imageOverlay = document.getElementById("imageOverlay");
-const imageOverlayImg = document.getElementById("imageOverlayImg");
-const imageOverlayClose = document.getElementById("imageOverlayClose");
-
-let currentGalleryItems = [];
-
-function authHeaders(extra = {}) {
-  return {
-    "x-admin-token": adminToken,
-    ...extra
-  };
+async function request(url, body) {
+  const response = await fetch(url, { method:body?'POST':'GET', headers:{'x-admin-token':adminToken,...(body && !(body instanceof FormData) ? {'Content-Type':'application/json'} : {})}, ...(body ? {body:body instanceof FormData ? body : JSON.stringify(body)} : {}) });
+  let result;
+  try { result = await response.json(); } catch { throw new Error('The server could not complete the request. Please try again.'); }
+  if(response.status===401 || response.status===403) throw new Error('Your admin session has expired. Sign in again in another tab, then refresh after saving your work.');
+  if(!response.ok) throw new Error(result.error || 'Request failed. Please try again.');
+  return result;
 }
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+function renderPhotos() {
+  $('albumPhotos').innerHTML = photos.map((p,i)=>`<div class="admin-album-photo"><img src="${escapeHtml(p.image_url)}" alt="Photo ${i+1}" loading="lazy"><input data-caption="${i}" maxlength="300" aria-label="Optional caption for photo ${i+1}" placeholder="Optional photo caption" value="${escapeHtml(p.caption)}"><div><button type="button" data-photo="${i}" data-action="cover" aria-pressed="${cover===p.image_url}">${cover===p.image_url?'Cover photo':'Set cover'}</button><button type="button" data-photo="${i}" data-action="up" aria-label="Move photo ${i+1} earlier" ${i===0?'disabled':''}>←</button><button type="button" data-photo="${i}" data-action="down" aria-label="Move photo ${i+1} later" ${i===photos.length-1?'disabled':''}>→</button><button type="button" data-photo="${i}" data-action="remove">Remove</button></div></div>`).join('') || '<p>No photos added yet.</p>';
 }
-
-function resetGalleryForm() {
-  galleryIdInput.value = "";
-  galleryTitleInput.value = "";
-  galleryCaptionInput.value = "";
-  galleryImageFileInput.value = "";
-  galleryImageUrlInput.value = "";
-  gallerySortOrderInput.value = "0";
-  galleryIsActiveInput.checked = true;
-  if (saveGalleryBtn) {
-    saveGalleryBtn.textContent = "Save Gallery Item";
-  }
+function resetForm() {
+  form.reset(); $('galleryId').value=''; photos=[]; cover=''; dirty=false;
+  $('editorHeading').textContent='Create Event Album'; $('saveGalleryBtn').textContent='Save Event Album'; status(''); renderPhotos();
 }
-
-async function loadGalleryItems() {
+function canDiscard() { return !dirty || confirm('Discard unsaved album changes?'); }
+async function loadAlbums() {
   try {
-    const response = await fetch("/api/admin/gallery", {
-      headers: authHeaders()
-    });
-
-    const items = await response.json();
-
-    if (!response.ok) {
-      throw new Error(items.error || "Failed to load gallery items");
-    }
-
-    galleryItemsList.innerHTML = "";
-
-    if (!Array.isArray(items) || items.length === 0) {
-      galleryItemsList.innerHTML = `<p>No gallery items yet.</p>`;
-      currentGalleryItems = [];
-      return;
-    }
-
-    currentGalleryItems = items;
-
-    items.forEach((item) => {
-      const card = document.createElement("div");
-      card.className = "admin-list-card";
-      card.innerHTML = `
-        <div class="admin-list-card-image">
-          ${
-            item.image_url
-              ? `<img src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.title || "Gallery image")}" data-action="preview-image" data-image-url="${escapeHtml(item.image_url)}" data-image-title="${escapeHtml(item.title || "Gallery image")}">`
-              : `<div class="image-preview-placeholder">No image</div>`
-          }
-        </div>
-        <div class="admin-list-card-body">
-          <h3>${escapeHtml(item.title || "Untitled")}</h3>
-          <p>${escapeHtml(item.caption || "")}</p>
-          <p><strong>Sort Order:</strong> ${Number(item.sort_order || 0)}</p>
-          <p><strong>Status:</strong> ${item.is_active ? "Active" : "Hidden"}</p>
-          <div class="admin-inline-actions">
-            <button type="button" data-action="edit" data-id="${item.id}">Edit</button>
-            <button type="button" data-action="delete" data-id="${item.id}">Delete</button>
-          </div>
-        </div>
-      `;
-
-      galleryItemsList.appendChild(card);
-    });
-  } catch (error) {
-    console.error(error);
-    galleryItemsList.innerHTML = `<p>Failed to load gallery items.</p>`;
-    currentGalleryItems = [];
+    albums = await request('/api/admin/gallery'); selected.clear();
+    $('mergeAlbumsBtn').disabled=true;
+    $('galleryItemsList').innerHTML=albums.map(a=>`<article class="admin-list-card"><div class="admin-list-card-image"><img src="${escapeHtml(a.image_url)}" alt="${escapeHtml(a.title)}" loading="lazy"></div><div class="admin-list-card-body"><label><input type="checkbox" data-select="${a.id}"> Select to combine</label><h3>${escapeHtml(a.title || 'Untitled event')}</h3><p>${a.photos.length} photos · ${a.is_active?'Active':'Hidden'}</p><p>${escapeHtml([a.event_date,a.location].filter(Boolean).join(' · '))}</p><p>Sort order: ${a.sort_order}</p><div class="admin-inline-actions"><button type="button" data-edit="${a.id}">Edit album</button><button type="button" data-delete="${a.id}">Delete</button></div></div></article>`).join('') || '<p>No event albums yet.</p>';
+  } catch(error) { $('galleryItemsList').textContent=error.message; }
+}
+function editAlbum(id) {
+  if(!canDiscard()) return;
+  const a=albums.find(a=>Number(a.id)===Number(id)); if(!a)return;
+  $('galleryId').value=a.id; $('galleryTitle').value=a.title || ''; $('galleryCaption').value=a.caption || '';
+  $('galleryDate').value=a.event_date || ''; $('galleryLocation').value=a.location || '';
+  $('gallerySortOrder').value=a.sort_order || 0; $('galleryIsActive').checked=a.is_active;
+  $('galleryImageFile').value=''; $('galleryImageUrl').value='';
+  photos=a.photos.map(p=>({...p})); cover=a.image_url; dirty=false;
+  $('editorHeading').textContent='Edit Event Album'; $('saveGalleryBtn').textContent='Update Event Album';
+  status(''); renderPhotos(); form.scrollIntoView({behavior:'smooth'});
+}
+function addUrl() {
+  const url=$('galleryImageUrl').value.trim(); if(!url)return;
+  if(!/^(\/[^/\\]|https?:\/\/)/i.test(url) || /[\s<>"\\]/.test(url) || url.length>500) throw new Error('Enter a valid local or HTTP(S) image URL.');
+  if(photos.length>=500) throw new Error('An album can contain up to 500 photos.');
+  photos.push({image_url:url,caption:''}); if(!cover)cover=url;
+  $('galleryImageUrl').value=''; dirty=true; renderPhotos();
+}
+async function uploadSelected() {
+  const files=Array.from($('galleryImageFile').files);
+  if(photos.length+files.length>500) throw new Error('An album can contain up to 500 photos.');
+  if(files.some(f=>!['image/jpeg','image/png','image/webp'].includes(f.type) || f.size>50*1024*1024)) throw new Error('Choose JPG, PNG, or WebP photos, each up to 50 MB.');
+  const failed=[]; let uploadError='';
+  for(let i=0;i<files.length;i++) {
+    status(`Uploading photo ${i+1} of ${files.length}…`);
+    const data=new FormData(); data.append('image',files[i]);
+    try { const result=await request('/api/upload-gallery-image',data); photos.push({image_url:result.image_url,caption:''}); if(!cover)cover=result.image_url; dirty=true; }
+    catch(error) { failed.push(files[i]); uploadError=error.message; }
   }
+  // Keep only failed files selected so retry never duplicates successful uploads.
+  const remaining=new DataTransfer(); failed.forEach(file=>remaining.items.add(file)); $('galleryImageFile').files=remaining.files;
+  renderPhotos();
+  if(failed.length) throw new Error(`${failed.length} photo(s) failed to upload: ${uploadError} Successful uploads are kept. Click Upload selected photos to retry the remaining files, or clear the file selection to save the others.`);
+  if(files.length) status(`${files.length} photos uploaded. Save the album to publish your changes.`);
 }
-
-function editGalleryItem(id) {
-  const item = currentGalleryItems.find((entry) => Number(entry.id) === Number(id));
-  if (!item) return;
-
-  galleryIdInput.value = item.id;
-  galleryTitleInput.value = item.title || "";
-  galleryCaptionInput.value = item.caption || "";
-  galleryImageUrlInput.value = item.image_url || "";
-  gallerySortOrderInput.value = String(item.sort_order ?? 0);
-  galleryIsActiveInput.checked = Boolean(item.is_active);
-  if (saveGalleryBtn) {
-    saveGalleryBtn.textContent = "Update Gallery Item";
-  }
-
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-function openImageOverlay(imageUrl, imageTitle) {
-  if (!imageOverlay || !imageOverlayImg || !imageUrl) return;
-
-  imageOverlayImg.src = imageUrl;
-  imageOverlayImg.alt = imageTitle || "Gallery preview";
-  imageOverlay.classList.add("is-open");
-  imageOverlay.setAttribute("aria-hidden", "false");
-  document.body.style.overflow = "hidden";
-}
-
-function closeImageOverlay() {
-  if (!imageOverlay || !imageOverlayImg) return;
-
-  imageOverlay.classList.remove("is-open");
-  imageOverlay.setAttribute("aria-hidden", "true");
-  imageOverlayImg.src = "";
-  imageOverlayImg.alt = "Gallery preview";
-  document.body.style.overflow = "";
-}
-
-async function deleteGalleryItem(id) {
-  if (!confirm("Delete this gallery item?")) return;
-
+$('uploadGalleryImageBtn').addEventListener('click',async()=>{
+  if(busy)return;
+  if(!$('galleryImageFile').files.length) {status('Choose photos first.');return;}
+  setBusy(true); try{await uploadSelected();}catch(error){status(error.message);}finally{setBusy(false);}
+});
+$('addPhotoUrl').addEventListener('click',()=>{try{addUrl();}catch(error){status(error.message);}});
+$('albumPhotos').addEventListener('input',e=>{if(e.target.dataset.caption!==undefined){photos[Number(e.target.dataset.caption)].caption=e.target.value;dirty=true;}});
+$('albumPhotos').addEventListener('click',e=>{
+  if(busy)return; const button=e.target.closest('[data-photo]'); if(!button)return;
+  const i=Number(button.dataset.photo), action=button.dataset.action;
+  if(action==='cover')cover=photos[i].image_url;
+  if(action==='remove') { photos.splice(i,1); if(!photos.some(p=>p.image_url===cover))cover=photos[0]?.image_url || ''; }
+  const j=action==='up'?i-1:action==='down'?i+1:-1;
+  if((action==='up'||action==='down')&&j>=0&&j<photos.length) [photos[i],photos[j]]=[photos[j],photos[i]];
+  dirty=true;renderPhotos();
+});
+form.addEventListener('input',()=>{dirty=true;});
+form.addEventListener('submit',async e=>{
+  e.preventDefault(); if(busy)return; setBusy(true);
   try {
-    const response = await fetch("/api/delete-gallery-item", {
-      method: "POST",
-      headers: authHeaders({
-        "Content-Type": "application/json"
-      }),
-      body: JSON.stringify({ id })
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.error || "Failed to delete gallery item");
-    }
-
-    await loadGalleryItems();
-    resetGalleryForm();
-  } catch (error) {
-    alert(error.message);
-  }
-}
-
-uploadGalleryImageBtn.addEventListener("click", async () => {
-  const file = galleryImageFileInput.files?.[0];
-  if (!file) {
-    alert("Please choose an image first.");
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append("image", file);
-
-  try {
-    const response = await fetch("/api/upload-gallery-image", {
-      method: "POST",
-      headers: {
-        "x-admin-token": adminToken
-      },
-      body: formData
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.error || "Failed to upload image");
-    }
-
-    galleryImageUrlInput.value = result.image_url || "";
-    alert("Image uploaded successfully.");
-  } catch (error) {
-    alert(error.message);
-  }
+    addUrl(); await uploadSelected();
+    if(!photos.length)throw new Error('Add at least one photo before saving.');
+    const id=Number($('galleryId').value)||undefined;
+    const payload={id,title:$('galleryTitle').value.trim(),caption:$('galleryCaption').value.trim(),event_date:$('galleryDate').value||null,location:$('galleryLocation').value.trim(),image_url:cover,photos,sort_order:Number($('gallerySortOrder').value),is_active:$('galleryIsActive').checked};
+    await request(id?'/api/update-gallery-item':'/api/add-gallery-item',payload);
+    resetForm(); status('Event album saved.'); await loadAlbums();
+  }catch(error){status(error.message);}finally{setBusy(false);}
 });
-
-galleryForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-
-  const payload = {
-    id: galleryIdInput.value ? Number(galleryIdInput.value) : undefined,
-    title: galleryTitleInput.value.trim(),
-    caption: galleryCaptionInput.value.trim(),
-    image_url: galleryImageUrlInput.value.trim(),
-    sort_order: Number(gallerySortOrderInput.value || 0),
-    is_active: galleryIsActiveInput.checked
-  };
-
-  const isEditing = Boolean(payload.id);
-  const endpoint = isEditing ? "/api/update-gallery-item" : "/api/add-gallery-item";
-
-  try {
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: authHeaders({
-        "Content-Type": "application/json"
-      }),
-      body: JSON.stringify(payload)
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.error || "Failed to save gallery item");
-    }
-
-    resetGalleryForm();
-    await loadGalleryItems();
-  } catch (error) {
-    alert(error.message);
-  }
+$('resetGalleryBtn').addEventListener('click',()=>{if(!busy&&canDiscard())resetForm();});
+$('galleryItemsList').addEventListener('change',e=>{
+  if(e.target.dataset.select){const id=Number(e.target.dataset.select);e.target.checked?selected.add(id):selected.delete(id);$('mergeAlbumsBtn').disabled=selected.size<2;}
 });
-
-resetGalleryBtn.addEventListener("click", resetGalleryForm);
-
-galleryItemsList?.addEventListener("click", (event) => {
-  const previewImg = event.target.closest("img[data-action='preview-image']");
-  if (previewImg) {
-    openImageOverlay(previewImg.dataset.imageUrl, previewImg.dataset.imageTitle);
-    return;
-  }
-
-  const editBtn = event.target.closest("button[data-action='edit']");
-  if (editBtn) {
-    editGalleryItem(Number(editBtn.dataset.id));
-    return;
-  }
-
-  const deleteBtn = event.target.closest("button[data-action='delete']");
-  if (deleteBtn) {
-    deleteGalleryItem(Number(deleteBtn.dataset.id));
-  }
+$('galleryItemsList').addEventListener('click',async e=>{
+  if(busy)return;
+  const edit=e.target.closest('[data-edit]'); if(edit){editAlbum(edit.dataset.edit);return;}
+  const del=e.target.closest('[data-delete]'); if(!del)return;
+  const id=Number(del.dataset.delete);
+  if(!confirm('Delete this entire event album and remove it from the gallery?'))return;
+  if(Number($('galleryId').value)===id&&!canDiscard())return;
+  setBusy(true);
+  try{await request('/api/delete-gallery-item',{id});if(Number($('galleryId').value)===id)resetForm();await loadAlbums();}catch(error){status(error.message);}finally{setBusy(false);}
 });
-
-imageOverlayClose?.addEventListener("click", closeImageOverlay);
-imageOverlay?.addEventListener("click", (event) => {
-  if (event.target === imageOverlay) {
-    closeImageOverlay();
-  }
+$('mergeAlbumsBtn').addEventListener('click',async()=>{
+  if(busy||selected.size<2||!canDiscard())return;
+  const ids=Array.from(selected), first=albums.find(a=>Number(a.id)===ids[0]);
+  if(!confirm(`Combine ${ids.length} albums into “${first.title}”? All photos will be kept. The other selected album entries and their event descriptions will be replaced by this album. All selected albums must have the same visibility.`))return;
+  setBusy(true);
+  try{const result=await request('/api/admin/gallery/merge',{ids});resetForm();await loadAlbums();editAlbum(result.id);status('Albums combined. You can now edit the event details.');}catch(error){status(error.message);}finally{setBusy(false);}
 });
-
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && imageOverlay?.classList.contains("is-open")) {
-    closeImageOverlay();
-  }
-});
-
-function logoutAdmin() {
-  localStorage.removeItem("adminToken");
-  window.location.href = "admin-login.html";
-}
-
-adminLogoutLink?.addEventListener("click", logoutAdmin);
-logoutBtnTop?.addEventListener("click", logoutAdmin);
-refreshGalleryBtn?.addEventListener("click", loadGalleryItems);
-
-loadGalleryItems();
+$('refreshGalleryBtn').addEventListener('click',loadAlbums);
+function logout(){if(!canDiscard())return;localStorage.removeItem('adminToken');dirty=false;location.href='admin-login.html';}
+$('adminLogoutLink').addEventListener('click',logout);$('logoutBtnTop').addEventListener('click',logout);
+window.addEventListener('beforeunload',e=>{if(dirty||busy){e.preventDefault();e.returnValue='';}});
+resetForm();loadAlbums();

@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="overrides.css">
 <link rel="stylesheet" href="premium.css?v=44">
+<link rel="stylesheet" href="gallery-albums.css?v=1">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&family=Montserrat:wght@500;600;700;800&family=Nunito+Sans:wght@400;500;600;700;800&display=swap">
 </head>
@@ -102,17 +103,20 @@
 </section>
 
 <section class="section">
-<div id="galleryGrid" class="gallery-grid"></div>
+<div id="albumToolbar" class="album-toolbar"><p>Explore the moments from our events and community.</p><label>Year <select id="galleryYear"><option value="">All years</option></select></label></div>
+<div id="galleryGrid" class="gallery-grid" aria-live="polite"></div>
+<div id="albumView" hidden></div>
 </section>
 </main>
 
-<div class="gallery-lightbox" id="galleryLightbox" aria-hidden="true">
+<div class="gallery-lightbox" id="galleryLightbox" role="dialog" aria-modal="true" aria-label="Event photo viewer" aria-hidden="true">
   <button class="lightbox-close" id="lightboxClose" aria-label="Close image">&times;</button>
   <button class="lightbox-arrow left" id="lightboxPrev" aria-label="Previous image">&#10094;</button>
   <div class="lightbox-stage" id="lightboxStage">
     <img id="lightboxImage" alt="Expanded gallery image">
   </div>
   <button class="lightbox-arrow right" id="lightboxNext" aria-label="Next image">&#10095;</button>
+  <div class="lightbox-detail"><span id="photoCounter" aria-live="polite"></span><p id="photoCaption"></p></div>
   <div class="lightbox-controls">
     <button id="zoomOut" aria-label="Zoom out">-</button>
     <span id="zoomLevel">100%</span>
@@ -176,7 +180,7 @@
 <p class="footer-bottom" data-i18n="footer_copy">&copy; 2026 ThemeGood. All Rights Reserved.</p>
 </footer>
 
-<script src="gallery.js"></script>
+<script src="gallery.js?v=2"></script>
 <script src="script.js?v=17"></script>
 </body>
 </html>
