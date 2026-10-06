@@ -41,7 +41,7 @@ function registerGalleryAlbums(app, pool, requireAdmin) {
   async function list(req, res, admin) {
     try {
       await ready();
-      const result = await pool.query(`SELECT *, to_char(event_date, 'YYYY-MM-DD') AS event_date FROM gallery_items ${admin ? '' : 'WHERE is_active = TRUE'} ORDER BY sort_order ASC, event_date DESC NULLS LAST, created_at DESC, id DESC`);
+      const result = await pool.query(`SELECT *, to_char(event_date, 'YYYY-MM-DD') AS event_date FROM gallery_items ${admin ? '' : 'WHERE is_active = TRUE'} ORDER BY sort_order ASC, gallery_items.event_date DESC NULLS LAST, created_at DESC, id DESC`);
       res.json(result.rows.map(serialize));
     } catch (error) {
       console.error('Load albums failed:', error);
