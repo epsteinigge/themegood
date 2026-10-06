@@ -5,6 +5,9 @@
 document.addEventListener('DOMContentLoaded', async () => {
   const grid = document.getElementById('galleryGrid');
   const view = document.getElementById('albumView');
+  const albumDialog = document.getElementById('albumDialog');
+  const albumClose = document.getElementById('albumClose');
+  let albumOpener, background = [];
   const lightbox = document.getElementById('galleryLightbox');
   const image = document.getElementById('lightboxImage');
   const stage = document.getElementById('lightboxStage');
@@ -28,8 +31,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   function closePhoto() {
     lightbox.classList.remove('open');
     lightbox.setAttribute('aria-hidden','true');
-    document.body.classList.remove('no-scroll');
-    opener?.focus();
+    if (albumDialog.hidden) document.body.classList.remove('no-scroll');
+    albumDialog.inert = false;
+    albumDialog.removeAttribute('aria-hidden');
+    opener?.focus({preventScroll:true});
   }
   function openPhoto(i, button) {
     index = i; zoom = 1; panX = panY = 0; opener = button;
@@ -37,26 +42,50 @@ document.addEventListener('DOMContentLoaded', async () => {
     lightbox.setAttribute('aria-hidden','false');
     document.body.classList.add('no-scroll');
     renderPhoto(); close.focus();
+    albumDialog.inert = true;
+    albumDialog.setAttribute('aria-hidden','true');
   }
-  function renderRoute(focus = false) {
+  function closeAlbum() {
     if (lightbox.classList.contains('open')) closePhoto();
+    albumDialog.hidden = true;
+    document.body.classList.remove('no-scroll');
+    background.forEach(([node, wasInert]) => { node.inert = wasInert; });
+    background = [];
+    albumOpener?.focus({preventScroll:true});
+    if (new URLSearchParams(location.hash.slice(1)).has('event')) history.replaceState(null, '', location.pathname + location.search);
+  }
+  function openAlbum(album, button) {
+    albumOpener = button || grid.querySelector('.event-card');
+    photos = album.photos;
+    view.innerHTML = `<div class="album-heading"><h2 id="albumTitle">${escapeHtml(album.title || 'Event album')}</h2><p class="album-meta">${escapeHtml(meta(album))}${meta(album) ? ' ? ' : ''}${photos.length} photos</p><p>${escapeHtml(album.caption)}</p></div><div class="album-photo-grid">${photos.map((p,i) => `<button class="album-photo" data-index="${i}" aria-label="Open photo ${i+1}${p.caption ? ': '+escapeHtml(p.caption) : ''}"><img src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.caption || album.title || 'Event photo')}" loading="lazy" decoding="async"></button>`).join('')}</div>`;
+    if (albumDialog.hidden) {
+      background = Array.from(document.body.children).filter(node => node !== albumDialog && node !== lightbox && !['SCRIPT', 'STYLE'].includes(node.tagName)).map(node => [node, node.inert]);
+      background.forEach(([node]) => { node.inert = true; });
+    }
+    albumDialog.hidden = false;
+    view.scrollTop = 0;
+    document.body.classList.add('no-scroll');
+    albumClose.focus({preventScroll:true});
+  }
+  function renderGallery() {
+    grid.innerHTML = albums.length ? albums.map(a => `<a class="event-card" href="#event=${a.id}" data-album="${a.id}" aria-haspopup="dialog"><div class="event-card-cover"><img src="${escapeHtml(a.image_url)}" alt="${escapeHtml(a.title || 'Event cover')}" loading="lazy" decoding="async"><span class="event-count">${a.photos.length} ${a.photos.length === 1 ? 'photo' : 'photos'}</span></div><div class="event-card-body"><h2>${escapeHtml(a.title || 'Event album')}</h2>${meta(a) ? `<p>${escapeHtml(meta(a))}</p>` : ''}<span class="event-link">View album &rarr;</span></div></a>`).join('') : '<p class="empty-state">No events to display yet.</p>';
+  }
+  function openLinkedAlbum() {
     const id = new URLSearchParams(location.hash.slice(1)).get('event');
     const album = albums.find(a => String(a.id) === id);
-    grid.hidden = Boolean(id);
-    view.hidden = !id;
-    if (id) {
-      if (!album) { view.innerHTML = '<div class="album-heading"><a class="album-back" href="#">← All events</a><h2>Event unavailable</h2><p>This album may have been removed or hidden.</p></div>'; return; }
-      photos = album.photos;
-      view.innerHTML = `<div class="album-heading"><a class="album-back" href="#">← All events</a><h2 tabindex="-1">${escapeHtml(album.title || 'Event album')}</h2><p>${escapeHtml(meta(album))}${meta(album) ? ' · ' : ''}${photos.length} photos</p><p>${escapeHtml(album.caption)}</p></div><div class="album-photo-grid">${photos.map((p,i) => `<button class="album-photo" data-index="${i}" aria-label="Open photo ${i+1}${p.caption ? ': '+escapeHtml(p.caption) : ''}"><img src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.caption || album.title || 'Event photo')}" loading="lazy" decoding="async"></button>`).join('')}</div>`;
-      if (focus) view.querySelector('h2').focus({preventScroll:true});
-    } else {
-      const visible = albums;
-      grid.innerHTML = visible.length ? visible.map(a => `<a class="event-card" href="#event=${a.id}"><div class="event-card-cover"><img src="${escapeHtml(a.image_url)}" alt="${escapeHtml(a.title || 'Event cover')}" loading="lazy" decoding="async"><span class="event-count">${a.photos.length} ${a.photos.length === 1 ? 'photo' : 'photos'}</span></div><div class="event-card-body"><h2>${escapeHtml(a.title || 'Event album')}</h2>${meta(a) ? `<p>${escapeHtml(meta(a))}</p>` : ''}<span class="event-link">View album &rarr;</span></div></a>`).join('') : '<p class="empty-state">No events to display yet.</p>';
-      if (focus) grid.querySelector('a')?.focus({preventScroll:true});
-    }
+    if (album) openAlbum(album);
+    else if (!albumDialog.hidden) closeAlbum();
   }
+  grid.addEventListener('click', e => {
+    const card = e.target.closest('[data-album]');
+    if (!card || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+    const album = albums.find(a => String(a.id) === card.dataset.album);
+    if (album) { e.preventDefault(); openAlbum(album, card); }
+  });
   view.addEventListener('click', e => { const button = e.target.closest('[data-index]'); if(button) openPhoto(Number(button.dataset.index),button); });
-  window.addEventListener('hashchange', () => { renderRoute(true); document.querySelector('main').scrollIntoView({behavior:'smooth'}); });
+  albumClose.addEventListener('click', closeAlbum);
+  albumDialog.addEventListener('click', e => { if (e.target === albumDialog) closeAlbum(); });
+  window.addEventListener('hashchange', openLinkedAlbum);
   close.addEventListener('click',closePhoto);
   prev.addEventListener('click',() => changePhoto(-1));
   next.addEventListener('click',() => changePhoto(1));
@@ -74,12 +103,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   stage.addEventListener('pointercancel',()=>{pointer=null;});
   image.addEventListener('dragstart',e=>e.preventDefault());
   document.addEventListener('keydown',e => {
-    if(!lightbox.classList.contains('open')) return;
-    if(e.key==='Escape') closePhoto();
-    if(e.key==='ArrowRight') changePhoto(1);
-    if(e.key==='ArrowLeft') changePhoto(-1);
+    const photoOpen = lightbox.classList.contains('open');
+    if(!photoOpen && albumDialog.hidden) return;
+    if(e.key==='Escape') { e.preventDefault(); photoOpen ? closePhoto() : closeAlbum(); return; }
+    if(photoOpen && e.key==='ArrowRight') changePhoto(1);
+    if(photoOpen && e.key==='ArrowLeft') changePhoto(-1);
     if(e.key==='Tab') {
-      const buttons=Array.from(lightbox.querySelectorAll('button')).filter(b=>!b.hidden);
+      const buttons=Array.from((photoOpen ? lightbox : albumDialog).querySelectorAll('button')).filter(b=>!b.hidden);
       const first=buttons[0], last=buttons[buttons.length-1];
       if(e.shiftKey && document.activeElement===first) { e.preventDefault(); last.focus(); }
       else if(!e.shiftKey && document.activeElement===last) { e.preventDefault(); first.focus(); }
@@ -91,8 +121,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       const response=await fetch('/api/gallery'); const data=await response.json();
       if(!response.ok || !Array.isArray(data)) throw new Error('Unable to load albums');
       albums=data;
-      renderRoute();
-    } catch(error) { grid.hidden=false; view.hidden=true; grid.innerHTML='<p class="empty-state">Unable to load events. <button id="retryGallery">Try again</button></p>'; document.getElementById('retryGallery').addEventListener('click',load); }
+      renderGallery();
+      openLinkedAlbum();
+    } catch(error) { grid.hidden=false; grid.innerHTML='<p class="empty-state">Unable to load events. <button id="retryGallery">Try again</button></p>'; document.getElementById('retryGallery').addEventListener('click',load); }
   }
   await load();
 });

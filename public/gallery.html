@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="overrides.css">
 <link rel="stylesheet" href="premium.css?v=44">
-<link rel="stylesheet" href="gallery-albums.css?v=2">
+<link rel="stylesheet" href="gallery-albums.css?v=3">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&family=Montserrat:wght@500;600;700;800&family=Nunito+Sans:wght@400;500;600;700;800&display=swap">
 </head>
@@ -104,9 +104,16 @@
 
 <section class="section">
 <div id="galleryGrid" class="gallery-grid" aria-live="polite"></div>
-<div id="albumView" hidden></div>
+
 </section>
 </main>
+
+<div id="albumDialog" class="album-dialog" role="dialog" aria-modal="true" aria-labelledby="albumTitle" hidden>
+  <div class="album-dialog-panel">
+    <div class="album-dialog-bar"><span>Event album</span><button id="albumClose" type="button" aria-label="Close album">&times;</button></div>
+    <div id="albumView" class="album-dialog-content"></div>
+  </div>
+</div>
 
 <div class="gallery-lightbox" id="galleryLightbox" role="dialog" aria-modal="true" aria-label="Event photo viewer" aria-hidden="true">
   <button class="lightbox-close" id="lightboxClose" aria-label="Close image">&times;</button>
@@ -179,7 +186,7 @@
 <p class="footer-bottom" data-i18n="footer_copy">&copy; 2026 ThemeGood. All Rights Reserved.</p>
 </footer>
 
-<script src="gallery.js?v=3"></script>
+<script src="gallery.js?v=4"></script>
 <script src="script.js?v=17"></script>
 </body>
 </html>
