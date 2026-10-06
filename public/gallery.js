@@ -5,8 +5,6 @@
 document.addEventListener('DOMContentLoaded', async () => {
   const grid = document.getElementById('galleryGrid');
   const view = document.getElementById('albumView');
-  const toolbar = document.getElementById('albumToolbar');
-  const year = document.getElementById('galleryYear');
   const lightbox = document.getElementById('galleryLightbox');
   const image = document.getElementById('lightboxImage');
   const stage = document.getElementById('lightboxStage');
@@ -44,7 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (lightbox.classList.contains('open')) closePhoto();
     const id = new URLSearchParams(location.hash.slice(1)).get('event');
     const album = albums.find(a => String(a.id) === id);
-    grid.hidden = toolbar.hidden = Boolean(id);
+    grid.hidden = Boolean(id);
     view.hidden = !id;
     if (id) {
       if (!album) { view.innerHTML = '<div class="album-heading"><a class="album-back" href="#">← All events</a><h2>Event unavailable</h2><p>This album may have been removed or hidden.</p></div>'; return; }
@@ -52,13 +50,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       view.innerHTML = `<div class="album-heading"><a class="album-back" href="#">← All events</a><h2 tabindex="-1">${escapeHtml(album.title || 'Event album')}</h2><p>${escapeHtml(meta(album))}${meta(album) ? ' · ' : ''}${photos.length} photos</p><p>${escapeHtml(album.caption)}</p></div><div class="album-photo-grid">${photos.map((p,i) => `<button class="album-photo" data-index="${i}" aria-label="Open photo ${i+1}${p.caption ? ': '+escapeHtml(p.caption) : ''}"><img src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.caption || album.title || 'Event photo')}" loading="lazy" decoding="async"></button>`).join('')}</div>`;
       if (focus) view.querySelector('h2').focus({preventScroll:true});
     } else {
-      const visible = albums.filter(a => !year.value || a.event_date?.slice(0,4) === year.value);
+      const visible = albums;
       grid.innerHTML = visible.length ? visible.map(a => `<a class="event-card" href="#event=${a.id}"><div class="event-card-cover"><img src="${escapeHtml(a.image_url)}" alt="${escapeHtml(a.title || 'Event cover')}" loading="lazy" decoding="async"><span class="event-count">${a.photos.length} ${a.photos.length === 1 ? 'photo' : 'photos'}</span></div><div class="event-card-body"><h2>${escapeHtml(a.title || 'Event album')}</h2>${meta(a) ? `<p>${escapeHtml(meta(a))}</p>` : ''}<span class="event-link">View album &rarr;</span></div></a>`).join('') : '<p class="empty-state">No events to display yet.</p>';
       if (focus) grid.querySelector('a')?.focus({preventScroll:true});
     }
   }
   view.addEventListener('click', e => { const button = e.target.closest('[data-index]'); if(button) openPhoto(Number(button.dataset.index),button); });
-  year.addEventListener('change', () => renderRoute());
   window.addEventListener('hashchange', () => { renderRoute(true); document.querySelector('main').scrollIntoView({behavior:'smooth'}); });
   close.addEventListener('click',closePhoto);
   prev.addEventListener('click',() => changePhoto(-1));
@@ -94,7 +91,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       const response=await fetch('/api/gallery'); const data=await response.json();
       if(!response.ok || !Array.isArray(data)) throw new Error('Unable to load albums');
       albums=data;
-      year.innerHTML='<option value="">All years</option>'+[...new Set(albums.map(a=>a.event_date?.slice(0,4)).filter(Boolean))].sort().reverse().map(y=>`<option>${escapeHtml(y)}</option>`).join('');
       renderRoute();
     } catch(error) { grid.hidden=false; view.hidden=true; grid.innerHTML='<p class="empty-state">Unable to load events. <button id="retryGallery">Try again</button></p>'; document.getElementById('retryGallery').addEventListener('click',load); }
   }

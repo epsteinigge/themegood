@@ -34,7 +34,7 @@ The site will run on `http://localhost:3000` unless `PORT` is overridden.
 
 ## Event gallery
 
-The gallery shows one card per event. Opening an album shows its shared description and photo grid; photos open in a viewer with arrows, keyboard navigation, mobile swipe, and zoom. Events are ordered by sort order, then newest event date. Dated events can be filtered by year.
+The gallery shows one card per event. Opening an album shows its shared description and photo grid; photos open in a viewer with arrows, keyboard navigation, mobile swipe, and zoom. Events are ordered by sort order, then newest event date.
 
 In **Admin → Gallery**, enter the event name, shared description, optional date and location, and select multiple JPG, PNG, or WebP photos (up to 50 MB each, 500 photos per album). Saving also uploads any selected files. Set the cover, reorder photos with the arrows, add optional individual captions, or remove photos, then save. Failed uploads remain selected for retry; successful uploads are retained in the form. Unchecking Active hides the entire album.
 
