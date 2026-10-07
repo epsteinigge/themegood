@@ -3692,7 +3692,7 @@
   const navMenu = document.getElementById("navMenu");
   const overlay = document.getElementById("menuOverlay");
   const headerActions = document.querySelector(".header-actions");
-  const langSwitch = headerActions?.querySelector(".lang-switch");
+  const langSwitch = siteHeader?.querySelector(".lang-switch");
   const homepageHero = document.querySelector(".home-page .hero");
   let customerAccountButton = null;
   let customerLogoutButton = null;
@@ -3833,67 +3833,12 @@
     siteHeader.classList.toggle("is-transparent", !isSolid);
   }
 
-  function syncMobileHeaderLayout() {
-    if (!navMenu || !headerActions || !langSwitch) return;
-
-    const isMobile = window.matchMedia("(max-width: 760px)").matches;
-
-    if (isMobile) {
-      langSwitch.classList.add("mobile-nav-utility");
-      if (langSwitch.parentElement !== navMenu) {
-        navMenu.appendChild(langSwitch);
-      }
-      return;
-    }
-
-    langSwitch.classList.remove("mobile-nav-utility");
-    if (langSwitch.parentElement !== headerActions) {
-      headerActions.appendChild(langSwitch);
-    }
-  }
-
-  syncMobileHeaderLayout();
   removeDuplicateShopNavLink();
   updateCustomerHeaderButtons();
   validateStoredCustomerSession();
   syncHeaderState();
-  window.addEventListener("resize", syncMobileHeaderLayout);
   window.addEventListener("resize", syncHeaderState);
   window.addEventListener("scroll", syncHeaderState, { passive: true });
-
-  if (hamburgerBtn) {
-    hamburgerBtn.addEventListener("click", () => {
-      const isOpen = navMenu.classList.toggle("open");
-      overlay.classList.toggle("active");
-      document.body.classList.toggle("no-scroll");
-      hamburgerBtn.setAttribute("aria-expanded", isOpen);
-      const icon = hamburgerBtn.querySelector("i");
-      icon.classList.toggle("fa-bars", !isOpen);
-      icon.classList.toggle("fa-times", isOpen);
-    });
-
-    overlay?.addEventListener("click", () => {
-      navMenu.classList.remove("open");
-      overlay.classList.remove("active");
-      document.body.classList.remove("no-scroll");
-      hamburgerBtn.setAttribute("aria-expanded", "false");
-      const icon = hamburgerBtn.querySelector("i");
-      icon.classList.add("fa-bars");
-      icon.classList.remove("fa-times");
-    });
-
-    document.querySelectorAll("#navMenu a").forEach(link => {
-      link.addEventListener("click", () => {
-        navMenu.classList.remove("open");
-        overlay.classList.remove("active");
-        document.body.classList.remove("no-scroll");
-        hamburgerBtn.setAttribute("aria-expanded", "false");
-        const icon = hamburgerBtn.querySelector("i");
-        icon.classList.add("fa-bars");
-        icon.classList.remove("fa-times");
-      });
-    });
-  }
 
   // --- Cart ---
   function updateCart() {

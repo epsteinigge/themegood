@@ -1,0 +1,62 @@
+.shopping-filter-panel > summary { list-style: none; font-weight: 800; color: #762638; }
+.shopping-filter-panel > summary::-webkit-details-marker { display: none; }
+@media (min-width: 761px) {
+  .shopping-filter-panel > summary { pointer-events: none; margin-bottom: 20px; font-size: 18px; }
+}
+@media (max-width: 760px) {
+  html body.shared-site { overflow-x: clip; }
+  html body.shared-site main { overflow: visible; }
+  html body.shared-site .section { padding: 28px 16px !important; }
+  html body.shared-site :is(.section-shell, .shopping-layout, .shopping-results, .checkout-grid, .product-view-body) { min-width: 0; max-width: 100%; }
+  html body.shared-site .section-title { margin: 0 0 12px; font-size: clamp(26px, 7vw, 36px) !important; line-height: 1.2 !important; }
+  html body.shared-site :is(input, select, textarea) { box-sizing: border-box; max-width: 100%; font-size: 16px !important; }
+  html body.shared-site button { touch-action: manipulation; }
+  html body.shared-site:is(.product-page, .gallery-page) .section:first-child { padding-top: 8px !important; padding-bottom: 12px !important; }
+  html body.shared-site.product-page #products { padding-top: 0 !important; }
+  html body.shared-site.product-page #products.section { margin-top: 0 !important; padding-inline: 16px !important; background: transparent !important; border: 0 !important; box-shadow: none !important; }
+  html body.shared-site.gallery-page > main { margin-top: 0 !important; }
+  html body.shared-site.product-page .shopping-layout { grid-template-columns: minmax(0, 1fr) !important; gap: 16px !important; padding: 0 !important; background: transparent !important; border: 0 !important; box-shadow: none !important; }
+  html body.shared-site.product-page .shopping-results { padding: 0 !important; background: transparent !important; border: 0 !important; box-shadow: none !important; }
+  html body.shared-site.product-page .shopping-filters { position: static !important; padding: 14px 16px !important; border-radius: 16px !important; box-shadow: none !important; width: 100%; box-sizing: border-box; }
+  .shopping-filter-panel > summary { display: flex; justify-content: space-between; align-items: center; min-height: 30px; cursor: pointer; font-size: 14px; }
+  .shopping-filter-panel > summary::after { content: "+"; font-size: 22px; font-weight: 400; }
+  .shopping-filter-panel[open] > summary::after { content: "−"; }
+  .shopping-filter-panel[open] > summary { margin-bottom: 14px; }
+  html body.shared-site.product-page .shopping-filter-group { margin-bottom: 14px !important; }
+  html body.shared-site.product-page .shopping-filter-group label { margin-bottom: 6px; font-size: 11px; }
+  html body.shared-site.product-page .shopping-filters :is(input, select, button) { min-height: 44px !important; border-radius: 10px !important; }
+  html body.shared-site.product-page .shopping-filters button { box-shadow: none !important; }
+  html body.shared-site.product-page #products .products-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 14px !important; }
+  html body.shared-site #products .product-card { min-width: 0; min-height: 0 !important; height: auto !important; gap: 10px !important; padding: 14px !important; border-radius: 18px !important; box-shadow: 0 4px 14px #48202c0a !important; }
+  html body.shared-site #products .product-card:hover { transform: none !important; }
+  html body.shared-site #products .product-image-box { min-height: 0 !important; height: 180px !important; margin: 0 !important; padding: 0 !important; border-radius: 12px !important; }
+  html body.shared-site #products .product-image-box > img { display: block; width: 100% !important; height: 100% !important; min-height: 0 !important; max-height: none !important; margin: 0 !important; padding: 10px !important; box-sizing: border-box; border-radius: 12px !important; object-fit: contain !important; }
+  html body.shared-site #products .product-certifications { gap: 4px !important; bottom: 6px !important; right: 6px !important; transform: scale(.6); transform-origin: bottom right; }
+  html body.shared-site #products .product-card h4 { margin: 2px 0 0 !important; font-size: 18px !important; line-height: 1.3 !important; }
+  html body.shared-site #products .product-card > p { min-height: 0 !important; height: auto !important; margin-bottom: 0 !important; font-size: 13px !important; line-height: 1.5 !important; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  html body.shared-site #products :is(.purchase-option-wrap, .gift-offer-wrap) { padding: 8px !important; margin-top: 4px !important; border-radius: 12px !important; box-shadow: none !important; box-sizing: border-box; }
+  html body.shared-site #products .package-label { margin-bottom: 6px !important; font-size: 10px !important; letter-spacing: .05em !important; }
+  html body.shared-site #products .purchase-option-select { padding: 0 24px 0 8px !important; min-height: 44px !important; border-radius: 8px !important; }
+  html body.shared-site #products .package-price-preview { padding: 10px !important; margin: 0 !important; border-radius: 10px !important; font-size: 14px !important; line-height: 1.4 !important; box-sizing: border-box; }
+  html body.shared-site #products .product-card-purchase-stack { gap: 8px !important; margin-top: 4px !important; }
+  html body.shared-site #products .add-to-cart { min-height: 44px !important; margin: 0 !important; padding: 10px !important; font-size: 12px !important; border-radius: 12px !important; box-shadow: none !important; }
+  html body.shared-site.home-page #home.hero { width: calc(100% - 32px) !important; height: 520px !important; min-height: 520px !important; margin: 0 auto !important; border-radius: 18px !important; }
+  html body.shared-site.home-page #home.hero .slide .hero-copy { top: 64px !important; left: 20px !important; right: 20px !important; width: auto !important; max-width: 340px !important; max-height: none !important; padding: 0 !important; }
+  html body.shared-site.home-page #home.hero .slide .hero-copy :is(h1, h2) { font-size: clamp(30px, 8.2vw, 42px) !important; line-height: 1.05 !important; max-inline-size: 13ch !important; margin-bottom: 14px !important; }
+  html body.shared-site.home-page #home.hero .slide .hero-copy .hero-support { font-size: 14px !important; line-height: 1.55 !important; }
+  html body.shared-site.home-page #home.hero .slide-cta .btn { min-height: 44px !important; padding: 12px 16px !important; }
+  html body.shared-site #product-modal .modal-content { width: calc(100% - 20px) !important; max-width: 540px !important; max-height: calc(100dvh - 20px) !important; padding: 16px !important; border-radius: 18px !important; overflow-y: auto !important; box-sizing: border-box; }
+  html body.shared-site #product-modal .modal-image-shell { height: 230px !important; min-height: 0 !important; max-height: none !important; }
+  html body.shared-site #product-modal #modal-image { height: 100% !important; max-height: 230px !important; min-height: 0 !important; object-fit: contain !important; }
+  html body.shared-site #product-modal .modal-detail-column { padding: 0 !important; gap: 12px !important; min-width: 0; }
+  html body.shared-site #product-modal #modal-title { font-size: 24px !important; line-height: 1.2 !important; }
+  html body.shared-site #product-modal .modal-purchase-bar { position: static !important; }
+  html body.shared-site :is(.checkout-summary, .checkout-payment, .detail-card) { padding: 18px !important; border-radius: 18px !important; }
+  html body.shared-site #cart-sidebar { width: min(380px, 100vw) !important; max-width: 100vw !important; box-sizing: border-box; padding: 20px 16px !important; }
+  html body.shared-site .footer-container { gap: 24px !important; padding: 0 !important; }
+  html body.shared-site .newsletter-shell { padding: 24px 16px !important; }
+}
+@media (max-width: 560px) {
+  html body.shared-site.product-page #products .products-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  html body.shared-site #products .product-image-box { height: 210px !important; }
+}

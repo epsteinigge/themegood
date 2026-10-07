@@ -1,5 +1,7 @@
 # ThemeGood
 
+Customer pages share the homepage navigation through `public/site-header.js` and `public/site-header.css`. New customer pages should include the `shared-site` body class, a `data-site-header` mount and its script before page scripts. `public/mobile-layout.css` handles storefront spacing and product layouts; header offsets follow the measured announcement and navigation height.
+
 ## Run Locally
 
 Open a terminal in the project folder. On this Windows computer:

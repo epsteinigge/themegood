@@ -363,7 +363,7 @@ function renderProducts(products) {
       <div class="product-image-box">
         ${
           imageUrl
-            ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(safeName)}" data-fallback-src="/uploads/sample-product.webp">`
+            ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(safeName)}" loading="lazy" decoding="async" data-fallback-src="/uploads/sample-product.webp">`
             : `<div class="image-preview-box"><div class="image-preview-placeholder">${escapeHtml(getUiText("no_image_available"))}</div></div>`
         }
         ${certificationsHtml}
