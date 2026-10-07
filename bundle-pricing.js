@@ -4,6 +4,8 @@ const TWO_CAN_800G_PRICE = 108;
 const TWO_CAN_300G_PRICE = 28;
 const TWO_CAN_300G_COCOA_PRICE = 36;
 const COCOA_800G_BUNDLE_PRICE = 138;
+const MATCHA_800G_PRICE = 148;
+const MATCHA_300G_PRICE = 79;
 const FIVE_CAN_800G_BASE_PRICE = 486;
 const FIVE_CAN_DISCOUNTED_800G_PRICE = 54;
 const FIVE_CAN_FIRST_COCOA_PRICE = 138;
@@ -49,13 +51,17 @@ function isCocoaFlavor(value) {
   return normalizeText(value).includes("cocoa");
 }
 
+function isMatchaFlavor(value) {
+  return normalizeText(value).includes("matcha");
+}
+
 function isPassionBeetrootFlavor(value) {
   const normalized = normalizeText(value);
   return normalized.includes("passion") && normalized.includes("beetroot");
 }
 
 function isNoSurchargeMixFlavor(value) {
-  return Boolean(normalizeText(value)) && !isCocoaFlavor(value);
+  return Boolean(normalizeText(value)) && !isCocoaFlavor(value) && !isMatchaFlavor(value);
 }
 
 function detectBundlePricingProfile(bundleName = "", slots = []) {
@@ -107,11 +113,13 @@ function getConfiguredBundleSurcharge(selectionOrOptions = {}) {
 }
 
 function get800gBundleUnitPrice(flavorName, options = {}) {
+  if (isMatchaFlavor(flavorName)) return MATCHA_800G_PRICE;
   const price = isCocoaFlavor(flavorName) ? COCOA_800G_BUNDLE_PRICE : MIX_800G_PRICE;
   return roundMoney(price);
 }
 
 function get300gBundleUnitPrice(flavorName, options = {}) {
+  if (isMatchaFlavor(flavorName)) return MATCHA_300G_PRICE;
   return roundMoney(MIX_300G_PWP_PRICE + getConfiguredBundleSurcharge(options));
 }
 
@@ -140,6 +148,10 @@ function getBundleBasePrice(profile, configuredPrice, slots = []) {
 function getBundleOptionDisplayAdjustment({ profile, sizeName, flavorName, configuredAmount = 0 }) {
   const canonicalSize = getCanonicalBundleSize(sizeName);
   const parsedConfiguredAmount = Number(configuredAmount);
+  if (isMatchaFlavor(flavorName)) {
+    if (canonicalSize === "800g") return MATCHA_800G_PRICE - TWO_CAN_800G_PRICE;
+    if (canonicalSize === "300g") return MATCHA_300G_PRICE - TWO_CAN_300G_PRICE;
+  }
   if (
     profile === "two_800g_one_300g" &&
     canonicalSize === "300g" &&
@@ -182,6 +194,7 @@ function buildSelectionRow(slot, selection, slotIndex) {
     size,
     bundle_extra_price: bundleExtraPrice,
     isCocoa: isCocoaFlavor(label),
+    isMatcha: isMatchaFlavor(label),
     isPassionBeetroot: isPassionBeetrootFlavor(label)
   };
 }
@@ -229,7 +242,8 @@ function calculateBundleTotal({ bundleName = "", bundlePrice = 0, slots = [], se
   if (profile === "two_800g") {
     let surchargeTotal = 0;
     orderedSelections.forEach((selection) => {
-      const surcharge = selection.isCocoa ? roundMoney(COCOA_800G_BUNDLE_PRICE - TWO_CAN_800G_PRICE) : 0;
+      const surcharge = selection.isMatcha ? MATCHA_800G_PRICE - TWO_CAN_800G_PRICE
+        : selection.isCocoa ? roundMoney(COCOA_800G_BUNDLE_PRICE - TWO_CAN_800G_PRICE) : 0;
       const linePrice = roundMoney(TWO_CAN_800G_PRICE + surcharge);
 
       surchargeTotal += surcharge;
@@ -251,7 +265,9 @@ function calculateBundleTotal({ bundleName = "", bundlePrice = 0, slots = [], se
     orderedSelections.forEach((selection, index) => {
       const slot = normalizedSlots[index];
       const standardPrice = selection.size === "300g" ? TWO_CAN_300G_PRICE : TWO_CAN_800G_PRICE;
-      const surcharge = selection.isCocoa
+      const surcharge = selection.isMatcha
+        ? (selection.size === "300g" ? MATCHA_300G_PRICE : MATCHA_800G_PRICE) - standardPrice
+        : selection.isCocoa
         ? (selection.size === "300g"
           ? roundMoney(TWO_CAN_300G_COCOA_PRICE - TWO_CAN_300G_PRICE)
           : getConfiguredBundleSurcharge(selection))
@@ -275,14 +291,14 @@ function calculateBundleTotal({ bundleName = "", bundlePrice = 0, slots = [], se
   } else if (profile === "five_800g_discounted") {
     let lineTotal = 0;
     let cocoaCount = 0;
-    const discountedIndex = orderedSelections.findIndex((selection) => !selection.isCocoa);
+    const discountedIndex = orderedSelections.findIndex((selection) => !selection.isCocoa && !selection.isMatcha);
     orderedSelections.forEach((selection, index) => {
       const isDiscountedCan = discountedIndex >= 0 && index === discountedIndex;
       const isCocoa = selection.isCocoa;
-      const linePrice = isCocoa
+      const linePrice = selection.isMatcha ? MATCHA_800G_PRICE : isCocoa
         ? (cocoaCount === 0 ? FIVE_CAN_FIRST_COCOA_PRICE : FIVE_CAN_ADDITIONAL_COCOA_PRICE)
         : (isDiscountedCan ? FIVE_CAN_DISCOUNTED_800G_PRICE : TWO_CAN_800G_PRICE);
-      const surcharge = isCocoa ? roundMoney(linePrice - TWO_CAN_800G_PRICE) : 0;
+      const surcharge = isCocoa || selection.isMatcha ? roundMoney(linePrice - TWO_CAN_800G_PRICE) : 0;
       if (isCocoa) cocoaCount += 1;
 
       lineTotal += linePrice;
@@ -357,9 +373,12 @@ module.exports = {
   FIVE_CAN_FIRST_COCOA_PRICE,
   FIVE_CAN_ADDITIONAL_COCOA_PRICE,
   COCOA_800G_BUNDLE_PRICE,
+  MATCHA_800G_PRICE,
+  MATCHA_300G_PRICE,
   getConfiguredBundleSurcharge,
   getCanonicalBundleSize,
   isCocoaFlavor,
+  isMatchaFlavor,
   isPassionBeetrootFlavor,
   isNoSurchargeMixFlavor,
   detectBundlePricingProfile,

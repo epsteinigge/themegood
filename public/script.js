@@ -64,6 +64,10 @@
     cocoa: {
       small: "/photos/Cocoa 300g.png",
       large: "/photos/Cocoa800g.png"
+    },
+    matcha: {
+      small: "/uploads/matcha-300g.webp",
+      large: "/uploads/matcha-800g.webp"
     }
   };
   const sizePriceDatasetKeys = {
@@ -495,6 +499,12 @@
       name_passion: "Passion Fruit Multigrain",
       name_oat: "Oat Beta Glucan Multigrain",
       name_cocoa: "Cocoa Multigrain",
+      name_matcha: "Matcha Soy Collagen",
+      desc_matcha: "A blend of soy, oat, matcha and collagen powder. Available in 300g and 800g.",
+      flavour_matcha_title: "Matcha",
+      flavour_matcha_heading: "Matcha Soy Collagen",
+      flavour_matcha_desc: "A blend of soy, oat, matcha and collagen powder. Choose the 300g box or 800g tin.",
+      flavour_matcha_cta: "Shop Matcha",
       add_to_cart: "Add to Cart",
       close_details: "Close",
       price: "Price",
@@ -809,6 +819,12 @@
       name_passion: "Multigrain Buah Markisa",
       name_oat: "Multigrain Oat Beta Glukan",
       name_cocoa: "Multigrain Koko",
+      name_matcha: "Matcha Soya Kolagen",
+      desc_matcha: "Campuran serbuk soya, oat, matcha dan kolagen. Tersedia dalam 300g dan 800g.",
+      flavour_matcha_title: "Matcha",
+      flavour_matcha_heading: "Matcha Soya Kolagen",
+      flavour_matcha_desc: "Campuran serbuk soya, oat, matcha dan kolagen. Pilih kotak 300g atau tin 800g.",
+      flavour_matcha_cta: "Beli Matcha",
       add_to_cart: "Tambah ke Troli",
       close_details: "Tutup",
       price: "Harga",
@@ -1135,6 +1151,12 @@
       name_passion: "百香果营养谷粮",
       name_oat: "燕麦B葡聚糖 大豆分离蛋白",
       name_cocoa: "可可营养谷粮",
+      name_matcha: "抹茶豆乳胶原蛋白",
+      desc_matcha: "大豆、燕麦、抹茶与胶原蛋白粉的混合饮品。提供300g和800g两种规格。",
+      flavour_matcha_title: "抹茶",
+      flavour_matcha_heading: "抹茶豆乳胶原蛋白",
+      flavour_matcha_desc: "大豆、燕麦、抹茶与胶原蛋白粉的混合饮品。可选择300g盒装或800g罐装。",
+      flavour_matcha_cta: "选购抹茶",
       add_to_cart: "加入购物车",
       close_details: "关闭",
       price: "价格",
@@ -1999,12 +2021,16 @@
       const size = option?.dataset?.size || "";
       const normalizedSize = String(size).toLowerCase();
       const isCocoa = /cocoa/i.test(String(label));
+      const isMatcha = /matcha/i.test(String(label));
       const isPassionBeetroot = /passion/i.test(String(label)) && /beetroot/i.test(String(label));
       let price = Number(option?.dataset?.price || 0);
       let extra = Number(option?.dataset?.extra || 0);
       const pricingNote = normalizeLegacyBundlePricingNote(option?.dataset?.pricingNote || "");
 
-      if (isTwo800gBundle) {
+      if (isMatcha) {
+        price = normalizedSize === "300g" ? 79 : 148;
+        extra = 0;
+      } else if (isTwo800gBundle) {
         if (normalizedSize === "800g") {
           if (isCocoa) {
             price = 138;
@@ -2036,6 +2062,7 @@
         price,
         extra,
         isCocoa,
+        isMatcha,
         isPassionBeetroot,
         pricing_note: pricingNote,
         is_free_can: option?.dataset?.freeCan === "true"
@@ -2044,13 +2071,16 @@
 
     if (isFiveCanBundle) {
       let cocoaCount = 0;
-      const discountedIndex = rows.findIndex((row) => !row.isCocoa);
+      const discountedIndex = rows.findIndex((row) => !row.isCocoa && !row.isMatcha);
       return rows.map((row, index) => {
         const discounted = discountedIndex >= 0 && index === discountedIndex;
         let resolvedPrice = discounted ? 54 : 108;
         let pricingNote = row.pricing_note;
 
-        if (row.isCocoa) {
+        if (row.isMatcha) {
+          resolvedPrice = 148;
+          pricingNote = "Matcha regular price";
+        } else if (row.isCocoa) {
           resolvedPrice = cocoaCount === 0 ? 138 : 128;
           pricingNote = "Additional Cocoa bundle price";
           cocoaCount += 1;
@@ -2078,21 +2108,22 @@
     if (!isFiveCanBundleBreakdown(rows)) return Array.isArray(rows) ? rows : [];
 
     let cocoaCount = 0;
-    const discountedIndex = rows.findIndex((row) => !/cocoa/i.test(String(row?.label || "")));
+    const discountedIndex = rows.findIndex((row) => !/cocoa|matcha/i.test(String(row?.label || "")));
     return rows.map((row, index) => {
       const isCocoa = /cocoa/i.test(String(row?.label || ""));
+      const isMatcha = /matcha/i.test(String(row?.label || ""));
       const discounted = discountedIndex >= 0 && index === discountedIndex;
       const basePrice = discounted ? 54 : 108;
-      const price = isCocoa ? (cocoaCount === 0 ? 138 : 128) : basePrice;
+      const price = isMatcha ? 148 : isCocoa ? (cocoaCount === 0 ? 138 : 128) : basePrice;
       const pricingNote = discounted
         ? "Discounted 5th can"
-        : (isCocoa ? "Additional Cocoa bundle price" : (row.pricing_note || "Paid 800g can"));
+        : (isMatcha ? "Matcha regular price" : isCocoa ? "Additional Cocoa bundle price" : (row.pricing_note || "Paid 800g can"));
       if (isCocoa) cocoaCount += 1;
 
       return {
         ...row,
         price,
-        extra: isCocoa ? Math.max(0, price - basePrice) : 0,
+        extra: isCocoa || isMatcha ? Math.max(0, price - basePrice) : 0,
         pricing_note: pricingNote,
         is_free_can: false
       };
@@ -3054,6 +3085,14 @@
       descKey: "flavour_cocoa_desc",
       ctaKey: "flavour_cocoa_cta",
       image: "photos/Cocoa800g.png",
+      href: "shopping.html#products"
+    },
+    {
+      titleKey: "flavour_matcha_title",
+      headingKey: "flavour_matcha_heading",
+      descKey: "flavour_matcha_desc",
+      ctaKey: "flavour_matcha_cta",
+      image: "uploads/matcha-800g.webp",
       href: "shopping.html#products"
     }
   ];

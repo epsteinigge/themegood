@@ -2097,7 +2097,7 @@ async function getGeneralPromoConfig(client = pool) {
 
 function getBundleSlotNote(profile, slotIndex, slots = [], requiredSize = "") {
   if (profile === "two_800g_one_300g" && getCanonicalBundleSize(requiredSize) === "300g") {
-    return "300g add-on pricing updates automatically when Cocoa is chosen.";
+    return "300g add-on pricing updates automatically for Cocoa and Matcha.";
   }
 
   if (
@@ -2108,7 +2108,7 @@ function getBundleSlotNote(profile, slotIndex, slots = [], requiredSize = "") {
       profile === "twelve_plus_three_800g") &&
     getCanonicalBundleSize(requiredSize) === "800g"
   ) {
-    return "Cocoa 800g selections update the bundle total automatically.";
+    return "Cocoa and Matcha 800g selections update the bundle total automatically.";
   }
 
   return "";

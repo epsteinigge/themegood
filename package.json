@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node --watch server.js",
     "start": "node server.js",
-    "test": "node test/bundle-pricing.test.js && node --test test/gallery-albums.test.js"
+    "test": "node test/bundle-pricing.test.js && node test/matcha-pricing.test.js && node --test test/gallery-albums.test.js"
   },
   "keywords": [],
   "author": "",

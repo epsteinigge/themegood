@@ -35,6 +35,10 @@ const PRODUCT_SIZE_IMAGE_MAP = {
   cocoa: {
     small: "/photos/Cocoa 300g.png",
     large: "/photos/Cocoa800g.png"
+  },
+  matcha: {
+    small: "/uploads/matcha-300g.webp",
+    large: "/uploads/matcha-800g.webp"
   }
 };
 
@@ -137,6 +141,9 @@ function getProductTranslationKeys(productName = "") {
   }
   if (normalized.includes("cocoa")) {
     return { name: "name_cocoa", desc: "desc_cocoa" };
+  }
+  if (normalized.includes("matcha")) {
+    return { name: "name_matcha", desc: "desc_matcha" };
   }
   if (normalized.includes("2x") && normalized.includes("800g") && normalized.includes("300g")) {
     return { name: "bundle_name_2x800_300", desc: "bundle_desc_2x800_300" };

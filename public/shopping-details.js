@@ -113,6 +113,10 @@ const DETAIL_PRODUCT_SIZE_IMAGE_MAP = {
   cocoa: {
     small: "/photos/Cocoa 300g.png",
     large: "/photos/Cocoa800g.png"
+  },
+  matcha: {
+    small: "/uploads/matcha-300g.webp",
+    large: "/uploads/matcha-800g.webp"
   }
 };
 
@@ -151,11 +155,15 @@ function buildDetailBundleBreakdownRowsFromSelects(selects = []) {
     const size = option?.dataset.choiceSize || "";
     const normalizedSize = String(size).toLowerCase();
     const isCocoa = isBundleCocoaLabel(label);
+    const isMatcha = /matcha/i.test(String(label));
     let price = Number(option?.dataset.choicePrice || 0);
     let extra = Number(option?.dataset.extra || 0);
     const pricingNote = normalizeDetailLegacyBundlePricingNote(option?.dataset.pricingNote || "");
 
-    if (isTwo800gBundle) {
+    if (isMatcha) {
+      price = normalizedSize === "300g" ? 79 : 148;
+      extra = 0;
+    } else if (isTwo800gBundle) {
       if (normalizedSize === "800g") {
         if (isCocoa) {
           price = 138;
@@ -193,13 +201,14 @@ function buildDetailBundleBreakdownRowsFromSelects(selects = []) {
 
   if (isFiveCanBundle) {
     let cocoaCount = 0;
-    const discountedIndex = rows.findIndex((row) => !isBundleCocoaLabel(row.label));
+    const discountedIndex = rows.findIndex((row) => !isBundleCocoaLabel(row.label) && !/matcha/i.test(String(row.label)));
     return rows.map((row, index) => {
       const discounted = discountedIndex >= 0 && index === discountedIndex;
       const isCocoa = isBundleCocoaLabel(row.label);
+      const isMatcha = /matcha/i.test(String(row.label));
       const basePrice = discounted ? 54 : 108;
-      const price = isCocoa ? (cocoaCount === 0 ? 138 : 128) : basePrice;
-      const pricingNote = discounted ? "Discounted 5th can" : (isCocoa ? "Additional Cocoa bundle price" : row.pricing_note);
+      const price = isMatcha ? 148 : isCocoa ? (cocoaCount === 0 ? 138 : 128) : basePrice;
+      const pricingNote = discounted ? "Discounted 5th can" : (isMatcha ? "Matcha regular price" : isCocoa ? "Additional Cocoa bundle price" : row.pricing_note);
       if (isCocoa) cocoaCount += 1;
 
       return {
@@ -252,21 +261,22 @@ function normalizeDetailFiveCanBundleBreakdown(rows = []) {
   if (!isDetailFiveCanBreakdown(rows)) return Array.isArray(rows) ? rows : [];
 
   let cocoaCount = 0;
-  const discountedIndex = rows.findIndex((row) => !isBundleCocoaLabel(row?.label));
+  const discountedIndex = rows.findIndex((row) => !isBundleCocoaLabel(row?.label) && !/matcha/i.test(String(row?.label)));
   return rows.map((row, index) => {
     const isCocoa = isBundleCocoaLabel(row?.label);
+    const isMatcha = /matcha/i.test(String(row?.label));
     const discounted = discountedIndex >= 0 && index === discountedIndex;
     const basePrice = discounted ? 54 : 108;
-    const price = isCocoa ? (cocoaCount === 0 ? 138 : 128) : basePrice;
+    const price = isMatcha ? 148 : isCocoa ? (cocoaCount === 0 ? 138 : 128) : basePrice;
     const pricingNote = discounted
       ? "Discounted 5th can"
-      : (isCocoa ? "Additional Cocoa bundle price" : (row.pricing_note || "Paid 800g can"));
+      : (isMatcha ? "Matcha regular price" : isCocoa ? "Additional Cocoa bundle price" : (row.pricing_note || "Paid 800g can"));
     if (isCocoa) cocoaCount += 1;
 
     return {
       ...row,
       price,
-      extra: isCocoa ? Math.max(0, price - basePrice) : 0,
+      extra: isCocoa || isMatcha ? Math.max(0, price - basePrice) : 0,
       pricing_note: pricingNote,
       is_free_can: false
     };
