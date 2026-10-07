@@ -31,14 +31,14 @@ async function loadAlbums() {
   try {
     albums = await request('/api/admin/gallery'); selected.clear();
     $('mergeAlbumsBtn').disabled=true;
-    $('galleryItemsList').innerHTML=albums.map(a=>`<article class="admin-list-card"><div class="admin-list-card-image"><img src="${escapeHtml(a.image_url)}" alt="${escapeHtml(a.title)}" loading="lazy"></div><div class="admin-list-card-body"><label><input type="checkbox" data-select="${a.id}"> Select to combine</label><h3>${escapeHtml(a.title || 'Untitled event')}</h3><p>${a.photos.length} photos · ${a.is_active?'Active':'Hidden'}</p><p>${escapeHtml([a.event_date,a.location].filter(Boolean).join(' · '))}</p><p>Sort order: ${a.sort_order}</p><div class="admin-inline-actions"><button type="button" data-edit="${a.id}">Edit album</button><button type="button" data-delete="${a.id}">Delete</button></div></div></article>`).join('') || '<p>No event albums yet.</p>';
+    $('galleryItemsList').innerHTML=albums.map(a=>`<article class="admin-list-card"><div class="admin-list-card-image"><img src="${escapeHtml(a.image_url)}" alt="${escapeHtml(a.title)}" loading="lazy"></div><div class="admin-list-card-body"><label><input type="checkbox" data-select="${a.id}"> Select to combine</label><h3>${escapeHtml(a.title || 'Untitled event')}</h3><p>${a.photos.length} photos · ${a.is_active?'Active':'Hidden'}</p><p>${escapeHtml([[a.event_date,a.event_end_date].filter(Boolean).join(" to "),a.location].filter(Boolean).join(' · '))}</p><p>Sort order: ${a.sort_order}</p><div class="admin-inline-actions"><button type="button" data-edit="${a.id}">Edit album</button><button type="button" data-delete="${a.id}">Delete</button></div></div></article>`).join('') || '<p>No event albums yet.</p>';
   } catch(error) { $('galleryItemsList').textContent=error.message; }
 }
 function editAlbum(id) {
   if(!canDiscard()) return;
   const a=albums.find(a=>Number(a.id)===Number(id)); if(!a)return;
   $('galleryId').value=a.id; $('galleryTitle').value=a.title || ''; $('galleryCaption').value=a.caption || '';
-  $('galleryDate').value=a.event_date || ''; $('galleryLocation').value=a.location || '';
+  $('galleryDate').value=a.event_date || ''; $('galleryEndDate').value=a.event_end_date || ''; $('galleryLocation').value=a.location || '';
   $('gallerySortOrder').value=a.sort_order || 0; $('galleryIsActive').checked=a.is_active;
   $('galleryImageFile').value=''; $('galleryImageUrl').value='';
   photos=a.photos.map(p=>({...p})); cover=a.image_url; dirty=false;
@@ -92,7 +92,7 @@ form.addEventListener('submit',async e=>{
     addUrl(); await uploadSelected();
     if(!photos.length)throw new Error('Add at least one photo before saving.');
     const id=Number($('galleryId').value)||undefined;
-    const payload={id,title:$('galleryTitle').value.trim(),caption:$('galleryCaption').value.trim(),event_date:$('galleryDate').value||null,location:$('galleryLocation').value.trim(),image_url:cover,photos,sort_order:Number($('gallerySortOrder').value),is_active:$('galleryIsActive').checked};
+    const payload={id,title:$('galleryTitle').value.trim(),caption:$('galleryCaption').value.trim(),event_date:$('galleryDate').value||null,event_end_date:$('galleryEndDate').value||null,location:$('galleryLocation').value.trim(),image_url:cover,photos,sort_order:Number($('gallerySortOrder').value),is_active:$('galleryIsActive').checked};
     await request(id?'/api/update-gallery-item':'/api/add-gallery-item',payload);
     resetForm(); status('Event album saved.'); await loadAlbums();
   }catch(error){status(error.message);}finally{setBusy(false);}

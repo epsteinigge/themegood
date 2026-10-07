@@ -650,7 +650,8 @@ body{
               <button type="button" id="addPhotoUrl" class="secondary-btn">Add photo URL</button>
             </div>
 
-            <div class="form-row"><label for="galleryDate">Event date (optional)</label><input type="date" id="galleryDate"></div>
+            <div class="form-row"><label for="galleryDate">Start date (optional)</label><input type="date" id="galleryDate"></div>
+            <div class="form-row"><label for="galleryEndDate">End date (optional, for multi-day events)</label><input type="date" id="galleryEndDate"></div>
             <div class="form-row"><label for="galleryLocation">Location (optional)</label><input id="galleryLocation" maxlength="200"></div>
             <div><p>The cover appears on the gallery page. Use the arrows to reorder photos. Changes take effect when you save.</p><div id="albumPhotos" class="admin-album-photos"></div></div>
             <p id="galleryStatus" role="status" aria-live="polite"></p>
@@ -694,7 +695,7 @@ body{
   </div>
 </div>
 
-<script src="admin-gallery.js?v=2"></script>
+<script src="admin-gallery.js?v=3"></script>
 </body>
 </html>
 

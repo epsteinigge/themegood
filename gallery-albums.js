@@ -12,10 +12,13 @@ function validateAlbum(body) {
   const caption = String(body.caption || '').trim();
   const location = String(body.location || '').trim();
   const event_date = body.event_date || null;
+  const event_end_date = body.event_end_date || null;
   const sort_order = Number(body.sort_order ?? 0);
   if (!title || title.length > 150) return fail('Enter an event name of up to 150 characters.');
   if (caption.length > 1000 || location.length > 200) return fail('Description must be at most 1000 characters and location at most 200.');
   if (event_date && (!/^\d{4}-\d{2}-\d{2}$/.test(event_date) || !Number.isFinite(Date.parse(event_date)) || new Date(event_date).toISOString().slice(0, 10) !== event_date)) return fail('Enter a valid event date.');
+  if (event_end_date && (!/^\d{4}-\d{2}-\d{2}$/.test(event_end_date) || !Number.isFinite(Date.parse(event_end_date)) || new Date(event_end_date).toISOString().slice(0, 10) !== event_end_date)) return fail('Enter a valid event end date.');
+  if (event_end_date && (!event_date || event_end_date < event_date)) return fail('Event end date must be on or after the start date.');
   if (!Number.isInteger(sort_order) || sort_order < 0 || sort_order > 100000) return fail('Sort order must be a whole number from 0 to 100000.');
   if (typeof body.is_active !== 'boolean') return fail('Active status must be true or false.');
   if (!Array.isArray(body.photos) || !body.photos.length || body.photos.length > 500) return fail('Add between 1 and 500 photos per album.');
@@ -28,7 +31,7 @@ function validateAlbum(body) {
   }
   const image_url = body.image_url || photos[0].image_url;
   if (!photos.some(photo => photo.image_url === image_url)) return fail('Choose a cover from the album photos.');
-  return { value: { title, caption, location, event_date, sort_order, is_active: body.is_active, photos, image_url } };
+  return { value: { title, caption, location, event_date, event_end_date, sort_order, is_active: body.is_active, photos, image_url } };
 }
 
 function registerGalleryAlbums(app, pool, requireAdmin) {
@@ -41,7 +44,7 @@ function registerGalleryAlbums(app, pool, requireAdmin) {
   async function list(req, res, admin) {
     try {
       await ready();
-      const result = await pool.query(`SELECT *, to_char(event_date, 'YYYY-MM-DD') AS event_date FROM gallery_items ${admin ? '' : 'WHERE is_active = TRUE'} ORDER BY sort_order ASC, gallery_items.event_date DESC NULLS LAST, created_at DESC, id DESC`);
+      const result = await pool.query(`SELECT *, to_char(event_date, 'YYYY-MM-DD') AS event_date, to_char(event_end_date, 'YYYY-MM-DD') AS event_end_date FROM gallery_items ${admin ? '' : 'WHERE is_active = TRUE'} ORDER BY sort_order ASC, gallery_items.event_date DESC NULLS LAST, created_at DESC, id DESC`);
       res.json(result.rows.map(serialize));
     } catch (error) {
       console.error('Load albums failed:', error);
@@ -56,12 +59,12 @@ function registerGalleryAlbums(app, pool, requireAdmin) {
     const id = Number(req.body.id);
     if (editing && (!Number.isSafeInteger(id) || id < 1)) return res.status(400).json({ error: 'Invalid album ID.' });
     const a = validation.value;
-    const values = [a.title, a.caption, a.image_url, a.sort_order, a.is_active, JSON.stringify(a.photos), a.event_date, a.location];
+    const values = [a.title, a.caption, a.image_url, a.sort_order, a.is_active, JSON.stringify(a.photos), a.event_date, a.location, a.event_end_date];
     try {
       await ready();
       const result = editing
-        ? await pool.query(`UPDATE gallery_items SET title=$1, caption=$2, image_url=$3, sort_order=$4, is_active=$5, photos=$6::jsonb, event_date=$7, location=$8 WHERE id=$9 RETURNING id`, [...values, id])
-        : await pool.query(`INSERT INTO gallery_items (title,caption,image_url,sort_order,is_active,photos,event_date,location) VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7,$8) RETURNING id`, values);
+        ? await pool.query(`UPDATE gallery_items SET title=$1, caption=$2, image_url=$3, sort_order=$4, is_active=$5, photos=$6::jsonb, event_date=$7, location=$8, event_end_date=$9 WHERE id=$10 RETURNING id`, [...values, id])
+        : await pool.query(`INSERT INTO gallery_items (title,caption,image_url,sort_order,is_active,photos,event_date,location,event_end_date) VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7,$8,$9) RETURNING id`, values);
       if (!result.rowCount) return res.status(404).json({ error: 'This album no longer exists. Refresh the list.' });
       res.json({ id: result.rows[0].id, message: 'Event album saved.' });
     } catch (error) {

@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const express = require('express');
 const { validateAlbum, photoList, registerGalleryAlbums } = require('../gallery-albums');
 
-const album = () => ({ title: 'Community event', caption: 'One shared description', location: 'Ipoh', event_date: '2026-05-15', sort_order: 0, is_active: true, image_url: '/photos/cover.jpg', photos: [{ image_url: '/photos/cover.jpg', caption: '' }, { image_url: '/photos/group.jpg', caption: 'Group photo' }] });
+const album = () => ({ title: 'Community event', caption: 'One shared description', location: 'Ipoh', event_date: '2026-05-15', event_end_date: null, sort_order: 0, is_active: true, image_url: '/photos/cover.jpg', photos: [{ image_url: '/photos/cover.jpg', caption: '' }, { image_url: '/photos/group.jpg', caption: 'Group photo' }] });
 
 test('album validation preserves ordered photos, cover, date, and captions', () => {
   assert.deepEqual(validateAlbum(album()).value, album());
@@ -16,6 +16,12 @@ test('album validation preserves ordered photos, cover, date, and captions', () 
   for (const image_url of ['javascript:alert(1)', '//external.test/a.jpg', '/\\external.test/a.jpg', 'data:image/png;base64,123']) {
     assert.ok(validateAlbum({ ...album(), photos: [{ image_url }] }).error);
   }
+});
+
+test('event ranges reject invalid or reversed dates and preserve valid ranges', () => {
+  assert.equal(validateAlbum({...album(), event_end_date:'2026-05-21'}).value.event_end_date,'2026-05-21');
+  for(const event_end_date of ['2026-02-30','2026-05-14','invalid']) assert.ok(validateAlbum({...album(),event_end_date}).error);
+  assert.ok(validateAlbum({...album(),event_date:null,event_end_date:'2026-05-21'}).error);
 });
 
 test('legacy rows remain single-photo albums without rewriting data', () => {
@@ -47,7 +53,8 @@ test('album routes enforce authentication, preserve album payloads, and roll bac
   const saved = queries.find(q=>q.sql.startsWith('INSERT'));
   assert.deepEqual(JSON.parse(saved.args[5]),album().photos);
   assert.equal(saved.args[6],'2026-05-15');
-  assert.equal((await post('/api/update-gallery-item',{...album(),id:1,image_url:'/photos/group.jpg',photos:album().photos.slice().reverse()})).status,200);
+  assert.equal((await post('/api/update-gallery-item',{...album(),id:1,event_end_date:'2026-05-21',image_url:'/photos/group.jpg',photos:album().photos.slice().reverse()})).status,200);
+  assert.equal(queries.find(q=>q.sql.startsWith('UPDATE gallery_items SET title')).args[8],'2026-05-21');
   assert.equal((await post('/api/add-gallery-item',{...album(),photos:[]})).status,400);
   await fetch(base+'/api/gallery');
   assert.ok(queries.find(q=>q.sql.includes('WHERE is_active = TRUE')));

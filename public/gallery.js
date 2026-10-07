@@ -15,7 +15,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   const prev = document.getElementById('lightboxPrev');
   const next = document.getElementById('lightboxNext');
   let albums = [], photos = [], index = 0, zoom = 1, opener, pointer, panX = 0, panY = 0;
-  const meta = album => [album.event_date && new Date(`${album.event_date}T12:00:00`).toLocaleDateString(undefined, {day:'numeric',month:'short',year:'numeric'}), album.location].filter(Boolean).join(' · ');
+  const dateFormat = new Intl.DateTimeFormat('en-GB', {day:'numeric',month:'long',year:'numeric'});
+  const eventDate = album => {
+    if (!album.event_date) return '';
+    const start = new Date(album.event_date + 'T12:00:00');
+    return album.event_end_date && album.event_end_date > album.event_date
+      ? dateFormat.formatRange(start, new Date(album.event_end_date + 'T12:00:00'))
+      : dateFormat.format(start);
+  };
+  const meta = album => [eventDate(album), album.location].filter(Boolean).join(' \u00b7 ');
   function renderPhoto() {
     const photo = photos[index];
     image.src = photo.image_url;
