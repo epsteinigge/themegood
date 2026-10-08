@@ -1742,6 +1742,7 @@
     if (!count) return;
     const label = t(key);
     const iconClass = "header-action-icon is-cart";
+    const existingIcon = button.querySelector('svg.header-action-icon');
 
     button.setAttribute("aria-label", label);
     button.innerHTML = `
@@ -1749,6 +1750,7 @@
       <span class="header-action-label">${label}</span>
     `;
     button.appendChild(count);
+    if (existingIcon) button.querySelector('.header-action-icon').replaceWith(existingIcon);
   }
 
   function parseCustomerId(value) {

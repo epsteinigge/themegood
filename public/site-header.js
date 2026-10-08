@@ -6,7 +6,8 @@
   template.innerHTML = `
 <section class="site-announcement-bar" role="alert" aria-live="polite">
 <div class="site-announcement-bar__content">
-<strong>Shipping fee is not included in website prices.</strong>
+<strong class="site-notice-full">Shipping fee is not included in website prices.</strong>
+<strong class="site-notice-compact">Prices exclude shipping.</strong>
 <span>After placing your order, contact us on WhatsApp to confirm your shipping fee by location and pay the shipping amount separately.</span>
 </div>
 <a class="site-announcement-bar__action" href="https://wa.me/60187786000" target="_blank" rel="noopener noreferrer">WhatsApp 018-7786000</a>
@@ -17,7 +18,7 @@
 </a>
 
 <button id="hamburgerBtn" type="button" aria-controls="navMenu" aria-expanded="false" aria-label="Open navigation">
-<i class="fa fa-bars"></i>
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path class="menu-icon-lines" d="M4 6h16M4 12h16M4 18h16"/></svg>
 </button>
 
 <nav id="navMenu" aria-label="Primary navigation">
@@ -71,7 +72,7 @@
 
 <div class="header-actions">
 <a href="shopping.html" class="btn header-shop-cta" data-i18n="shop_now">Shop Now</a>
-<button id="cart-toggle" type="button" aria-label="Open shopping cart">&#128722; Cart <span id="cart-count">0</span></button>
+<button id="cart-toggle" type="button" aria-label="Open shopping cart"><svg class="header-action-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h2l2.4 12h11.2l2-8H6"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg><span class="header-action-label">Cart</span> <span id="cart-count">0</span></button>
 <label class="lang-switch" aria-label="Language">
 <span data-i18n="language">Language</span>
 <select class="js-lang-switch">
@@ -105,7 +106,7 @@
     document.body.classList.remove('no-scroll');
     toggle.setAttribute('aria-expanded', 'false');
     toggle.setAttribute('aria-label', 'Open navigation');
-    toggle.querySelector('i').className = 'fa fa-bars';
+    toggle.querySelector('.menu-icon-lines').setAttribute('d', 'M4 6h16M4 12h16M4 18h16');
     if (restoreFocus) (previousFocus || toggle).focus();
   }
 
@@ -114,7 +115,7 @@
     const headerHeight = header.getBoundingClientRect().height;
     root.style.setProperty('--site-notice-height', `${noticeHeight}px`);
     root.style.setProperty('--site-header-height', `${headerHeight}px`);
-    root.style.setProperty('--site-content-offset', `${noticeHeight + headerHeight + 28}px`);
+    root.style.setProperty('--site-content-offset', `${noticeHeight + headerHeight + (window.matchMedia('(max-width: 760px)').matches ? 16 : 28)}px`);
   }
 
   function syncLayout() {
@@ -131,7 +132,7 @@
     document.body.classList.add('no-scroll');
     toggle.setAttribute('aria-expanded', 'true');
     toggle.setAttribute('aria-label', 'Close navigation');
-    toggle.querySelector('i').className = 'fa fa-times';
+    toggle.querySelector('.menu-icon-lines').setAttribute('d', 'M6 6l12 12M6 18L18 6');
     nav.querySelector('a')?.focus();
   });
   overlay.addEventListener('click', () => closeMenu(true));

@@ -30,6 +30,7 @@ html body.shared-site .site-announcement-bar {
 }
 html body.shared-site .site-announcement-bar__content { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 8px; }
 html body.shared-site .site-announcement-bar__content :is(strong, span) { font-size: 13px; line-height: 1.45; }
+html body.shared-site .site-announcement-bar__content .site-notice-compact { display: none; }
 html body.shared-site .site-announcement-bar__action {
   flex-shrink: 0;
   padding: 6px 12px;
@@ -230,8 +231,9 @@ html body.shared-site .contact-hover-card { display: none !important; }
   html body.shared-site > header.site-header .header-actions { grid-column: 2 !important; grid-row: 1 !important; }
   html body.shared-site > header.site-header :is(.header-store-links, .header-social-links, .header-shop-cta, #customer-logout-btn) { display: none !important; }
   html body.shared-site > header.site-header #cart-toggle { position: relative; width: 44px !important; height: 44px !important; min-height: 44px !important; padding: 0 !important; font-size: 0 !important; }
-  html body.shared-site > header.site-header #cart-toggle::after { content: "\1F6D2" !important; font: 18px/1 Arial; }
-  html body.shared-site > header.site-header #cart-toggle :is(.header-action-icon, .header-action-label) { display: none !important; }
+  html body.shared-site > header.site-header #cart-toggle::after { content: none !important; }
+  html body.shared-site > header.site-header #cart-toggle .header-action-label { display: none !important; }
+  html body.shared-site > header.site-header #cart-toggle .header-action-icon { display: block !important; }
   html body.shared-site > header.site-header #cart-count { position: absolute !important; top: -3px !important; right: -3px !important; z-index: 1; }
   html body.shared-site > header.site-header #cart-count.is-empty { display: none !important; }
   html body.shared-site > header.site-header #hamburgerBtn {
@@ -281,12 +283,33 @@ html body.shared-site .contact-hover-card { display: none !important; }
   html body.shared-site > header.site-header #menuOverlay.active { opacity: 1 !important; pointer-events: auto !important; }
 }
 @media (max-width: 760px) {
-  html body.shared-site .site-announcement-bar { min-height: 0; padding: 8px 14px; flex-direction: row; gap: 8px; }
+  html body.shared-site .site-announcement-bar { min-height: 36px; padding: 4px 16px; flex-direction: row; justify-content: space-between; gap: 8px; }
   html body.shared-site .site-announcement-bar__content { justify-content: flex-start; text-align: left; }
-  html body.shared-site .site-announcement-bar__content strong { font-family: "Nunito Sans", Arial, sans-serif; font-size: 11px; font-weight: 800; line-height: 1.35; }
+  html body.shared-site .site-announcement-bar__content strong { font-family: "Nunito Sans", Arial, sans-serif; font-size: 11px; font-weight: 600; line-height: 1.35; }
+  html body.shared-site .site-announcement-bar__content .site-notice-full { display: none; }
+  html body.shared-site .site-announcement-bar__content .site-notice-compact { display: block; }
   html body.shared-site .site-announcement-bar__content span { display: none; }
-  html body.shared-site .site-announcement-bar__action { width: auto; max-width: none; padding: 8px; font-size: 0; }
-  html body.shared-site .site-announcement-bar__action::after { content: "WhatsApp"; font-size: 11px; }
+  html body.shared-site .site-announcement-bar__action { width: auto; max-width: none; min-height: 28px; padding: 0; border: 0; background: transparent; font-size: 0; letter-spacing: 0; text-transform: none; }
+  html body.shared-site .site-announcement-bar__action::after { content: "WhatsApp \2197"; font-size: 11px; }
+  html body.shared-site > header.site-header {
+    top: var(--site-notice-height) !important;
+    width: 100% !important;
+    height: 68px !important;
+    min-height: 68px !important;
+    padding: 4px 16px !important;
+    border: 0 !important;
+    border-bottom: 1px solid #eed8dc !important;
+    border-radius: 0 !important;
+    box-shadow: 0 4px 16px #48202c08 !important;
+    gap: 8px !important;
+  }
+  html body.shared-site > header.site-header .logo-container { width: 104px !important; max-width: 104px !important; }
+  html body.shared-site > header.site-header .logo { width: 104px !important; height: 60px !important; object-fit: cover !important; transform: none !important; }
+  html body.shared-site > header.site-header #cart-toggle,
+  html body.shared-site > header.site-header #hamburgerBtn { border: 0 !important; border-radius: 12px !important; background: transparent !important; color: #652335 !important; box-shadow: none !important; }
+  html body.shared-site > header.site-header #cart-toggle:hover,
+  html body.shared-site > header.site-header #hamburgerBtn:hover { background: #fff0f3 !important; }
+  html body.shared-site > header.site-header #navMenu { left: 12px !important; right: 12px !important; }
   html body.shared-site:is(.account-page, .customer-login-page, .track-order-page, .order-success-page) :is(input, select, textarea) { font-size: 16px; box-sizing: border-box; max-width: 100%; }
   html body.shared-site.account-page .stats { grid-template-columns: minmax(0, 1fr) !important; }
   html body.shared-site:is(.track-order-page, .order-success-page) :is(.hero-copy, .hero-content, .panel) { padding: 24px; }
