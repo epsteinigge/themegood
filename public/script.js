@@ -3604,7 +3604,6 @@
 
   // --- Slider Logic ---
   let slideIndex = 0;
-  let sliderIntervalId = null;
 
   function initHomepageSlider() {
     const hero = document.querySelector(".hero");
@@ -3646,23 +3645,11 @@
       });
     };
 
-    const restartSliderTimer = () => {
-      if (sliderIntervalId) {
-        clearInterval(sliderIntervalId);
-      }
-      sliderIntervalId = setInterval(() => showSlide(slideIndex + 1), 5000);
-    };
-
-    const showSlideAndRestartTimer = (i) => {
-      showSlide(i);
-      restartSliderTimer();
-    };
-
-    prevBtn.onclick = () => showSlideAndRestartTimer(slideIndex - 1);
-    nextBtn.onclick = () => showSlideAndRestartTimer(slideIndex + 1);
+    prevBtn.onclick = () => showSlide(slideIndex - 1);
+    nextBtn.onclick = () => showSlide(slideIndex + 1);
 
     dots.forEach((dot, index) => {
-      dot.onclick = () => showSlideAndRestartTimer(index);
+      dot.onclick = () => showSlide(index);
     });
 
     slides.forEach((slide) => {
@@ -3680,7 +3667,6 @@
 
     showSlide(slideIndex);
 
-    restartSliderTimer();
   }
 
   window.initHomepageSlider = initHomepageSlider;

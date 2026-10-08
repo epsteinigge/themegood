@@ -77,13 +77,19 @@ async function loadHomepageContent() {
       const prevBtn = hero.querySelector("#prevBtn");
       const dotsContainer = hero.querySelector(".dots");
       const heroBottomBar = hero.querySelector(".hero-bottom-bar");
+      const bannerSlide = hero.querySelector(".hero-banner-slide");
 
-      hero.querySelectorAll(".slide").forEach((slide) => slide.remove());
-      if (dotsContainer) dotsContainer.innerHTML = "";
+      hero.querySelectorAll(".slide").forEach((slide) => {
+        if (slide !== bannerSlide) slide.remove();
+      });
+      if (dotsContainer) {
+        dotsContainer.innerHTML = bannerSlide ? '<span class="dot active"></span>' : "";
+      }
 
       slides.forEach((slide, index) => {
+        const isFirstSlide = !bannerSlide && index === 0;
         const slideEl = document.createElement("div");
-        slideEl.className = `slide${index === 0 ? " active" : ""}`;
+        slideEl.className = `slide${isFirstSlide ? " active" : ""}`;
         const hasVideo = Boolean(slide.video_url);
         const mediaMarkup = hasVideo
           ? `
@@ -101,7 +107,7 @@ async function loadHomepageContent() {
           <div class="hero-overlay"></div>
           <div class="hero-copy">
             <p class="hero-eyebrow">ThemeGood</p>
-            <${index === 0 ? "h1" : "h2"}>${escapeHtml(slide.title || "Premium wellness nutrition for modern lifestyles.")}</${index === 0 ? "h1" : "h2"}>
+            <${isFirstSlide ? "h1" : "h2"}>${escapeHtml(slide.title || "Premium wellness nutrition for modern lifestyles.")}</${isFirstSlide ? "h1" : "h2"}>
             <p class="hero-support">${escapeHtml(slide.description || slide.subtitle || "Discover a cleaner, more elevated way to explore ThemeGood products online.")}</p>
             <div class="slide-cta">
               <a href="${escapeHtml(slide.button_primary_link || "#products")}" class="btn btn-primary">${escapeHtml(slide.button_primary_text || "Buy Now")}</a>
@@ -122,7 +128,7 @@ async function loadHomepageContent() {
 
         if (dotsContainer) {
           const dot = document.createElement("span");
-          dot.className = `dot${index === 0 ? " active" : ""}`;
+          dot.className = `dot${isFirstSlide ? " active" : ""}`;
           dotsContainer.appendChild(dot);
         }
       });
