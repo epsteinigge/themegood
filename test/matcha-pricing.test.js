@@ -38,13 +38,13 @@ function check(entries, basePrice, expected) {
   assert.equal(quote.subtotal, expected);
   assert.deepEqual(quote.validation_errors, []);
   for (const row of quote.breakdown.filter((row) => /matcha/i.test(row.label))) {
-    assert.equal(row.price, row.size === "300g" ? 79 : 148);
+    assert.equal(row.price, row.size === "300g" ? 79 : 168);
   }
   const selects = entries.map(([label, size]) => ({
     selectedIndex: 0,
     options: [{ dataset: {
-      name: label, size, price: size === "300g" ? 79 : 148,
-      choiceLabel: label, choiceSize: size, choicePrice: size === "300g" ? 79 : 148
+      name: label, size, price: size === "300g" ? 79 : 168,
+      choiceLabel: label, choiceSize: size, choicePrice: size === "300g" ? 79 : 168
     } }],
     closest: () => ({ querySelector: () => ({ textContent: "Slot" }) })
   }));
@@ -57,19 +57,19 @@ function check(entries, basePrice, expected) {
   }
 }
 
-check([["Matcha", "800g"], ["Bilberry", "800g"]], 216, 256);
-check([["Matcha", "800g"], ["Matcha", "800g"]], 216, 296);
-check([["Matcha", "800g"], ["Cocoa", "800g"], ["Matcha", "300g"]], 244, 365);
+check([["Matcha", "800g"], ["Bilberry", "800g"]], 216, 276);
+check([["Matcha", "800g"], ["Matcha", "800g"]], 216, 336);
+check([["Matcha", "800g"], ["Cocoa", "800g"], ["Matcha", "300g"]], 244, 385);
 check([["Bilberry", "800g"], ["Bilberry", "800g"], ["Matcha", "300g"]], 244, 295);
-check(Array.from({ length: 5 }, () => ["Matcha", "800g"]), 486, 740);
-check([["Matcha", "800g"], ...Array.from({ length: 4 }, () => ["Bilberry", "800g"])], 486, 526);
-check([["Matcha", "800g"], ...Array.from({ length: 4 }, () => ["Cocoa", "800g"])], 486, 670);
-check([["Matcha", "800g"], ["Cocoa", "800g"], ...Array.from({ length: 3 }, () => ["Bilberry", "800g"])], 486, 556);
+check(Array.from({ length: 5 }, () => ["Matcha", "800g"]), 486, 840);
+check([["Matcha", "800g"], ...Array.from({ length: 4 }, () => ["Bilberry", "800g"])], 486, 546);
+check([["Matcha", "800g"], ...Array.from({ length: 4 }, () => ["Cocoa", "800g"])], 486, 690);
+check([["Matcha", "800g"], ["Cocoa", "800g"], ...Array.from({ length: 3 }, () => ["Bilberry", "800g"])], 486, 576);
 assert.equal(getBundleOptionDisplayAdjustment({ profile: "two_800g_one_300g", sizeName: "300g", flavorName: "Matcha" }), 51);
-assert.equal(getBundleOptionDisplayAdjustment({ profile: "two_800g", sizeName: "800g", flavorName: "Matcha" }), 40);
+assert.equal(getBundleOptionDisplayAdjustment({ profile: "two_800g", sizeName: "800g", flavorName: "Matcha" }), 60);
 for (const count of [7, 15]) {
   const slots = Array.from({ length: count }, (_, index) => ({ id: index + 1, required_size: "800g" }));
   const selections = slots.map((slot) => ({ slot_id: slot.id, label: "Matcha", size_name: "800g" }));
-  assert.equal(calculateBundleTotal({ slots, selections }).subtotal, count * 148);
+  assert.equal(calculateBundleTotal({ slots, selections }).subtotal, count * 168);
 }
 console.log("Matcha prices agree across server, shop modal and product detail.");

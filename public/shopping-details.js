@@ -161,7 +161,7 @@ function buildDetailBundleBreakdownRowsFromSelects(selects = []) {
     const pricingNote = normalizeDetailLegacyBundlePricingNote(option?.dataset.pricingNote || "");
 
     if (isMatcha) {
-      price = normalizedSize === "300g" ? 79 : 148;
+      price = normalizedSize === "300g" ? 79 : 168;
       extra = 0;
     } else if (isTwo800gBundle) {
       if (normalizedSize === "800g") {
@@ -207,7 +207,7 @@ function buildDetailBundleBreakdownRowsFromSelects(selects = []) {
       const isCocoa = isBundleCocoaLabel(row.label);
       const isMatcha = /matcha/i.test(String(row.label));
       const basePrice = discounted ? 54 : 108;
-      const price = isMatcha ? 148 : isCocoa ? (cocoaCount === 0 ? 138 : 128) : basePrice;
+      const price = isMatcha ? 168 : isCocoa ? (cocoaCount === 0 ? 138 : 128) : basePrice;
       const pricingNote = discounted ? "Discounted 5th can" : (isMatcha ? "Matcha regular price" : isCocoa ? "Additional Cocoa bundle price" : row.pricing_note);
       if (isCocoa) cocoaCount += 1;
 
@@ -267,7 +267,7 @@ function normalizeDetailFiveCanBundleBreakdown(rows = []) {
     const isMatcha = /matcha/i.test(String(row?.label));
     const discounted = discountedIndex >= 0 && index === discountedIndex;
     const basePrice = discounted ? 54 : 108;
-    const price = isMatcha ? 148 : isCocoa ? (cocoaCount === 0 ? 138 : 128) : basePrice;
+    const price = isMatcha ? 168 : isCocoa ? (cocoaCount === 0 ? 138 : 128) : basePrice;
     const pricingNote = discounted
       ? "Discounted 5th can"
       : (isMatcha ? "Matcha regular price" : isCocoa ? "Additional Cocoa bundle price" : (row.pricing_note || "Paid 800g can"));
