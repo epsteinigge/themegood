@@ -1,11 +1,4 @@
-/* Keep the complete promotional artwork visible at every screen size. */
-html body.shared-site.home-page #home.hero:has(.hero-banner-slide.active) {
-  height: auto !important;
-  min-height: 0 !important;
-  aspect-ratio: 1672 / 941;
-  background: #faf1e5;
-}
-
+/* Use the shared slider dimensions and fill the frame like the other images. */
 html body.home-page #home.hero .hero-banner-slide .hero-media {
   display: block;
   width: 100%;
@@ -15,7 +8,7 @@ html body.home-page #home.hero .hero-banner-slide .hero-media {
 html body.home-page #home.hero .hero-banner-slide img {
   width: 100% !important;
   height: 100% !important;
-  object-fit: contain !important;
+  object-fit: cover !important;
   object-position: center !important;
   transform: none !important;
   filter: none !important;
