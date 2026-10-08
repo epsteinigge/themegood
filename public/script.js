@@ -3714,7 +3714,7 @@
   }
 
   function ensureCustomerHeaderButtons() {
-    if (!headerActions) return;
+    if (!headerActions || siteHeader?.dataset.accountControls === "disabled") return;
 
     if (!customerAccountButton || !customerLogoutButton) {
       customerAccountButton = headerActions.querySelector("#customer-account-btn");

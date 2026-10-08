@@ -11,7 +11,7 @@
 </div>
 <a class="site-announcement-bar__action" href="https://wa.me/60187786000" target="_blank" rel="noopener noreferrer">WhatsApp 018-7786000</a>
 </section>
-<header class="site-header">
+<header class="site-header" data-account-controls="disabled">
 <a href="index.html" class="logo-container" aria-label="ThemeGood home">
 <img src="photos/Theme Good Logo-03.png" class="logo" alt="ThemeGood logo">
 </a>
@@ -71,7 +71,6 @@
 
 <div class="header-actions">
 <a href="shopping.html" class="btn header-shop-cta" data-i18n="shop_now">Shop Now</a>
-<a id="customer-account-btn" class="btn header-account-btn" href="customer-login.html">Login</a>
 <button id="cart-toggle" type="button" aria-label="Open shopping cart">&#128722; Cart <span id="cart-count">0</span></button>
 <label class="lang-switch" aria-label="Language">
 <span data-i18n="language">Language</span>
@@ -180,12 +179,6 @@
     const count = cart.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
     header.querySelector('#cart-count').textContent = count;
     header.querySelector('#cart-count').classList.toggle('is-empty', count <= 0);
-    const customerId = localStorage.getItem('themegood_customer_id');
-    if (customerId && localStorage.getItem('themegood_customer_token')) {
-      const account = header.querySelector('#customer-account-btn');
-      account.textContent = 'My Points';
-      account.href = `account.html?customer_id=${encodeURIComponent(customerId)}`;
-    }
     const select = language.querySelector('select');
     select.value = localStorage.getItem('site_lang') || 'en';
     select.addEventListener('change', () => localStorage.setItem('site_lang', select.value));
