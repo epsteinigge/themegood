@@ -1,0 +1,9 @@
+# Mobile hero garden background
+
+Asset: `public/photos/themegood-mobile-garden-background.webp`
+
+Generated with the built-in imagegen tool using `public/photos/themegood-home-banner-real-packaging.png` as a style reference. The output was resized to 1000 × 1500 and encoded as WebP at quality 84. The website overlays the original product photos and live text separately.
+
+## Generation prompt
+
+Use case: photorealistic-natural. Asset type: portrait background-only photograph for a mobile nutrition shop hero, approximate 2:3 portrait composition. The provided image is a STYLE REFERENCE for the sunlit cream stone, foliage shadows, garden and mountain scenery of the desktop banner, not an edit target. Generate a clean empty background in the same warm natural photographic style. A sunlit pale cream limestone courtyard wall in the upper third with gentle botanical shadows and ample clean light space for dark headline text. A soft-focus green garden and glimpse of blue distant mountains through an opening toward the right middle, with warm cream wall still occupying the majority so overlaid product cans remain clear. Two wide shallow pale travertine display ledges across the lower half, at about 53 percent and 78 percent of image height, empty and subtle, for separate real product photos that will be added in HTML. A few leafy green branches frame the extreme edges, natural golden morning light, delicate depth of field. Keep central areas mostly quiet and pale, no busy foliage behind overlay positions. Constraints: background only, absolutely NO product cans, packages, glasses, food, fruit, beans, logos, badges, lettering, symbols, text or watermark. Do not recreate any text or packaging in the reference. It must look like a real photograph and have no beige flat gradient look.

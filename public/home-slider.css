@@ -48,7 +48,11 @@ html body.home-page #home.hero:has(.hero-banner-slide.active) .hero-bottom-bar {
     min-height: 0 !important;
     aspect-ratio: auto;
     padding: 24px 16px 18px;
-    background: radial-gradient(ellipse at center, #fffdf8 0%, #f8eedc 60%, #f3e2ce 100%);
+    background-color: #f8eedc;
+    background-image: linear-gradient(180deg, #fff8eecc 0%, #fff8eeb8 28%, #fff8ee10 48%, #fff8ee20 100%), url("photos/themegood-mobile-garden-background.webp");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
   }
   html body.shared-site.home-page #home.hero .hero-banner-slide > .hero-media { display: none; }
   html body.shared-site.home-page #home.hero .hero-banner-title {
