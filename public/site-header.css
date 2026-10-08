@@ -229,7 +229,21 @@ html body.shared-site .contact-hover-card { display: none !important; }
   html body.shared-site > header.site-header .logo-container { grid-column: 1 !important; grid-row: 1 !important; width: 116px !important; max-width: 116px !important; }
   html body.shared-site > header.site-header .logo { height: 44px !important; }
   html body.shared-site > header.site-header .header-actions { grid-column: 2 !important; grid-row: 1 !important; }
-  html body.shared-site > header.site-header :is(.header-store-links, .header-social-links, .header-shop-cta, #customer-logout-btn) { display: none !important; }
+  html body.shared-site > header.site-header :is(.header-store-links, .header-social-links, #customer-logout-btn) { display: none !important; }
+  html body.shared-site > header.site-header :is(#cart-toggle, .header-shop-cta).header-shop-cta {
+    display: inline-flex !important;
+    width: 88px !important;
+    min-height: 44px !important;
+    padding: 0 8px !important;
+    border: 0 !important;
+    border-radius: 12px !important;
+    background: #8e2941 !important;
+    font-size: 10px !important;
+    line-height: 1.3 !important;
+    text-align: center;
+    text-transform: none;
+    white-space: normal;
+  }
   html body.shared-site > header.site-header #cart-toggle { position: relative; width: 44px !important; height: 44px !important; min-height: 44px !important; padding: 0 !important; font-size: 0 !important; }
   html body.shared-site > header.site-header #cart-toggle::after { content: none !important; }
   html body.shared-site > header.site-header #cart-toggle .header-action-label { display: none !important; }
@@ -296,13 +310,14 @@ html body.shared-site .contact-hover-card { display: none !important; }
     width: 100% !important;
     height: 68px !important;
     min-height: 68px !important;
-    padding: 4px 16px !important;
+    padding: 4px 12px !important;
     border: 0 !important;
     border-bottom: 1px solid #eed8dc !important;
     border-radius: 0 !important;
     box-shadow: 0 4px 16px #48202c08 !important;
-    gap: 8px !important;
+    gap: 4px !important;
   }
+  html body.shared-site > header.site-header .header-actions { gap: 4px !important; }
   html body.shared-site > header.site-header .logo-container { width: 104px !important; max-width: 104px !important; }
   html body.shared-site > header.site-header .logo { width: 104px !important; height: 60px !important; object-fit: cover !important; transform: none !important; }
   html body.shared-site > header.site-header #cart-toggle,
