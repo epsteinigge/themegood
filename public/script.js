@@ -522,6 +522,9 @@
       about_themegood: "About ThemeGood",
       about_lead: "Quality and natural wellness nutrition for modern lifestyles.",
       hero_slide1_title: "Premium wellness nutrition for modern lifestyles.",
+      hero_banner_title: "Good Ingredients for Brighter Days",
+      hero_banner_intro: "Fruit-flavoured soy nutrition for your daily routine.",
+      hero_banner_shop: "Explore the flavours",
       hero_slide1_support: "Discover a cleaner, more elevated way to explore ThemeGood products online.",
       hero_slide1_primary: "Buy Now",
       hero_slide1_secondary: "Learn More",
@@ -842,6 +845,9 @@
       about_themegood: "Tentang ThemeGood",
       about_lead: "Pemakanan kesihatan semula jadi berkualiti untuk gaya hidup moden.",
       hero_slide1_title: "Pemakanan kesihatan premium untuk gaya hidup moden.",
+      hero_banner_title: "Ramuan Baik untuk Hari yang Lebih Ceria",
+      hero_banner_intro: "Nutrisi soya berperisa buah untuk rutin harian anda.",
+      hero_banner_shop: "Terokai perisa",
       hero_slide1_support: "Terokai cara yang lebih bersih dan lebih premium untuk membeli produk ThemeGood secara dalam talian.",
       hero_slide1_primary: "Beli Sekarang",
       hero_slide1_secondary: "Ketahui Lagi",
@@ -1174,6 +1180,9 @@
       about_themegood: "关于 天榖",
       about_lead: "为现代生活打造的优质天然健康营养。",
       hero_slide1_title: "为现代生活方式打造的高端健康营养。",
+      hero_banner_title: "好原料，让每一天更美好",
+      hero_banner_intro: "果味豆奶营养，为日常生活添活力。",
+      hero_banner_shop: "探索口味",
       hero_slide1_support: "用更清晰、更高质感的方式在线探索 天榖 产品。",
       hero_slide1_primary: "立即购买",
       hero_slide1_secondary: "了解更多",
@@ -3240,6 +3249,12 @@
       ];
 
       heroSlides.forEach((slide, index) => {
+        if (slide.classList.contains('hero-banner-slide')) {
+          slide.querySelector('.hero-banner-title').textContent = t('hero_banner_title');
+          slide.querySelector('.mobile-hero-intro').textContent = t('hero_banner_intro');
+          slide.querySelector('.mobile-hero-shop-label').textContent = t('hero_banner_shop');
+          return;
+        }
         const cfg = heroConfig[index];
         if (!cfg) return;
         const heading = slide.querySelector("h1, h2");

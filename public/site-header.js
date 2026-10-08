@@ -71,7 +71,7 @@
 </div>
 
 <div class="header-actions">
-<a href="shopping.html" class="btn header-shop-cta" data-i18n="shop_now">Shop Now</a>
+<a id="header-shop-now" href="shopping.html" class="btn header-shop-cta" data-i18n="shop_now">Shop Now</a>
 <button id="cart-toggle" type="button" aria-label="Open shopping cart"><svg class="header-action-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h2l2.4 12h11.2l2-8H6"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg><span class="header-action-label">Cart</span> <span id="cart-count">0</span></button>
 <label class="lang-switch" aria-label="Language">
 <span data-i18n="language">Language</span>

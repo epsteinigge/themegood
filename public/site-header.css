@@ -230,7 +230,7 @@ html body.shared-site .contact-hover-card { display: none !important; }
   html body.shared-site > header.site-header .logo { height: 44px !important; }
   html body.shared-site > header.site-header .header-actions { grid-column: 2 !important; grid-row: 1 !important; }
   html body.shared-site > header.site-header :is(.header-store-links, .header-social-links, #customer-logout-btn) { display: none !important; }
-  html body.shared-site > header.site-header :is(#cart-toggle, .header-shop-cta).header-shop-cta {
+  html body.shared-site > header.site-header #header-shop-now.header-shop-cta {
     display: inline-flex !important;
     width: 88px !important;
     min-height: 44px !important;
