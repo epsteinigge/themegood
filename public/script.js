@@ -3251,8 +3251,6 @@
       heroSlides.forEach((slide, index) => {
         if (slide.classList.contains('hero-banner-slide')) {
           slide.querySelector('.hero-banner-title').textContent = t('hero_banner_title');
-          slide.querySelector('.mobile-hero-intro').textContent = t('hero_banner_intro');
-          slide.querySelector('.mobile-hero-shop-label').textContent = t('hero_banner_shop');
           return;
         }
         const cfg = heroConfig[index];
