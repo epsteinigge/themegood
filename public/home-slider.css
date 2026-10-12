@@ -1,4 +1,12 @@
-/* Use the shared slider dimensions and fill the frame like the other images. */
+/* Fit the campaign artwork so its certification marks stay inside the frame. */
+@media (min-width: 761px) {
+  html body.home-page #home.hero:has(.hero-banner-slide.active) {
+    height: auto !important;
+    min-height: 0 !important;
+    aspect-ratio: 1672 / 941;
+  }
+}
+
 html body.home-page #home.hero .hero-banner-slide .hero-media {
   display: block;
   width: 100%;
