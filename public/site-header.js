@@ -73,14 +73,14 @@
 <div class="header-actions">
 <a id="header-shop-now" href="shopping.html" class="btn header-shop-cta" data-i18n="shop_now">Shop Now</a>
 <button id="cart-toggle" type="button" aria-label="Open shopping cart"><svg class="header-action-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h2l2.4 12h11.2l2-8H6"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg><span class="header-action-label">Cart</span> <span id="cart-count">0</span></button>
-<label class="lang-switch" aria-label="Language">
+<div class="lang-switch site-language-picker" aria-label="Language">
 <span data-i18n="language">Language</span>
 <select class="js-lang-switch">
 <option value="en">EN</option>
 <option value="ms">BM</option>
 <option value="zh">&#20013;&#25991;</option>
 </select>
-</label>
+</div>
 </div>
 
 <div id="menuOverlay"></div>
@@ -100,7 +100,108 @@
   const notice = document.querySelector('.site-announcement-bar');
   let previousFocus = null;
 
+  // Keep the select as the translation interface, and design its visible controls.
+  const languageSelect = language.querySelector('select');
+  const languageChoices = [
+    { value: 'en', code: 'EN', name: 'English' },
+    { value: 'ms', code: 'BM', name: 'Bahasa Melayu' },
+    { value: 'zh', code: '\u4e2d\u6587', name: '\u4e2d\u6587' }
+  ];
+  languageSelect.value = localStorage.getItem('site_lang') || 'en';
+  languageSelect.dataset.premiumReady = 'true';
+  languageSelect.tabIndex = -1;
+  languageSelect.setAttribute('aria-hidden', 'true');
+  language.classList.add('lang-switch-premium');
+  const languageTrigger = document.createElement('button');
+  languageTrigger.type = 'button';
+  languageTrigger.className = 'lang-trigger';
+  languageTrigger.setAttribute('aria-label', 'Choose language');
+  languageTrigger.setAttribute('aria-haspopup', 'listbox');
+  languageTrigger.setAttribute('aria-expanded', 'false');
+  languageTrigger.setAttribute('aria-controls', 'site-language-menu');
+  languageTrigger.innerHTML = '<span class="lang-trigger-text"></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+  const languageMenu = document.createElement('div');
+  languageMenu.id = 'site-language-menu';
+  languageMenu.className = 'lang-menu';
+  languageMenu.setAttribute('role', 'listbox');
+  languageMenu.setAttribute('aria-label', 'Choose language');
+  const languageOptions = languageChoices.map(choice => {
+    const option = document.createElement('button');
+    option.type = 'button';
+    option.className = 'lang-option';
+    option.dataset.lang = choice.value;
+    option.setAttribute('role', 'option');
+    option.tabIndex = -1;
+    option.innerHTML = `<span class="language-code">${choice.code}</span><span class="language-name">${choice.name}</span>`;
+    option.addEventListener('click', () => {
+      languageSelect.value = choice.value;
+      languageSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      closeLanguageMenu(true);
+    });
+    languageMenu.appendChild(option);
+    return option;
+  });
+  language.append(languageTrigger, languageMenu);
+
+  function syncLanguage() {
+    const selected = languageChoices.find(choice => choice.value === languageSelect.value) || languageChoices[0];
+    languageTrigger.querySelector('.lang-trigger-text').textContent = selected.code;
+    languageTrigger.setAttribute('aria-label', `Choose language, current language: ${selected.name}`);
+    languageOptions.forEach(option => {
+      const active = option.dataset.lang === selected.value;
+      option.classList.toggle('is-active', active);
+      option.setAttribute('aria-selected', String(active));
+    });
+  }
+  function closeLanguageMenu(restoreFocus = false) {
+    language.classList.remove('premium-open');
+    languageTrigger.setAttribute('aria-expanded', 'false');
+    if (restoreFocus) languageTrigger.focus();
+  }
+  function openLanguageMenu() {
+    language.classList.add('premium-open');
+    languageTrigger.setAttribute('aria-expanded', 'true');
+    languageOptions.find(option => option.dataset.lang === languageSelect.value)?.focus();
+  }
+  languageTrigger.addEventListener('click', () => {
+    if (language.classList.contains('premium-open')) closeLanguageMenu();
+    else openLanguageMenu();
+  });
+  languageTrigger.addEventListener('keydown', event => {
+    if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return;
+    event.preventDefault();
+    openLanguageMenu();
+  });
+  languageMenu.addEventListener('keydown', event => {
+    if (event.key === 'Tab') { closeLanguageMenu(true); return; }
+    const index = languageOptions.indexOf(document.activeElement);
+    let next;
+    if (event.key === 'ArrowDown') next = (index + 1) % languageOptions.length;
+    if (event.key === 'ArrowUp') next = (index + languageOptions.length - 1) % languageOptions.length;
+    if (event.key === 'Home') next = 0;
+    if (event.key === 'End') next = languageOptions.length - 1;
+    if (next !== undefined) { event.preventDefault(); languageOptions[next].focus(); }
+  });
+  languageSelect.addEventListener('change', () => {
+    localStorage.setItem('site_lang', languageSelect.value);
+    syncLanguage();
+  });
+  document.addEventListener('themegood:langchange', syncLanguage);
+  document.addEventListener('click', event => {
+    if (!language.contains(event.target)) closeLanguageMenu();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !language.classList.contains('premium-open')) return;
+    event.preventDefault();
+    closeLanguageMenu(true);
+  });
+  language.addEventListener('focusout', event => {
+    if (!language.contains(event.relatedTarget)) closeLanguageMenu();
+  });
+  syncLanguage();
+
   function closeMenu(restoreFocus = false) {
+    closeLanguageMenu();
     nav.classList.remove('open');
     overlay.classList.remove('active');
     document.body.classList.remove('no-scroll');
@@ -141,11 +242,12 @@
   });
   header.querySelector('#cart-toggle').addEventListener('click', () => closeMenu());
   document.addEventListener('keydown', (event) => {
+    if (event.defaultPrevented) return;
     if (!nav.classList.contains('open')) return;
     if (event.key === 'Escape') return closeMenu(true);
     if (event.key !== 'Tab') return;
     const focusable = [toggle, ...nav.querySelectorAll('a, button, select')]
-      .filter((element) => element.getClientRects().length);
+      .filter((element) => element.tabIndex >= 0 && element.getClientRects().length);
     const first = focusable[0], last = focusable[focusable.length - 1];
     if (event.shiftKey && document.activeElement === first) {
       event.preventDefault(); last.focus();
@@ -180,8 +282,5 @@
     const count = cart.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
     header.querySelector('#cart-count').textContent = count;
     header.querySelector('#cart-count').classList.toggle('is-empty', count <= 0);
-    const select = language.querySelector('select');
-    select.value = localStorage.getItem('site_lang') || 'en';
-    select.addEventListener('change', () => localStorage.setItem('site_lang', select.value));
   }
 })();
