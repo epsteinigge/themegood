@@ -4160,9 +4160,9 @@
 
   const setActiveModalGalleryImage = (imageUrl) => {
     if (!modalGallery) return;
-    const normalizedImageUrl = normalizeImageUrl(imageUrl);
+    const imagePath = getComparableImagePath(imageUrl);
     modalGallery.querySelectorAll("img.thumb").forEach((thumb) => {
-      thumb.classList.toggle("is-active", normalizeImageUrl(thumb.src) === normalizedImageUrl);
+      thumb.classList.toggle("is-active", getComparableImagePath(thumb.src) === imagePath);
     });
   };
 
@@ -4466,41 +4466,22 @@
         sizeId: size.id
       })).filter((row) => row.src);
 
-      const unique = [];
-      const seen = new Set();
-      const hasUploadedGallery = Array.isArray(gallery) && gallery.length > 0;
-
-      // Prefer uploaded product gallery images when available.
-      if (!hasUploadedGallery) {
-        bySize.forEach((row) => {
-          const key = normalizeImageUrl(row.src);
-          if (!key || seen.has(key)) return;
-          seen.add(key);
-          unique.push(row);
-        });
-      }
-
-      gallery.forEach((src) => {
-        const key = normalizeImageUrl(src);
-        if (!key || seen.has(key)) return;
-        seen.add(key);
-        unique.push({
-          src: key,
-          sizeId: ""
-        });
+      // Uploaded pouch photos must not hide the can or other size-linked images.
+      const rows = [
+        ...gallery.map(src => ({ src, sizeId: getSizeIdForImage(el, src) })),
+        ...bySize,
+        { src: modalProductImage, sizeId: selectedSize.id }
+      ];
+      const unique = new Map();
+      rows.forEach(row => {
+        const src = normalizeImageUrl(row.src);
+        if (!src || isSachetImageAsset(src)) return;
+        const key = new URL(src, window.location.origin).href;
+        const existing = unique.get(key);
+        if (!existing) unique.set(key, { src, sizeId: row.sizeId || "" });
+        else if (!existing.sizeId && row.sizeId) existing.sizeId = row.sizeId;
       });
-
-      // Safety fallback in case both arrays are empty.
-      if (unique.length === 0) {
-        bySize.forEach((row) => {
-          const key = normalizeImageUrl(row.src);
-          if (!key || seen.has(key)) return;
-          seen.add(key);
-          unique.push(row);
-        });
-      }
-
-      return unique;
+      return [...unique.values()];
     })();
 
     currentProduct = {
