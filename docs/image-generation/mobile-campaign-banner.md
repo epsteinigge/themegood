@@ -1,6 +1,6 @@
 # Mobile campaign banner
 
-Retired: this generated composite is no longer served by the homepage. Its reference artwork contains an altered certification mark. Do not regenerate or reuse it. The homepage now displays the existing product photographs and original certification files directly in HTML/CSS, without editing their contents.
+Retired: this generated portrait composite is no longer served by the homepage. Do not regenerate it. At the user's explicit request, the homepage uses the previous landscape campaign artwork with only its incorrect Halal mark replaced by the original supplied logo. See `docs/home-banner-logo-correction.md` for the exact correction and verification.
 
 Asset: `public/photos/themegood-home-banner-mobile.webp`
 
