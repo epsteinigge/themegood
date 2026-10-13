@@ -1,5 +1,47 @@
 .shopping-filter-panel > summary { list-style: none; font-weight: 800; color: #762638; }
 .shopping-filter-panel > summary::-webkit-details-marker { display: none; }
+html body.shared-site #products .purchase-option-select { min-width: 0; max-width: 100%; box-sizing: border-box; }
+@media (max-width: 1366px) {
+  html body.shared-site #products .purchase-option-wrap .tg-select-trigger { min-width: 0; max-width: 100%; min-height: 44px !important; box-sizing: border-box; white-space: normal; overflow-wrap: anywhere; }
+}
+/* Tablet layouts cover iPad portrait, landscape, and split-screen widths. */
+@media (min-width: 761px) and (max-width: 1366px) {
+  html body.shared-site .section { padding-inline: 24px !important; }
+  html body.shared-site :is(.section-shell, .shopping-layout, .shopping-results, .checkout-grid, .detail-grid, .product-view-body) { min-width: 0; max-width: 100%; }
+  html body.shared-site :is(input, select, textarea) { box-sizing: border-box; max-width: 100%; font-size: 16px !important; }
+  html body.shared-site button { touch-action: manipulation; }
+  html body.shared-site.product-page .shopping-layout { grid-template-columns: minmax(0, 1fr) !important; gap: 24px !important; }
+  html body.shared-site.product-page .shopping-filters { position: static !important; padding: 20px !important; box-sizing: border-box; }
+  html body.shared-site.product-page .shopping-filter-fields { display: grid; grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+  html body.shared-site.product-page .shopping-filter-group { min-width: 0; margin-bottom: 0 !important; }
+  html body.shared-site.product-page #clearShoppingFiltersBtn { grid-column: 1 / -1; width: auto !important; justify-self: end; }
+  html body.shared-site.product-page .shopping-filters :is(input, select, button) { min-height: 44px !important; }
+  html body.shared-site.product-page .shopping-results { padding: 16px !important; box-sizing: border-box; }
+  html body.shared-site.product-page #products .products-grid,
+  html body.shared-site .shopping-featured-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 20px !important; }
+  html body.shared-site.home-page #products #productList { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 20px !important; }
+  html body.shared-site #products .product-card,
+  html body.shared-site.home-page #products #productList .product-card,
+  html body.shared-site .shopping-featured-grid .product-card { min-width: 0; max-width: none !important; min-height: 0 !important; height: auto !important; aspect-ratio: auto !important; padding: 18px !important; }
+  html body.shared-site #products .product-image-box { min-height: 0 !important; height: 240px !important; margin: 0 !important; padding: 0 !important; }
+  html body.shared-site #products .product-image-box > img { display: block; width: 100% !important; height: 100% !important; min-height: 0 !important; max-height: none !important; aspect-ratio: auto !important; margin: 0 !important; padding: 12px !important; box-sizing: border-box; object-fit: contain !important; }
+  html body.shared-site #products .product-card h4 { font-size: 22px !important; line-height: 1.3 !important; overflow-wrap: anywhere; }
+  html body.shared-site #products :is(.purchase-option-wrap, .gift-offer-wrap, .package-price-preview, .product-card-purchase-stack) { min-width: 0; box-sizing: border-box; }
+  html body.shared-site #products .package-price-preview { font-size: 16px !important; line-height: 1.5 !important; }
+  html body.shared-site #products :is(.purchase-option-select, .add-to-cart) { min-height: 44px !important; }
+  html body.shared-site #product-modal .modal-content { height: 100dvh !important; max-height: 100dvh !important; overflow-y: auto !important; box-sizing: border-box; }
+  html body.shared-site .footer-container { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 28px !important; }
+}
+@media (min-width: 1101px) and (max-width: 1366px) {
+  html body.shared-site.product-page #products .products-grid,
+  html body.shared-site.home-page #products #productList,
+  html body.shared-site .shopping-featured-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+}
+@media (min-width: 761px) and (max-width: 980px) {
+  html body.shared-site.checkout-page .checkout-grid,
+  html body.shared-site.shopping-details-page #products .detail-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  html body.shared-site.checkout-page .checkout-summary { position: static !important; }
+}
 @media (min-width: 761px) {
   .shopping-filter-panel > summary { pointer-events: none; margin-bottom: 20px; font-size: 18px; }
 }

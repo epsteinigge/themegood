@@ -95,7 +95,7 @@
   const overlay = header.querySelector('#menuOverlay');
   const actions = header.querySelector('.header-actions');
   const language = header.querySelector('.lang-switch');
-  const mobile = window.matchMedia('(max-width: 1100px)');
+  const mobile = window.matchMedia('(max-width: 1366px)');
   const root = document.documentElement;
   const notice = document.querySelector('.site-announcement-bar');
   let previousFocus = null;

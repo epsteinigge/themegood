@@ -216,7 +216,7 @@ html body.shared-site .contact-hover-card { display: none !important; }
   html body.shared-site > header.site-header { gap: 12px !important; padding-inline: 16px !important; }
   html body.shared-site > header.site-header .header-social-links { display: none !important; }
 }
-@media (max-width: 1100px) {
+@media (max-width: 1366px) {
   html body.shared-site > header.site-header {
     width: calc(100% - 24px) !important;
     height: 64px !important;
