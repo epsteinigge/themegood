@@ -29,8 +29,24 @@ html body.shared-site #products .purchase-option-select { min-width: 0; max-widt
   html body.shared-site #products :is(.purchase-option-wrap, .gift-offer-wrap, .package-price-preview, .product-card-purchase-stack) { min-width: 0; box-sizing: border-box; }
   html body.shared-site #products .package-price-preview { font-size: 16px !important; line-height: 1.5 !important; }
   html body.shared-site #products :is(.purchase-option-select, .add-to-cart) { min-height: 44px !important; }
-  html body.shared-site #product-modal .modal-content { height: 100dvh !important; max-height: 100dvh !important; overflow-y: auto !important; box-sizing: border-box; }
+  /* Use one scroll surface so swiping over the image also reaches the flavours. */
+  html body.shared-site #product-modal .modal-content { height: 94dvh !important; max-height: 94dvh !important; padding: 60px 20px calc(20px + env(safe-area-inset-bottom, 0px)) !important; overflow-y: auto !important; overflow-x: hidden !important; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; box-sizing: border-box; }
+  html body.shared-site #product-modal .modal-body { grid-template-columns: minmax(0, 1fr) !important; height: auto !important; min-height: 0 !important; overflow: visible !important; align-items: start; gap: 16px !important; }
+  html body.shared-site #product-modal :is(.modal-visual-column, .modal-detail-column) { min-width: 0; min-height: 0 !important; overflow: visible !important; }
+  html body.shared-site #product-modal .modal-image-shell { flex: none !important; height: clamp(180px, 24dvh, 260px) !important; min-height: 0 !important; max-height: 260px !important; }
+  html body.shared-site #product-modal #modal-image { height: 100% !important; min-height: 0 !important; max-height: 100% !important; padding: 10px !important; box-sizing: border-box; object-fit: contain !important; }
+  html body.shared-site #product-modal .modal-gallery { grid-template-columns: repeat(auto-fit, minmax(56px, 72px)) !important; gap: 8px !important; }
+  html body.shared-site #product-modal .modal-gallery img.thumb { height: 60px !important; min-height: 0 !important; box-sizing: border-box; }
+  html body.shared-site #product-modal .modal-detail-column { padding: 16px !important; gap: 12px !important; }
+  html body.shared-site #product-modal #modal-title { font-size: 28px !important; line-height: 1.2 !important; }
+  html body.shared-site #product-modal #modal-description { margin-top: 8px !important; line-height: 1.5 !important; }
+  html body.shared-site #product-modal .modal-purchase-bar { position: static !important; gap: 12px !important; margin-top: 12px !important; }
+  html body.shared-site #product-modal :is(.bundle-slot-select, .modal-actions button, .close-modal) { min-height: 44px !important; }
+  html body.shared-site #product-modal .close-modal { top: 8px !important; right: 12px !important; width: 44px !important; height: 44px !important; }
   html body.shared-site .footer-container { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 28px !important; }
+}
+@media (min-width: 1000px) and (max-width: 1366px) {
+  html body.shared-site #product-modal .modal-body { grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr) !important; }
 }
 @media (min-width: 1101px) and (max-width: 1366px) {
   html body.shared-site.product-page #products .products-grid,
