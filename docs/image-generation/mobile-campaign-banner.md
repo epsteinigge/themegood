@@ -1,5 +1,7 @@
 # Mobile campaign banner
 
+Retired: this generated composite is no longer served by the homepage. Its reference artwork contains an altered certification mark. Do not regenerate or reuse it. The homepage now displays the existing product photographs and original certification files directly in HTML/CSS, without editing their contents.
+
 Asset: `public/photos/themegood-home-banner-mobile.webp`
 
 Created with built-in imagegen, using `public/photos/themegood-home-banner-real-packaging.png` as the edit reference. The portrait output is encoded as WebP at quality 88 and served through a responsive picture source on screens up to 760px. Desktop keeps the original landscape artwork.
