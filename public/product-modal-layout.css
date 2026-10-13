@@ -98,6 +98,14 @@ html body.shared-site #product-modal .close-modal { top: 8px !important; right: 
 @media (min-width: 1000px) {
   html body.shared-site #product-modal .modal-body { grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr) !important; }
 }
+/* Give mouse-operated desktop dialogs a larger image without expanding tablet images. */
+@media (min-width: 1000px) and (hover: hover) and (pointer: fine) {
+  html body.shared-site #product-modal .modal-content { max-width: 1400px !important; }
+  html body.shared-site #product-modal .modal-body { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr) !important; }
+  html body.shared-site #product-modal .modal-image-shell { height: clamp(320px, 56dvh, 600px) !important; max-height: 600px !important; }
+  html body.shared-site #product-modal .modal-gallery { grid-template-columns: repeat(auto-fit, minmax(72px, 88px)) !important; }
+  html body.shared-site #product-modal .modal-gallery img.thumb { height: 80px !important; }
+}
 @media (max-width: 560px) {
   html body.shared-site #product-modal .modal-content { width: calc(100% - 16px) !important; padding-inline: 12px !important; }
   html body.shared-site #product-modal .modal-detail-column { padding: 12px !important; }
