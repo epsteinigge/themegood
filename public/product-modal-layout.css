@@ -1,0 +1,107 @@
+/* Shared product dialog layout: content grows naturally inside one scroll area. */
+html body.shared-site #product-modal,
+html body.shared-site #product-modal * {
+  box-sizing: border-box;
+}
+
+html body.shared-site #product-modal .modal-content {
+  width: calc(100% - 32px) !important;
+  max-width: 1200px !important;
+  height: 94dvh !important;
+  max-height: 94dvh !important;
+  margin: auto !important;
+  padding: 60px 20px calc(20px + env(safe-area-inset-bottom, 0px)) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+html body.shared-site #product-modal .modal-body {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-auto-rows: auto;
+  align-items: start;
+  gap: 16px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+html body.shared-site #product-modal :is(.modal-visual-column, .modal-detail-column) {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: auto;
+  align-content: start !important;
+  gap: 12px !important;
+  height: auto !important;
+  min-width: 0;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+html body.shared-site #product-modal .modal-detail-column { padding: 16px !important; }
+html body.shared-site #product-modal .modal-detail-column > * { min-width: 0; margin: 0 !important; }
+html body.shared-site #product-modal .modal-detail-column :is(h3, p, strong, span, button) { overflow-wrap: anywhere; }
+html body.shared-site #product-modal #modal-title { font-size: 28px !important; line-height: 1.2 !important; }
+html body.shared-site #product-modal #modal-description { margin-top: 8px !important; line-height: 1.5 !important; }
+
+html body.shared-site #product-modal .modal-image-shell {
+  height: clamp(180px, 24dvh, 260px) !important;
+  min-height: 0 !important;
+  max-height: 260px !important;
+}
+html body.shared-site #product-modal #modal-image {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+  padding: 10px !important;
+  object-fit: contain !important;
+}
+html body.shared-site #product-modal .modal-gallery {
+  grid-template-columns: repeat(auto-fit, minmax(56px, 72px)) !important;
+  gap: 8px !important;
+  margin: 0 !important;
+}
+html body.shared-site #product-modal .modal-gallery img.thumb { height: 60px !important; min-height: 0 !important; margin: 0 !important; }
+
+html body.shared-site #product-modal :is(.modal-price-line, .modal-meta-line) {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+}
+html body.shared-site #product-modal :is(.modal-price-line, .modal-meta-line) > * { min-width: 0; }
+html body.shared-site #product-modal :is(.modal-price-line, .modal-meta-line) > span { text-align: right; }
+html body.shared-site #product-modal .modal-size-options { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+html body.shared-site #product-modal .modal-size-option { min-width: 0; height: auto !important; min-height: 44px !important; white-space: normal; line-height: 1.4; }
+
+html body.shared-site #product-modal .modal-purchase-bar { position: static !important; display: grid !important; gap: 12px !important; }
+html body.shared-site #product-modal .modal-qty { display: flex !important; flex-wrap: wrap; gap: 8px !important; }
+html body.shared-site #product-modal .modal-qty :is(button, span) { width: 44px !important; height: 44px !important; min-height: 44px !important; }
+html body.shared-site #product-modal .modal-actions {
+  position: static !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 12px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+html body.shared-site #product-modal .modal-actions .btn { min-width: 0; min-height: 44px !important; height: auto; padding: 12px !important; white-space: normal; line-height: 1.4; }
+html body.shared-site #product-modal .bundle-modal-head { flex-wrap: wrap; align-items: start; }
+html body.shared-site #product-modal .bundle-modal-head > * { min-width: 0; }
+html body.shared-site #product-modal .close-modal { top: 8px !important; right: 12px !important; width: 44px !important; height: 44px !important; }
+
+@media (min-width: 1000px) {
+  html body.shared-site #product-modal .modal-body { grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr) !important; }
+}
+@media (max-width: 560px) {
+  html body.shared-site #product-modal .modal-content { width: calc(100% - 16px) !important; padding-inline: 12px !important; }
+  html body.shared-site #product-modal .modal-detail-column { padding: 12px !important; }
+  html body.shared-site #product-modal #modal-title { font-size: 24px !important; }
+  html body.shared-site #product-modal .modal-size-options,
+  html body.shared-site #product-modal .modal-actions { grid-template-columns: minmax(0, 1fr) !important; }
+}

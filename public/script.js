@@ -4435,6 +4435,7 @@
         renderModalGallery(gallery);
 
         modal.style.display = "flex";
+        modal.querySelector(".modal-content").scrollTop = 0;
         document.body.classList.add("product-modal-open");
         return;
       } catch (error) {
@@ -4551,6 +4552,7 @@
     }
 
     modal.style.display = "flex";
+    modal.querySelector(".modal-content").scrollTop = 0;
     document.body.classList.add("product-modal-open");
   }
   function bindProductCardInteractions(root = document) {
